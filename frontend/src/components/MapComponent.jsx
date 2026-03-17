@@ -142,6 +142,24 @@ const MapClickHandler = ({ onClick }) => {
   return null;
 };
 
+const MapPanes = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const ensurePane = (name, zIndex, pointerEvents = "auto") => {
+      const existing = map.getPane(name) || map.createPane(name);
+      existing.style.zIndex = String(zIndex);
+      existing.style.pointerEvents = pointerEvents;
+    };
+
+    ensurePane("grid-pane", 350, "none");
+    ensurePane("earthquake-pane", 400, "auto");
+    ensurePane("volcano-pane", 450, "auto");
+  }, [map]);
+
+  return null;
+};
+
 const GridOverlay = ({ show, isDarkMode, mapType }) => {
   const map = useMap();
   const gridRef = useRef([]);
@@ -183,7 +201,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
     const addLine = (coords, color, weight, opacity) => {
       gridRef.current.push(
-        L.polyline(coords, { color, weight, opacity, interactive: false }).addTo(map)
+        L.polyline(coords, { color, weight, opacity, interactive: false, pane: "grid-pane" }).addTo(map)
       );
     };
     const addLabel = (lat, lng, text, color, size, fontWeight = "bold") => {
@@ -197,6 +215,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
           }),
           interactive: false,
           zIndexOffset: -9000,
+          pane: "grid-pane",
         }).addTo(map)
       );
     };
@@ -293,7 +312,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   markerIconsRef.current = markerIcons;
 
   useEffect(() => {
-    rendererRef.current = L.canvas();
+    rendererRef.current = L.canvas({ pane: "earthquake-pane" });
     const lg = L.layerGroup().addTo(map);
     layerGroupRef.current = lg;
     return () => {
@@ -600,6 +619,7 @@ const MapComponent = ({
         wheelPxPerZoomLevel={60}   // default 60px per level; combined with zoomDelta=0.5 this means ~120px of scroll per full integer zoom
       >
         <TileLayerManager mapType={mapType} />
+        <MapPanes />
         <MinZoomController mapType={mapType} />
         <MapReadyHandler />
         <ScaleControl position="bottomright" />

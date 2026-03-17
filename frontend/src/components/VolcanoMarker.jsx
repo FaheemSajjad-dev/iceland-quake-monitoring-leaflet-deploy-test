@@ -28,7 +28,12 @@ const VolcanoMarker = ({ volcano, onSelect }) => {
       return;
     }
 
-    const marker = L.marker([lat, lng], { icon: volcanoIcon, zIndexOffset: 5, title: volcano.name })
+    const marker = L.marker([lat, lng], {
+      icon: volcanoIcon,
+      zIndexOffset: 5,
+      title: volcano.name,
+      pane: "volcano-pane",
+    })
       .on("click", (e) => {
         L.DomEvent.stopPropagation(e);
         onSelect(volcano);
