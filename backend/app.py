@@ -175,6 +175,8 @@ create_tables()
 _scheduler = None
 _scheduler_lock = threading.Lock()
 _scheduler_started = False
+_bootstrap_lock = threading.Lock()
+_bootstrap_started = False
 
 # Simple in-memory cache for /earthquakes (invalidated after each scrape cycle)
 _eq_cache: dict = {"data": None, "ts": 0.0}
@@ -183,6 +185,37 @@ _EQ_CACHE_TTL = 60  # seconds — frontend polls every 3 min, so 60s is fine
 # -----------------------------------------------------------------------------
 # Scheduled job
 # -----------------------------------------------------------------------------
+def _refresh_derived_data() -> None:
+    """Fetch secondary sources and rebuild derived tables."""
+    sys.path.append(CURRENT_FILE_PATH)
+    import importlib
+    import reconcile as _reconcile; importlib.reload(_reconcile)
+    import skjalftalisa_client as _sk; importlib.reload(_sk)
+    import volcano_scraper as _volcanoes; importlib.reload(_volcanoes)
+
+    match_and_merge = _reconcile.match_and_merge
+    fetch_last_n_days = _sk.fetch_last_n_days
+    store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
+    refresh_volcanoes = _volcanoes.refresh_volcanoes
+
+    try:
+        rows = fetch_last_n_days(7, size_min=2.7)
+        store_skjalftalisa_rows(rows)
+    except Exception as e:
+        print(f"[WARN] Skjalftalisa fetch failed: {e}")
+
+    try:
+        refresh_volcanoes(DB_PATH)
+    except Exception as e:
+        print(f"[WARN] Volcano refresh failed: {e}")
+
+    end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    start = "2020-06-01 00:00:00"
+    match_and_merge(start, end, min_mag=2.7)
+
+    _eq_cache["data"] = None
+
+
 def scheduled_scrape() -> None:
     """
     Every 3 minutes:
@@ -219,6 +252,22 @@ def scheduled_scrape() -> None:
 
         # Invalidate response cache so next request gets fresh reconciled data
         _eq_cache["data"] = None
+
+
+def bootstrap_missing_data() -> None:
+    """Populate merged and volcano tables on a fresh deployment."""
+    global _bootstrap_started
+
+    with _bootstrap_lock:
+        if _bootstrap_started:
+            return
+        _bootstrap_started = True
+
+    with app.app_context():
+        if EarthquakeMerged.query.count() > 0 and Volcano.query.count() > 0:
+            return
+
+        _refresh_derived_data()
 
 def start_background_services() -> None:
     global _scheduler, _scheduler_started
@@ -280,6 +329,10 @@ def get_earthquake_data():
     Cached for _EQ_CACHE_TTL seconds; cache is also invalidated after each scrape.
     """
     days_param = (request.args.get("days") or "all").strip().lower()
+
+    with app.app_context():
+        if EarthquakeMerged.query.count() == 0 and Earthquake.query.count() > 0:
+            bootstrap_missing_data()
 
     # Serve from cache only for the default "all" case
     if days_param == "all":
@@ -386,6 +439,8 @@ def scrape_volcanoes():
 def get_volcano_data():
     """Returns volcano data from the database as JSON."""
     with app.app_context():
+        if Volcano.query.count() == 0:
+            bootstrap_missing_data()
         volcanoes = Volcano.query.all()
         return jsonify([
             {
