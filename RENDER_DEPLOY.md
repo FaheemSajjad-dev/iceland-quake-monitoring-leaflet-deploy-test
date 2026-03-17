@@ -25,3 +25,11 @@ This repo is configured for a single Render web service that serves both:
 - This app uses SQLite at `backend/data/earthquakes.db`.
 - Render free web services do not provide persistent disk storage, so database contents can reset on redeploy/restart.
 - The scheduler stays enabled in deployment and runs inside the single Gunicorn worker.
+
+## Optional analytics
+
+To enable Cloudflare Web Analytics, add this environment variable in Render:
+
+- `VITE_CLOUDFLARE_ANALYTICS_TOKEN`
+
+Use the token from your Cloudflare Web Analytics project, then redeploy.
