@@ -1,0 +1,24 @@
+Documentation page numbering
+
+Update screenshots and their captions in documentation
+
+deployment of webapp on local server and a proper host 
+
+after deployment stress test through students in department
+
+rate limiting (not applied yet) -------------------------- 
+                                                            |
+                                                            |
+                                                            |
+map layers discussion with MET office --------------------
+
+marker rendering performance (~297 MB, slow pan/zoom locally)
+  - currently ~1800 DOM markers (L.divIcon, one SVG per quake)
+  - changed earthquake markers from square SVG/divIcon markers to Leaflet L.circleMarker markers
+  - this was necessary because square markers relied on many separate DOM/SVG elements, which made pan/zoom rendering heavy and slowed the map locally
+  - L.circleMarker uses Leaflet's canvas rendering path, reducing marker rendering overhead and improving redraw speed
+  - trade-off: squares became circles, while marker colours and size scaling were kept the same
+  - observed memory improvement: browser tab usage dropped from about 297 MB to about 66-70 MB; hovering over the webapp tab now shows around 66 MB
+  - result: improved marker rendering quality, smoother pan/zoom behaviour, and faster overall map rendering
+
+.md files and documentation still have square marker version

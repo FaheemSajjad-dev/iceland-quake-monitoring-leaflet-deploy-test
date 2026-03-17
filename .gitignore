@@ -1,0 +1,30 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database (runtime data — not source)
+backend/data/earthquakes.db
+backend/data/earthquakes.db-shm
+backend/data/earthquakes.db-wal
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# VS files
+.vs/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+*.env

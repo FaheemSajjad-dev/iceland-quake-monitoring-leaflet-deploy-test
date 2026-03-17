@@ -1,0 +1,288 @@
+/* Time Window Slider */
+.time-window-slider-container {
+  background-color: rgba(250, 250, 250, 0.95);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 44%;
+  max-width: 440px;
+  height: fit-content;
+  padding: 8px 18px;
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  border: none;
+}
+
+.timeline-slider {
+  height: 36px;
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
+.timeline-track {
+  border: 1px solid #666666;
+  height: 16px;
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  border-radius: 0px;
+  transition: background-color 0.2s ease;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.timeline-track:hover {
+  filter: brightness(0.95);
+}
+
+.timeline-track.dragging {
+  cursor: grabbing !important;
+  filter: brightness(0.9);
+  height: 18px;
+  top: 6px;
+  border-color: #000000;
+}
+
+/* Divider base style */
+.divider {
+  position: absolute;
+  width: 2px;
+  pointer-events: none;
+  transform: translateX(-0.5px);
+  z-index: 5; /* Make dividers appear above the background */
+}
+
+/* Day divider: solid line, matching month thickness */
+.divider.divider-day {
+  background-color: #000000;
+  width: 1px;
+  height: 100%;
+  top: 0;
+}
+
+/* Month divider: solid, slightly thicker */
+.divider.divider-month {
+  background-color: #000000;
+  width: 1px;
+  height: 100%;
+  top: 0;
+}
+
+/* Year divider: bold 2px line */
+.divider.divider-year {
+  background-color: #000000;
+  width: 2px;
+  height: 100%;
+  top: 0;
+  opacity: 1;
+}
+
+.year-labels {
+  position: absolute;
+  width: 100%;
+  top: 26px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.year-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #333333;
+  text-align: center;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+  background-color: none;
+  padding: 0 3px;
+  z-index: 10;
+}
+
+.selected-date {
+  margin-top: 2px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #333;
+  letter-spacing: 0.2px;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-align: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+/* Day view specific styles */
+.day-labels {
+  position: absolute;
+  width: 100%;
+  top: 26px;
+  height: 30px;
+  pointer-events: none;
+}
+
+.day-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #444;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.month-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #333;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  top: 14px;
+}
+
+/* Zoom indicator tooltip (shows on hover) */
+.zoom-indicator {
+  position: absolute;
+  top: -22px;                 /* above the slider card */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-style: italic;
+  white-space: nowrap;
+  opacity: 0;                 /* hidden by default */
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+/* Show tooltip when hovering the slider area */
+.timeline-slider:hover ~ .zoom-indicator {
+  opacity: 1;
+}
+
+/* Adjust time window slider container for day view mode */
+.time-window-slider-container.day-view {
+  padding-bottom: 14px;
+  height: auto;
+}
+
+
+.timeline-track.gray {
+  background: linear-gradient(to right, #dcdcdc, #777, #333);
+}
+
+.timeline-track.colored {
+  background: linear-gradient(
+    to right,
+    #e2d9ff,
+    #cbb9f6,
+    #a991e0,
+    #8667c2,
+    #4b2f86,
+    #234078,
+    #30707b,
+    #4b9276,
+    #7bab6d,
+    #b7cf77
+  );
+}
+
+/* ── Vertical orientation (left-side panel) ── */
+.time-window-slider-container.vertical {
+  width: 380px;
+  max-width: none;
+  /* padding: CSS-top (→ visual right space for labels) = 26px,
+             CSS-right/left (→ visual bottom/top end padding) = 24px,
+             CSS-bottom (→ visual left margin before bar) = 10px
+     total container CSS height = 26 + 52 + 10 = 88px */
+  padding: 26px 24px 10px 24px;
+  bottom: auto;
+  left: -150px;              /* content-box: total_W=428px → CSS_left = 20 - 428/2 + 88/2 = 20 - 214 + 44 = -150 → visual left = 20px */
+  top: calc(50vh - 75px);   /* visual centre = T+44 = 50vh-31 */
+  transform: rotate(-90deg);
+}
+
+/* In heatmap mode the colour toggles are hidden, leaving extra space — shift slider down to re-centre
+   between the map-type control (~46px from top) and the volcano toggle (~100vh-67px from top).
+   visual centre = T+44 = 50vh-10 ≈ midpoint of (46 + 100vh-67) / 2 = 50vh-10.5 */
+.time-window-slider-container.vertical.heatmap-mode {
+  top: calc(50vh - 54px);
+}
+
+/* Give timeline-slider more CSS height (= visual width) so bar + gap + labels all fit */
+.time-window-slider-container.vertical .timeline-slider {
+  height: 52px;
+}
+
+/* Track flush with CSS-bottom → visual LEFT side of the panel, 22px wide */
+.time-window-slider-container.vertical .timeline-track {
+  top: auto;
+  bottom: 10px;
+  height: 22px;
+}
+
+/* Labels near CSS-top → visual RIGHT side of the panel.
+   Bar top edge = 52 - 10 - 22 = 20px from CSS-top; labels at 6px → 14px gap. */
+.time-window-slider-container.vertical .year-labels,
+.time-window-slider-container.vertical .day-labels {
+  top: 6px;
+}
+
+/* In vertical mode, place the date range text in the 20px strip at CSS bottom (= visual right of bar).
+   Track ends at CSS y≈68px; container CSS height = 88px → 20px gap from track to container edge.
+   The element inherits the container's rotate(-90deg), so text reads bottom-to-top automatically. */
+.time-window-slider-container.vertical .selected-date {
+  position: absolute;
+  bottom: 0;
+  /* left: 50% + translateX(-50%) centers the element along the CSS x-axis
+     (= visual y-axis after -90deg rotation), placing the text at the visual
+     vertical midpoint of the slider regardless of container width. */
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #555;
+  letter-spacing: 0.3px;
+  background: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* In vertical mode, CSS top → visual left (off-screen). Move tooltip to CSS bottom → visual right. */
+.time-window-slider-container.vertical .zoom-indicator {
+  top: auto;
+  bottom: -22px;
+}
+
+/* Counter-rotate labels so text reads horizontally.
+   top: -20px shifts each label 20px toward CSS-top (= visual right),
+   moving the rotated text clear of the bar with ~8px gap.
+   translateX(-50%) centers each label on its segment tick.
+   All labels share the same top value → same visual horizontal distance from bar. */
+.time-window-slider-container.vertical .year-label,
+.time-window-slider-container.vertical .day-label,
+.time-window-slider-container.vertical .month-label {
+  top: -20px;
+  transform: translateX(-50%) rotate(90deg);
+  transform-origin: center center;
+}

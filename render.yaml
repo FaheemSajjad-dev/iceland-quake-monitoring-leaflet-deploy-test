@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: iceland-quake-monitoring-leaflet-deploy-test
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r backend/requirements-render.txt
+      npm ci --prefix frontend
+      npm run build --prefix frontend
+    startCommand: gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 1
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
