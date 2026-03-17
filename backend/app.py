@@ -267,6 +267,12 @@ def bootstrap_missing_data() -> None:
         if EarthquakeMerged.query.count() > 0 and Volcano.query.count() > 0:
             return
 
+        if Earthquake.query.count() == 0:
+            sys.path.append(CURRENT_FILE_PATH)
+            import importlib
+            import scrape as _scrape; importlib.reload(_scrape)
+            _scrape.scrape_all_earthquake_data()
+
         _refresh_derived_data()
 
 def start_background_services() -> None:
@@ -331,7 +337,7 @@ def get_earthquake_data():
     days_param = (request.args.get("days") or "all").strip().lower()
 
     with app.app_context():
-        if EarthquakeMerged.query.count() == 0 and Earthquake.query.count() > 0:
+        if EarthquakeMerged.query.count() == 0:
             bootstrap_missing_data()
 
     # Serve from cache only for the default "all" case
