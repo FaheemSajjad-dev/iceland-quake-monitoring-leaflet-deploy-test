@@ -147,7 +147,7 @@ const About = ({ onClose }) => {
             <p>For feedback, collaboration, or support:</p>
             <ul className="contact-list">
               <li>
-                <a href="mailto:mfs7@hi.is">mfs7@hi.is</a>
+                <a href="mailto:mfs7@hi.is">mfs7@hi.is  <p>For feedback, collaboration, or support:</p></a>
               </li>
               <li>
                 <a href="mailto:jonasson@hi.is">jonasson@hi.is</a>
