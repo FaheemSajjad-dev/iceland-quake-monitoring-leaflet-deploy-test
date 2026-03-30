@@ -13,8 +13,8 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   const [zoomLevel, setZoomLevel] = useState(1.0);
   const [viewOffset, setViewOffset] = useState(1.0);
 
-  const isDayViewMode = zoomLevel < 0.04;
-  const isWeekMode    = !isDayViewMode && zoomLevel < 0.15;
+  const isDayViewMode = zoomLevel < 0.01;
+  const isWeekMode    = !isDayViewMode && zoomLevel < 0.02;
   const isYearMode    = zoomLevel >= 0.95;
 
   const sliderRef = useRef(null);
@@ -26,8 +26,8 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   const calculateVisibleRange = () => {
     if (isDayViewMode) {
       const minDays = 3;
-      const maxDays = 30;
-      let normalized = (zoomLevel - 0.01) / (0.1 - 0.01);
+      const maxDays = 7;
+      let normalized = (zoomLevel - 0.005) / (0.01 - 0.005);
       normalized = Math.max(0, Math.min(1, normalized));
       const daysToShow = Math.round(minDays + normalized * (maxDays - minDays));
       const maxOffset = Math.max(0, totalDays - daysToShow+1);
@@ -43,9 +43,9 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
     } else if (isWeekMode) {
       // Weeks mode: 4 → 3 → 2 → 1 week(s) as you zoom in
         const weeksToShow =
-          zoomLevel < 0.06 ? 1 :
-          zoomLevel < 0.09 ? 2 :
-          zoomLevel < 0.12 ? 3 : 4;
+          zoomLevel < 0.0125 ? 1 :
+          zoomLevel < 0.015  ? 2 :
+          zoomLevel < 0.0175 ? 3 : 4;
        const daysToShow = weeksToShow * 7;
         const maxOffset = Math.max(0, totalDays - daysToShow + 1);
         const dayOffset = Math.round(viewOffset * maxOffset);
@@ -185,10 +185,10 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
     // Horizontal: drag right → earlier dates, so negate delta.
     // Vertical (rotated -90deg): drag down is visually leftward along the timeline,
     // so use positive delta to keep drag-down = earlier dates (natural direction).
-    let sensitivityFactor = isDayViewMode ? 0.1 : 2.0;
+    let sensitivityFactor = (isDayViewMode || isWeekMode) ? 0.1 : 2.0;
     const deltaRatio = (vertical ? delta : -delta) / trackWidth * sensitivityFactor;
     const newOffset = Math.max(0, Math.min(1, dragStartOffsetRef.current + deltaRatio));
-    
+
     setViewOffset(newOffset);
   };
 
@@ -211,7 +211,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
       const clamped = Math.max(-60, Math.min(60, raw));
       const k = zoomLevel < 0.1 ? 0.004 : 0.006;
       const scale = Math.exp(clamped * k);
-      const newZoomLevel = Math.max(0.01, Math.min(1.0, zoomLevel * scale));
+      const newZoomLevel = Math.max(0.005, Math.min(1.0, zoomLevel * scale));
       setZoomLevel(newZoomLevel);
       if (newZoomLevel >= 1.0) {
         setViewOffset(1.0);
@@ -231,7 +231,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
     const scale = Math.exp(clamped * k);
 
     const oldZoom = zoomLevel;
-    const newZoom = Math.max(0.01, Math.min(1.0, zoomLevel * scale));
+    const newZoom = Math.max(0.005, Math.min(1.0, zoomLevel * scale));
 
     // Month mode: anchor zoom to the month under the cursor to avoid big jumps
     if (!isDayViewMode && !isWeekMode && !isYearMode) {
@@ -307,7 +307,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
     const trackWidth = trackRef.current.offsetWidth;
     const delta = (vertical ? t.clientY : t.clientX) - dragStartXRef.current;
 
-    const sensitivityFactor = isDayViewMode ? 0.1 : 2.0;
+    const sensitivityFactor = (isDayViewMode || isWeekMode) ? 0.1 : 2.0;
     const deltaRatio = (vertical ? delta : -delta) / trackWidth * sensitivityFactor;
     const newOffset = Math.max(0, Math.min(1, dragStartOffsetRef.current + deltaRatio));
     setViewOffset(newOffset);
@@ -527,7 +527,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   const { dividers, labels } = useMemo(() => generateDividers(), [viewOffset, zoomLevel]);
 
   return (
-    <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
+    <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
       <div className="timeline-slider" ref={sliderRef}>
         <div
           className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : 'colored'}`}
@@ -541,7 +541,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
           {dividers}
         </div>
 
-        <div className={isDayViewMode ? "day-labels" : "year-labels"}>
+        <div className={(isDayViewMode || isWeekMode) ? "day-labels" : "year-labels"}>
           {labels}
         </div>
 
@@ -549,7 +549,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 
       <div className="selected-date">{formatDateRangeDisplay()}</div>
       <div className="zoom-indicator">
-        {isDayViewMode ? " Day view " : isYearMode ? " Year view " : " Month view "}
+        {isDayViewMode ? " Day view " : isWeekMode ? " Week view " : isYearMode ? " Year view " : " Month view "}
         ( scroll to zoom {zoomLevel < 0.5 ? "time window, drag to shift" : "time window, drag to shift "} )
       </div>
     </div>

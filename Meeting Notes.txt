@@ -1,11 +1,30 @@
-Documentation page numbering
+The site is live at http://pluto.cs.hi.is/mpgv/.
+----------------------------------------------
+after every change locally and after scp to pluto
 
-Update screenshots and their captions in documentation
+ren 
 
-deployment of webapp on local server and a proper host 
+bash ~/iceland-quake/stop.sh && bash ~/iceland-quake/deploy.sh
 
-after deployment stress test through students in department
+----------------------------------------
+Then future deploys on the server are just bash deploy.sh
+------------------------------------------------
+For true 1000 concurrent users you'd need:
 
+Sudo — nginx caching for tiles/sprites/fonts (those never need to hit Python)
+PostgreSQL instead of SQLite
+A CDN or object storage for the .pmtiles file
+-------------------------------------------------
+change other 3 maps too
+----------------------------
+deployment of webapp on local server (done) and a proper host (talk to met office)
+--------------------------------------
+after deployment stress test through students in department (to do)
+---------------------------------------------
+
+fix map for all kind of screens, tabs to laptops to screens to bigger screens, when opened in browser (not just hdmi
+
+------------------------------------------------------------)
 rate limiting (not applied yet) -------------------------- 
                                                             |
                                                             |

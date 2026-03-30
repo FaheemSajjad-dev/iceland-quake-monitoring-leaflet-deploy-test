@@ -20,6 +20,12 @@ const VolcanoMarker = ({ volcano, onSelect }) => {
   const markerRef = useRef(null);
 
   useEffect(() => {
+    if (!map.getPane('volcanoPane')) {
+      const pane = map.createPane('volcanoPane');
+      pane.style.zIndex = 390;
+      pane.style.pointerEvents = 'auto';
+    }
+
     if (volcano.latitude == null || volcano.longitude == null) return;
     const lat = parseFloat(volcano.latitude);
     const lng = parseFloat(volcano.longitude);
@@ -28,12 +34,7 @@ const VolcanoMarker = ({ volcano, onSelect }) => {
       return;
     }
 
-    const marker = L.marker([lat, lng], {
-      icon: volcanoIcon,
-      zIndexOffset: 5,
-      title: volcano.name,
-      pane: "volcano-pane",
-    })
+    const marker = L.marker([lat, lng], { icon: volcanoIcon, pane: 'volcanoPane', title: volcano.name })
       .on("click", (e) => {
         L.DomEvent.stopPropagation(e);
         onSelect(volcano);

@@ -112,7 +112,15 @@ const App = () => {
         setIsHeatmap(type === "heatmap");
         if (type === "heatmap") setColorOwner('timeline');
     }, []);
-    const toggleVolcanoes = useCallback(() => setShowVolcanoes(v => !v), []);
+    const toggleVolcanoes = useCallback(() => {
+        setShowVolcanoes(v => {
+            const next = !v;
+            if (next) {
+                fetchVolcanoData().then(setVolcanoData).catch(() => {});
+            }
+            return next;
+        });
+    }, []);
     const handleMagnitudeFilterChange = useCallback(v => setMagnitudeFilter(v), []);
     // Stable empty array so MapComponent doesn't re-render when volcanoes are hidden
     const emptyVolcanoes = useMemo(() => [], []);

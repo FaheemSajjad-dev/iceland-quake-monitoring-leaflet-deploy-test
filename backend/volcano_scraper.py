@@ -180,7 +180,7 @@ def save_volcanoes_to_db(volcanoes: List[Dict], db_path: Optional[str] = None) -
     conn.commit()
     conn.close()
     print(f"[DB] Saved {count} volcano rows to {db_path}.")
-    return True
+    return count > 0
 
 def refresh_volcanoes(db_path: Optional[str] = None):
     rows = fetch_and_merge()

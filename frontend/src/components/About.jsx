@@ -144,12 +144,16 @@ const About = ({ onClose }) => {
 
           <section className="about-section">
             <h3>Contact</h3>
+            <p>For feedback, collaboration, or support:</p>
             <ul className="contact-list">
               <li>
-                <a href="mailto:mfs7@hi.is">mfs7@hi.is</a> <p>For inquiries/support</p>
+                <a href="mailto:mfs7@hi.is">mfs7@hi.is</a>
               </li>
               <li>
-                <a href="mailto:jonasson@hi.is">jonasson@hi.is</a> <p>For feedback</p>
+                <a href="mailto:jonasson@hi.is">jonasson@hi.is</a>
+              </li>
+              <li>
+                <a href="mailto:esa@hi.is">esa@hi.is</a>
               </li>
             </ul>
           </section>

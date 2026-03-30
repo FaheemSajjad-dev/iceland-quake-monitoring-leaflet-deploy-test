@@ -1,17 +1,28 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Pane, ScaleControl, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Pane, ScaleControl, AttributionControl, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import maplibregl from "maplibre-gl";
+import "@maplibre/maplibre-gl-leaflet";
+import { Protocol } from "pmtiles";
+import pmLayers from "protomaps-themes-base";
 import MapTypeSelector from "./MapTypeSelector";
 import VolcanoMarker from "./VolcanoMarker";
 import "./MapComponent.css";
 import { fetchShakeMapValidated } from "../api";
 import { parseBackendUtcDate } from "../utils/datetime";
 
+// Register pmtiles:// protocol with MapLibre GL once at module load.
+// This lets MapLibre fetch a single .pmtiles file via HTTP range requests
+// instead of hitting a tile server for every tile.
+const _pmtilesProtocol = new Protocol();
+maplibregl.addProtocol("pmtiles", _pmtilesProtocol.tile.bind(_pmtilesProtocol));
+
 const CENTER = [64.9631, -19.0208];
 
 const MIN_MAG = 2.7;
-const MAG_PALETTE_STOPS = ["#FDE725", "#5DC863", "#21918C", "#3B528B", "#440154"];
+const MAG_PALETTE_STOPS = ["#8aa0c0", "#5a7098", "#344870", "#1a2450", "#060820"];
 
 function hexToRgb(hex) {
   const h = hex.replace("#", "");
@@ -34,16 +45,21 @@ const getMarkerColor = (magnitude, maxMagnitude) => {
   const t = (parseFloat(magnitude) - MIN_MAG) / ((parseFloat(maxMagnitude) - MIN_MAG) || 1);
   return samplePalette(MAG_PALETTE_STOPS, t);
 };
-const getMarkerPixelSize = (mag, maxMag) => {
-  const denom = (parseFloat(maxMag) - MIN_MAG) || 1;
-  const t = Math.max(0, Math.min(1, (parseFloat(mag) - MIN_MAG) / denom));
-  return Math.round(8 + Math.pow(t, 0.7) * 6);
-};
+const MARKER_PX = 10; // fixed size for all markers
 
 const TWILIGHT_MONTH_COLORS = [
-  "#e2d9ff", "#cbb9f6", "#a991e0", "#8667c2",
-  "#6a51a3", "#4b2f86", "#2d1a6f", "#234078",
-  "#30707b", "#4b9276", "#7bab6d", "#b7cf77",
+  "#b07888", // Jan
+  "#a06878", // Feb
+  "#905868", // Mar
+  "#804858", // Apr
+  "#6e3848", // May
+  "#5e2c3c", // Jun
+  "#4e2030", // Jul
+  "#3e1626", // Aug
+  "#2e0e1c", // Sep
+  "#200814", // Oct
+  "#14040c", // Nov
+  "#0c0208", // Dec
 ];
 const getTwilightColorForDate = (isoString) => {
   if (!isoString) return "#6a51a3";
@@ -52,61 +68,205 @@ const getTwilightColorForDate = (isoString) => {
   return TWILIGHT_MONTH_COLORS[d.getUTCMonth()] || "#6a51a3";
 };
 
+// All tile layers now use Esri's ArcGIS REST CDN — the same infrastructure used
+// by the Icelandic Met Office's own Skjálftalísa app (esri-leaflet).
+// No API key required. Tile URL format: /MapServer/tile/{z}/{y}/{x}
 const TILE_LAYERS = {
-  roadmap: {
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-    maxNativeZoom: 19,
-  },
+  roadmap: null, // handled by MaplibreVectorLayer
   satellite: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attribution: "Tiles &copy; Esri",
+    attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
     maxZoom: 19,
-    maxNativeZoom: 17, // Esri World Imagery native cap; above 17 Leaflet up-scales existing tiles instead of requesting blank ones
+    maxNativeZoom: 17, // Esri World Imagery native cap; above 17 Leaflet up-scales existing tiles
   },
   dark_mode: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
     maxZoom: 19,
-    maxNativeZoom: 19,
+    maxNativeZoom: 16,
   },
 };
 
-// Shared tile options applied to every TileLayer — key for zoom smoothness
+// Shared tile options applied to every basemap layer — key for zoom smoothness.
+// esri-leaflet's basemapLayer() extends L.TileLayer, so all standard options apply.
 const TILE_PROPS = {
   updateWhenZooming: false, // do not fetch new tiles during CSS zoom animation; scaled copies of existing tiles are shown instead — eliminates blank tile flicker
   updateWhenIdle:    false, // fetch new tiles immediately after zoom/pan settles, not deferred (better on desktop)
   keepBuffer:        4,     // pre-load 4 extra tile rows in every direction — greatly reduces blank edges when panning or zooming
-  detectRetina:      false, // do not request 2× tiles (e.g. @2x via {r}); avoids over-requesting and potential blank tiles on retina screens where provider has no hi-res variant
+  detectRetina:      false, // do not request 2× tiles; avoids over-requesting on retina screens
+};
+
+// Layers to strip entirely from the default "light" theme.
+const PMTILES_REMOVE_LAYERS = new Set([
+  "landuse_park",        // greenery
+  "landuse_urban_green", // greenery
+  "landuse_hospital",    // building footprint
+  "landuse_industrial",  // industrial area
+  "landuse_school",      // building footprint
+  "landuse_zoo",         // greenery
+  "landuse_aerodrome",   // airfield fill
+  "landuse_runway",      // runway fill
+  "landuse_pedestrian",  // plazas / pedestrian zones
+  "landuse_pier",        // pier fill
+  "roads_runway",        // runway line
+  "roads_taxiway",       // taxiway line
+  "roads_pier",          // pier road
+  "roads_rail",          // railway lines
+  "buildings",           // building footprints
+  "address_label",       // door-number labels
+  "pois",                // POIs: peaks, parks, marinas — all unwanted
+  "landcover",           // low-zoom simplified layer replaced by glacier_landuse
+]);
+
+const GLACIER_PAINT = { "fill-color": "#dff2fb", "fill-opacity": 1 };
+
+// Produce a filtered + tweaked layer list for the roadmap PMTiles style.
+function buildPmtilesLayers() {
+  const layers = pmLayers("protomaps", "light")
+    .filter(l => !PMTILES_REMOVE_LAYERS.has(l.id))
+    .map(l => {
+      // Background: default is gray (#cccccc) which leaks outside the tile bbox.
+      // Use water color so any out-of-data area reads as ocean, not blank gray.
+      if (l.id === "background") {
+        return { ...l, paint: { "background-color": "#80deea" } };
+      }
+      return l;
+    });
+
+  // Single glacier layer using landuse source (zoom 2-15) — covers all zoom levels.
+  // Insert right after "earth" so it renders beneath roads/labels.
+  const earthIdx = layers.findIndex(l => l.id === "earth");
+  layers.splice(earthIdx + 1, 0, {
+    id: "glacier_landuse",
+    type: "fill",
+    source: "protomaps",
+    "source-layer": "landuse",
+    filter: ["==", ["get", "kind"], "glacier"],
+    paint: GLACIER_PAINT,
+  });
+
+  return layers;
+}
+
+// Fully self-hosted PMTiles style — tiles, glyphs, and sprites all served locally.
+// No external CDN dependencies.
+const _base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const buildPmtilesStyle = () => ({
+  version: 8,
+  glyphs: `${window.location.origin}${_base}/fonts/pbf/{fontstack}/{range}.pbf`,
+  sprite: `${window.location.origin}${_base}/sprites/v4/light`,
+  sources: {
+    protomaps: {
+      type: "vector",
+      url: `pmtiles://${window.location.origin}${_base}/tiles/iceland.pmtiles`,
+      attribution: "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a> contributors",
+    },
+  },
+  layers: buildPmtilesLayers(),
+});
+
+const MaplibreVectorLayer = () => {
+  const map = useMap();
+  useEffect(() => {
+    const gl = L.maplibreGL({
+      style: buildPmtilesStyle(),
+      attribution: "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a> contributors",
+      fadeDuration: 0,
+      collectResourceTiming: false,
+      trackResize: false,
+      pixelRatio: 1,
+      maxTileCacheSize: 20,
+      antialias: false,
+    }).addTo(map);
+
+    // Disable all MapLibre interaction handlers — Leaflet is the sole controller.
+    const mlMap = gl.getMaplibreMap();
+    mlMap.scrollZoom.disable();
+    mlMap.dragPan.disable();
+    mlMap.dragRotate.disable();
+    mlMap.keyboard.disable();
+    mlMap.doubleClickZoom.disable();
+    mlMap.touchZoomRotate.disable();
+    mlMap.boxZoom.disable();
+
+    // Make the MapLibre canvas non-interactive so events reach Leaflet layers.
+    const canvas = mlMap.getCanvas();
+    canvas.style.pointerEvents = "none";
+
+    // Lower the GL container z-index so it sits beneath Leaflet marker panes.
+    const glContainer = mlMap.getContainer().parentElement;
+    if (glContainer) {
+      glContainer.style.zIndex = "200";
+      glContainer.style.pointerEvents = "none";
+    }
+
+    // Ensure the GL canvas is correctly sized on initial load (trackResize:false
+    // means MapLibre won't auto-detect the container size at startup).
+    setTimeout(() => mlMap.resize(), 100);
+    setTimeout(() => mlMap.resize(), 500);
+
+    // Forward Leaflet resize events (e.g. F11 fullscreen) to MapLibre GL,
+    // since trackResize:false prevents it from auto-detecting viewport changes.
+    // Two-stage resize: immediate call handles normal window resizes; the
+    // deferred call (300 ms) handles fullscreen transitions where the browser
+    // fires the resize event before the viewport has settled to its final size.
+    let resizeTimer = null;
+    const handleResize = () => {
+      mlMap.resize();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => mlMap.resize(), 300);
+    };
+    map.on("resize", handleResize);
+
+    // Also catch fullscreenchange directly — some browsers complete the
+    // transition after the resize event, so we need a second resize pass.
+    const handleFullscreen = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        map.invalidateSize();
+        mlMap.resize();
+      }, 300);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreen);
+    document.addEventListener("webkitfullscreenchange", handleFullscreen);
+
+    return () => {
+      clearTimeout(resizeTimer);
+      map.off("resize", handleResize);
+      document.removeEventListener("fullscreenchange", handleFullscreen);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreen);
+      map.removeLayer(gl);
+    };
+  }, [map]);
+  return null;
 };
 
 const TileLayerManager = ({ mapType }) => {
+  if (mapType === "roadmap") return <MaplibreVectorLayer />;
   if (mapType === "heatmap") {
-    // Base terrain (no labels) → heatmap renders above this → labels on top
     return (
       <>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
           maxZoom={19}
-          maxNativeZoom={19}
+          maxNativeZoom={16}
           zIndex={1}
           {...TILE_PROPS}
         />
         <Pane name="heatmap-labels" style={{ zIndex: 650 }}>
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
             attribution=""
             maxZoom={19}
-            maxNativeZoom={19}
+            maxNativeZoom={16}
             {...TILE_PROPS}
           />
         </Pane>
       </>
     );
   }
-  const layer = TILE_LAYERS[mapType] || TILE_LAYERS.roadmap;
+  const layer = TILE_LAYERS[mapType];
   return (
     <TileLayer
       key={mapType}
@@ -119,11 +279,18 @@ const TileLayerManager = ({ mapType }) => {
   );
 };
 
-const MinZoomController = ({ mapType }) => {
+// Bounding box used to auto-fit Iceland on any screen size.
+const ICELAND_FIT_BOUNDS = [[63.0, -24.5], [66.6, -13.0]];
+
+// Fit Iceland to the viewport on initial mount, then lock minZoom to that level
+// so the user cannot zoom out further than the "full island" view on any screen.
+const FitIcelandOnReady = () => {
   const map = useMap();
   useEffect(() => {
-    map.setMinZoom(5.5);
-  }, [map, mapType]);
+    map.fitBounds(ICELAND_FIT_BOUNDS, { padding: [10, 10], animate: false });
+    const fitZoom = map.getBoundsZoom(L.latLngBounds(ICELAND_FIT_BOUNDS), false, [10, 10]);
+    map.setMinZoom(Math.max(4.5, fitZoom - 0.5));
+  }, [map]);
   return null;
 };
 
@@ -131,8 +298,52 @@ const MinZoomController = ({ mapType }) => {
 const MapReadyHandler = () => {
   const map = useMap();
   useEffect(() => {
-    const id = setTimeout(() => map.invalidateSize(), 150);
-    return () => clearTimeout(id);
+    const id1 = setTimeout(() => map.invalidateSize(), 150);
+    const id2 = setTimeout(() => map.invalidateSize(), 500);
+    return () => { clearTimeout(id1); clearTimeout(id2); };
+  }, [map]);
+  return null;
+};
+
+// Prevents scroll-wheel events from accumulating while a zoom animation is
+// still playing. Without this, fast scrolling queues extra zoom steps during
+// the ~250 ms CSS animation, causing multi-zoom and direction-inversion bugs.
+//
+// We patch _performZoom (not disable/enable the handler) so that Leaflet's
+// wheel listener remains active and keeps calling preventDefault() on every
+// wheel event — preventing the browser from zooming the page instead.
+const ZoomAnimGuard = () => {
+  const map = useMap();
+  useEffect(() => {
+    const handler = map.scrollWheelZoom;
+    const original = handler._performZoom.bind(handler);
+    let animating = false;
+
+    let lastZoom = 0;
+    const COOLDOWN = 250; // matches Leaflet's CSS zoom animation duration
+
+    handler._performZoom = function () {
+      const now = Date.now();
+      if (animating || now - lastZoom < COOLDOWN) {
+        // Discard accumulated delta so it doesn't bleed into the next zoom.
+        this._delta = 0;
+        this._startTime = null;
+        return;
+      }
+      lastZoom = now;
+      original();
+    };
+
+    const lock   = () => { animating = true; };
+    const unlock = () => { animating = false; };
+    map.on("zoomstart", lock);
+    map.on("zoomend",   unlock);
+
+    return () => {
+      handler._performZoom = original;
+      map.off("zoomstart", lock);
+      map.off("zoomend",   unlock);
+    };
   }, [map]);
   return null;
 };
@@ -142,21 +353,18 @@ const MapClickHandler = ({ onClick }) => {
   return null;
 };
 
-const MapPanes = () => {
+// Leaflet registers a bubble-phase contextmenu listener on the map container
+// that calls preventDefault(), suppressing the browser's native right-click menu.
+// This component intercepts that event in the capture phase and calls
+// stopPropagation() so Leaflet's handler never runs, restoring the default menu.
+const ContextMenuEnabler = () => {
   const map = useMap();
-
   useEffect(() => {
-    const ensurePane = (name, zIndex, pointerEvents = "auto") => {
-      const existing = map.getPane(name) || map.createPane(name);
-      existing.style.zIndex = String(zIndex);
-      existing.style.pointerEvents = pointerEvents;
-    };
-
-    ensurePane("grid-pane", 350, "none");
-    ensurePane("earthquake-pane", 400, "auto");
-    ensurePane("volcano-pane", 450, "auto");
+    const container = map.getContainer();
+    const handler = (e) => { e.stopPropagation(); };
+    container.addEventListener('contextmenu', handler, true);
+    return () => container.removeEventListener('contextmenu', handler, true);
   }, [map]);
-
   return null;
 };
 
@@ -201,21 +409,20 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
     const addLine = (coords, color, weight, opacity) => {
       gridRef.current.push(
-        L.polyline(coords, { color, weight, opacity, interactive: false, pane: "grid-pane" }).addTo(map)
+        L.polyline(coords, { color, weight, opacity, interactive: false }).addTo(map)
       );
     };
     const addLabel = (lat, lng, text, color, size, fontWeight = "bold") => {
       gridRef.current.push(
         L.marker([lat, lng], {
           icon: L.divIcon({
-            className: "",
+            className: "grid-label-icon",
             html: `<span style="color:${color};font-size:${size};font-weight:${fontWeight};white-space:nowrap;pointer-events:none;">${text}</span>`,
             iconSize: [80, 16],
             iconAnchor: [0, 8],
           }),
           interactive: false,
           zIndexOffset: -9000,
-          pane: "grid-pane",
         }).addTo(map)
       );
     };
@@ -291,7 +498,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 const quakeKey = (q) => `${q["Date-time"]}_${q.Latitude}_${q.Longitude}`;
 
 const getQuakeMarkerStyle = (px, color, isSelected) => ({
-  radius: Math.max(4, (isSelected ? px + 4 : px) / 2),
+  radius: isSelected ? 7 : 5,
   fillColor: color,
   fillOpacity: 1,
   stroke: isSelected,
@@ -303,7 +510,6 @@ const getQuakeMarkerStyle = (px, color, isSelected) => ({
 const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMarkerClick, visible }) => {
   const map = useMap();
   const layerGroupRef = useRef(null);
-  const rendererRef = useRef(null);
   const markersMapRef = useRef(new Map());
   const prevSelectedRef = useRef(null);
   const selectedEqRef = useRef(selectedEarthquake);
@@ -312,13 +518,11 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   markerIconsRef.current = markerIcons;
 
   useEffect(() => {
-    rendererRef.current = L.canvas({ pane: "earthquake-pane" });
     const lg = L.layerGroup().addTo(map);
     layerGroupRef.current = lg;
     return () => {
       map.removeLayer(lg);
       layerGroupRef.current = null;
-      rendererRef.current = null;
     };
   }, [map]);
 
@@ -336,7 +540,13 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     markersMapRef.current = new Map();
 
     const sel = selectedEqRef.current;
-    earthquakes.forEach((quake, index) => {
+    // Sort ascending by magnitude so higher-magnitude markers are added last
+    // and appear on top in the SVG stack (higher effective z-index).
+    const sorted = earthquakes
+      .map((q, i) => ({ q, i, mag: parseFloat(q.Mw_mean) || 0 }))
+      .sort((a, b) => a.mag - b.mag);
+
+    sorted.forEach(({ q: quake, i: index }) => {
       const lat = parseFloat(quake.Latitude);
       const lng = parseFloat(quake.Longitude);
       if (isNaN(lat) || isNaN(lng)) return;
@@ -350,7 +560,6 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
       const { px, color } = markerIcons[index] || {};
       const marker = L.circleMarker([lat, lng], {
         ...getQuakeMarkerStyle(px, color, isSelected),
-        renderer: rendererRef.current,
       })
         .on("click", (e) => { L.DomEvent.stopPropagation(e); onMarkerClick(quake); })
         .addTo(lg);
@@ -370,7 +579,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
       if (!entry) return;
       const { px, color } = markerIconsRef.current[entry.index] || {};
       entry.marker.setStyle(getQuakeMarkerStyle(px, color, isSelected));
-      entry.marker.setRadius(Math.max(4, (isSelected ? px + 4 : px) / 2));
+      entry.marker.setRadius(isSelected ? 7 : 5);
       if (isSelected) entry.marker.bringToFront();
       else entry.marker.bringToBack();
     };
@@ -561,8 +770,7 @@ const MapComponent = ({
         colorOwner === "timeline"
           ? getTwilightColorForDate(quake["Date-time"])
           : getMarkerColor(magnitude, maxMagnitude);
-      const px = getMarkerPixelSize(magnitude, maxMagnitude);
-      return { px, color };
+      return { px: MARKER_PX, color };
     }),
     [earthquakes, colorOwner, maxMagnitude]
   );
@@ -606,22 +814,26 @@ const MapComponent = ({
       <MapContainer
         center={CENTER}
         zoom={6}
-        minZoom={5.5}
+        minZoom={4.5}
+        maxBounds={[[62, -25], [68.5, -12]]}
+        maxBoundsViscosity={1.0}
         style={{ width: "100vw", height: "100vh" }}
         zoomControl={false}
-        attributionControl={true}
+        attributionControl={false}
         zoomAnimation={true}
         fadeAnimation={true}
         markerZoomAnimation={true}
-        preferCanvas={true}        // render markers on canvas — much faster redraws
+        preferCanvas={false}       // SVG renderer: right-click on markers shows normal browser context menu (canvas would show "Save image as")
         zoomSnap={0.5}             // snap to 0.5 zoom increments instead of integers — smoother steps
-        zoomDelta={0.5}            // one scroll gesture = 0.5 zoom levels — prevents aggressive jumps
-        wheelPxPerZoomLevel={60}   // default 60px per level; combined with zoomDelta=0.5 this means ~120px of scroll per full integer zoom
+        zoomDelta={0.5}            // zoom button / keyboard step = 0.5 levels (does NOT affect scroll wheel)
+        wheelPxPerZoomLevel={120}  // 120px of scroll per zoom level → ~1 notch = 0.5 levels (one snap step)
       >
         <TileLayerManager mapType={mapType} />
-        <MapPanes />
-        <MinZoomController mapType={mapType} />
+        <FitIcelandOnReady />
         <MapReadyHandler />
+        <ZoomAnimGuard />
+        <ContextMenuEnabler />
+        <AttributionControl position="bottomright" prefix={false} />
         <ScaleControl position="bottomright" />
         <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} />
         <MapClickHandler onClick={handleMapClick} />

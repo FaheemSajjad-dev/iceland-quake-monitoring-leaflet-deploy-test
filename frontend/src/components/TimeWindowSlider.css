@@ -172,30 +172,33 @@
   opacity: 1;
 }
 
-/* Adjust time window slider container for day view mode */
-.time-window-slider-container.day-view {
+/* Adjust time window slider container for day/week view mode */
+.time-window-slider-container.day-view,
+.time-window-slider-container.week-view {
   padding-bottom: 14px;
   height: auto;
 }
 
 
 .timeline-track.gray {
-  background: linear-gradient(to right, #dcdcdc, #777, #333);
+  background: linear-gradient(to right, #666666, #444444, #1a1a1a);
 }
 
 .timeline-track.colored {
   background: linear-gradient(
     to right,
-    #e2d9ff,
-    #cbb9f6,
-    #a991e0,
-    #8667c2,
-    #4b2f86,
-    #234078,
-    #30707b,
-    #4b9276,
-    #7bab6d,
-    #b7cf77
+    #b07888,
+    #a06878,
+    #905868,
+    #804858,
+    #6e3848,
+    #5e2c3c,
+    #4e2030,
+    #3e1626,
+    #2e0e1c,
+    #200814,
+    #14040c,
+    #0c0208
   );
 }
 
@@ -285,4 +288,42 @@
   top: -20px;
   transform: translateX(-50%) rotate(90deg);
   transform-origin: center center;
+}
+
+/* ── Responsive: vertical slider grows with screen size ──
+   Derivation: CSS_width = width + 2*24px padding; CSS_height = 26 + slider_height + 10
+   left = 20 - CSS_width/2 + CSS_height/2   (visual left = 20px)
+   top  = 50vh - 31 - CSS_height/2          (visual centre at 50vh-31)
+   heatmap_top = 50vh - 10 - CSS_height/2   (visual centre at 50vh-10, color toggle hidden) */
+
+@media (min-width: 1500px) {
+  /* CSS_width=508, CSS_height=96: left=20-254+48=-186, top=50vh-31-48=50vh-79 */
+  .time-window-slider-container.vertical {
+    width: 460px;
+    left: -186px;
+    top: calc(50vh - 79px);
+  }
+  .time-window-slider-container.vertical.heatmap-mode { top: calc(50vh - 58px); }
+  .time-window-slider-container.vertical .timeline-slider { height: 60px; }
+  .time-window-slider-container.vertical .timeline-track { height: 26px; }
+  .time-window-slider-container.vertical .year-label,
+  .time-window-slider-container.vertical .day-label,
+  .time-window-slider-container.vertical .month-label { font-size: 12px; }
+  .time-window-slider-container.vertical .selected-date { font-size: 13px; }
+}
+
+@media (min-width: 2100px) {
+  /* CSS_width=608, CSS_height=108: left=20-304+54=-230, top=50vh-31-54=50vh-85 */
+  .time-window-slider-container.vertical {
+    width: 560px;
+    left: -230px;
+    top: calc(50vh - 85px);
+  }
+  .time-window-slider-container.vertical.heatmap-mode { top: calc(50vh - 64px); }
+  .time-window-slider-container.vertical .timeline-slider { height: 72px; }
+  .time-window-slider-container.vertical .timeline-track { height: 30px; }
+  .time-window-slider-container.vertical .year-label,
+  .time-window-slider-container.vertical .day-label,
+  .time-window-slider-container.vertical .month-label { font-size: 14px; }
+  .time-window-slider-container.vertical .selected-date { font-size: 15px; }
 }

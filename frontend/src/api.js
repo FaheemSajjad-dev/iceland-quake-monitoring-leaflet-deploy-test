@@ -1,11 +1,10 @@
 import axios from "axios";
 
-const DEV_BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || "5002";
-
-// In dev, point explicitly at the Flask backend.
+// In dev, point explicitly at the Flask backend (port 5001).
 // In production the API is served on the same origin, so an empty base URL is correct.
 const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-export const API_URL = isLocalDev ? `http://localhost:${DEV_BACKEND_PORT}` : "";
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+export const API_URL = isLocalDev ? "http://localhost:5001" : base;
 
 export const fetchEarthquakeData = async () => {
     try {

@@ -123,6 +123,18 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
+/* ── Responsive: title + nav scale on larger screens ── */
+@media (min-width: 1500px) {
+  .controls h1 { font-size: 26px; }
+  .nav-button { font-size: 15px; padding: 9px 18px; min-width: 110px; }
+  .toggle-label { font-size: 13px; }
+}
+@media (min-width: 2100px) {
+  .controls h1 { font-size: 32px; }
+  .nav-button { font-size: 18px; padding: 11px 22px; min-width: 130px; }
+  .toggle-label { font-size: 16px; }
+}
+
 /*About Page*/
 
 .nav-button {

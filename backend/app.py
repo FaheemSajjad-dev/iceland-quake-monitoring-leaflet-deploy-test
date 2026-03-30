@@ -19,8 +19,9 @@ from datetime import datetime, timedelta, timezone
 CURRENT_FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 LOCAL_VENV = Path(CURRENT_FILE_PATH) / "venv"
 if LOCAL_VENV.exists():
+    # Windows: Lib/site-packages; Linux: lib/python3.x/site-packages
     venv_site_packages = next(
-        (p for p in LOCAL_VENV.glob("Lib/site-packages") if p.exists()),
+        (p for p in [*LOCAL_VENV.glob("Lib/site-packages"), *LOCAL_VENV.glob("lib/*/site-packages")] if p.exists()),
         None,
     )
     if venv_site_packages and str(venv_site_packages) not in sys.path:
@@ -37,7 +38,7 @@ try:
 except Exception:  # noqa: BLE001
     Compress = None
 
-FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5175"))
+FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5176"))
 BACKEND_PORT = int(os.environ.get("PORT") or os.environ.get("BACKEND_PORT", "5002"))
 FRONTEND_DIST_DIR = (Path(CURRENT_FILE_PATH).parent / "frontend" / "dist").resolve()
 FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
