@@ -164,7 +164,7 @@ const buildPmtilesStyle = () => ({
   layers: buildPmtilesLayers(),
 });
 
-const MaplibreVectorLayer = () => {
+const MaplibreVectorLayer = ({ onReady }) => {
   const map = useMap();
   useEffect(() => {
     const gl = L.maplibreGL({
@@ -198,6 +198,9 @@ const MaplibreVectorLayer = () => {
       glContainer.style.zIndex = "200";
       glContainer.style.pointerEvents = "none";
     }
+
+    // Fire once when the first full render pass is complete — all visible tiles painted.
+    mlMap.once("idle", () => onReady?.());
 
     // Ensure the GL canvas is correctly sized on initial load (trackResize:false
     // means MapLibre won't auto-detect the container size at startup).
@@ -240,8 +243,8 @@ const MaplibreVectorLayer = () => {
   return null;
 };
 
-const TileLayerManager = ({ mapType }) => {
-  if (mapType === "roadmap") return <MaplibreVectorLayer />;
+const TileLayerManager = ({ mapType, onReady }) => {
+  if (mapType === "roadmap") return <MaplibreVectorLayer onReady={onReady} />;
   if (mapType === "heatmap") {
     return (
       <>
@@ -251,6 +254,7 @@ const TileLayerManager = ({ mapType }) => {
           maxZoom={19}
           maxNativeZoom={16}
           zIndex={1}
+          eventHandlers={{ load: onReady }}
           {...TILE_PROPS}
         />
         <Pane name="heatmap-labels" style={{ zIndex: 650 }}>
@@ -273,6 +277,7 @@ const TileLayerManager = ({ mapType }) => {
       attribution={layer.attribution}
       maxZoom={layer.maxZoom}
       maxNativeZoom={layer.maxNativeZoom}
+      eventHandlers={{ load: onReady }}
       {...TILE_PROPS}
     />
   );
@@ -703,6 +708,8 @@ const MapComponent = ({
   const [showGrid, setShowGrid] = useState(false);
   const [mapType, setMapType] = useState("roadmap");
   const [shakeUrl, setShakeUrl] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
+  const handleMapReady = useCallback(() => setMapReady(true), []);
 
   useEffect(() => {
     if (!selectedEarthquake) return;
@@ -774,6 +781,11 @@ const MapComponent = ({
 
   return (
     <div className="map-container" style={{ position: "relative" }}>
+      {!mapReady && (
+        <div className="map-loading-overlay">
+          <span>Loading map…</span>
+        </div>
+      )}
       <div className="map-type-control">
         <MapTypeSelector onMapTypeChange={handleMapTypeChange} />
       </div>
@@ -825,7 +837,7 @@ const MapComponent = ({
         zoomDelta={0.5}            // zoom button / keyboard step = 0.5 levels (does NOT affect scroll wheel)
         wheelPxPerZoomLevel={120}  // 120px of scroll per zoom level → ~1 notch = 0.5 levels (one snap step)
       >
-        <TileLayerManager mapType={mapType} />
+        <TileLayerManager mapType={mapType} onReady={handleMapReady} />
         <FitIcelandOnReady />
         <MapReadyHandler />
         <ZoomAnimGuard />
@@ -835,16 +847,18 @@ const MapComponent = ({
         <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} />
         <MapClickHandler onClick={handleMapClick} />
 
-        <EarthquakeMarkers
-          earthquakes={earthquakes}
-          markerIcons={markerIcons}
-          selectedEarthquake={selectedEarthquake}
-          onMarkerClick={handleMarkerClick}
-          visible={mapType !== "heatmap"}
-        />
-        {mapType === "heatmap" && <HeatmapLayer earthquakes={earthquakes} />}
+        {mapReady && (
+          <EarthquakeMarkers
+            earthquakes={earthquakes}
+            markerIcons={markerIcons}
+            selectedEarthquake={selectedEarthquake}
+            onMarkerClick={handleMarkerClick}
+            visible={mapType !== "heatmap"}
+          />
+        )}
+        {mapReady && mapType === "heatmap" && <HeatmapLayer earthquakes={earthquakes} />}
 
-        {showVolcanoes &&
+        {mapReady && showVolcanoes &&
           volcanoes.map((volcano, index) => (
             <VolcanoMarker
               key={`volcano-${index}`}

@@ -307,6 +307,26 @@
   pointer-events: none !important;
 }
 
+/* Shown while the base tile layer is loading — fades out once mapReady is true */
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500; /* above tiles (200) but below UI controls (1000) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.map-loading-overlay span {
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
 /* Align scale bar bottom with the volcano/grid toggles (bottom: 39px); right matches left components (20px) */
 .leaflet-bottom.leaflet-right .leaflet-control-scale {
   margin-bottom: 29px; /* Leaflet adds ~10px default bottom padding → 10 + 29 = 39px */
