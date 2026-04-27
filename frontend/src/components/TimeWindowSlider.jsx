@@ -387,7 +387,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 				dividerDate.setDate(dividerDate.getDate() + 1);
 			}
 
-			// Right edge of the last day's box
 			dividers.push(
 				<div
 					key="day-divider-end"
@@ -399,13 +398,12 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 			return { dividers, labels };
 		}
 
-		// Month & year modes share a month-based axis
 		const visibleMonths = range.visibleMonths || 0;
 		const firstVisibleMonthIndex = range.firstVisibleMonthIndex || 0;
 
 		if (!visibleMonths) return { dividers, labels };
 
-		const segments = visibleMonths; // N months → N equal boxes → N+1 boundaries
+		const segments = visibleMonths;
 
 		// For year mode: collect boundary positions then place labels at midpoints
 		const yearBoundaryPositions = [];
@@ -413,16 +411,12 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 		for (let i = 0; i <= segments; i++) {
 			const boundaryIndex = firstVisibleMonthIndex + i;
 
-			// Map "month index from June 2020" → (year, month)
 			const base = startDate.getMonth() + boundaryIndex;
 			const year =
 				startDate.getFullYear() + Math.floor(base / 12);
 			const month = base % 12; // 0 = Jan ... 11 = Dec
 
-			// Position of this boundary across the visible months [0..1]
 			const pos = segments > 0 ? (i / segments) * 100 : 0;
-
-			// Actual calendar date for the boundary (1st of that month)
 			const boundaryDate = new Date(year, month, 1);
 
 			// A year boundary is *only* a January 1st that lies inside the data window
@@ -432,7 +426,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 				boundaryDate <= currentDate;
 
 			if (range.isYearMode) {
-				// YEAR MODE: show ONLY bold year lines, collect positions for centered labels
 				if (!isYearBoundary) continue;
 
 				dividers.push(
@@ -445,7 +438,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 
 				yearBoundaryPositions.push({ year, pos });
 			} else {
-				// MONTH MODE: thin month lines + bold year lines
 				dividers.push(
 					<div
 						key={`month-boundary-${year}-${month + 1}`}
@@ -458,7 +450,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 					/>
 				);
 
-				// Month mode: year label at thick separator line showing prev/next year
 				if (isYearBoundary && i < segments) {
 					labels.push(
 						<div
@@ -473,7 +464,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 			}
 		}
 
-		// Year mode: place labels centered inside each year band
 		if (range.isYearMode && yearBoundaryPositions.length > 0) {
 			// First partial year (e.g. Jun-Dec 2020): band is 0% to first boundary
 			const first = yearBoundaryPositions[0];
@@ -489,7 +479,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 				);
 			}
 
-			// Full years between consecutive boundaries
 			for (let j = 0; j < yearBoundaryPositions.length - 1; j++) {
 				const midPos = (yearBoundaryPositions[j].pos + yearBoundaryPositions[j + 1].pos) / 2;
 				labels.push(

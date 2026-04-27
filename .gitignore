@@ -28,3 +28,6 @@ Thumbs.db
 # Env files
 .env
 *.env
+
+# Large binary assets (exceed GitHub's 100 MB limit)
+*.pmtiles

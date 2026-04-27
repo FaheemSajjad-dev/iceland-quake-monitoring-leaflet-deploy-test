@@ -23,7 +23,7 @@
    - Flask + Gunicorn performance
    - SQLite locks and slow queries
    - Effect of scraping and reconcile jobs
-   - Frontend load (Google Maps rendering on clients)
+   - Frontend load (Leaflet rendering on clients)
 
 ---
 

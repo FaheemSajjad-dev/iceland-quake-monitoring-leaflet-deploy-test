@@ -1,5 +1,3 @@
-from __future__ import annotations
-from typing import Iterable, List, Dict, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 import time as _time
 import requests
@@ -8,7 +6,6 @@ from app import app, db, EarthquakeSRaw
 
 API_URL = "https://api.vedur.is/skjalftalisa/v1/quake/array"
 
-# Don’t fetch data before this date
 CUTOFF_UTC = datetime(2020, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
 
 # API limit: max 1 year per request
@@ -19,17 +16,13 @@ DEFAULT_BACKOFF = 0.8
 
 DEFAULT_MIN_MAG = 2.7
 
-# ---- Utilities --------------------------------------------------------------
-
-def _fmt_utc(dt: datetime) -> str:
-    """Format aware datetime to 'YYYY-MM-DD HH:MM:SS' in UTC."""
+def _fmt_utc(dt):
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     dt = dt.astimezone(timezone.utc).replace(microsecond=0)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
-def _chunk_ranges(start_utc: datetime, end_utc: datetime, max_days: int = MAX_SPAN_DAYS) -> Iterable[Tuple[datetime, datetime]]:
-    """Yield [start, end] chunks where span <= max_days."""
+def _chunk_ranges(start_utc, end_utc, max_days=MAX_SPAN_DAYS):
     if start_utc.tzinfo is None:
         start_utc = start_utc.replace(tzinfo=timezone.utc)
     if end_utc.tzinfo is None:
@@ -42,9 +35,7 @@ def _chunk_ranges(start_utc: datetime, end_utc: datetime, max_days: int = MAX_SP
         yield (cur, nxt)
         cur = nxt + one_day
 
-def _post_with_retry(url: str, json: dict, timeout: int = DEFAULT_TIMEOUT,
-                     retries: int = DEFAULT_RETRIES, backoff: float = DEFAULT_BACKOFF) -> requests.Response:
-    """POST with simple exponential backoff."""
+def _post_with_retry(url, json, timeout=DEFAULT_TIMEOUT, retries=DEFAULT_RETRIES, backoff=DEFAULT_BACKOFF):
     last_err = None
     for i in range(retries):
         try:
@@ -54,7 +45,7 @@ def _post_with_retry(url: str, json: dict, timeout: int = DEFAULT_TIMEOUT,
         except Exception as e:
             last_err = e
             _time.sleep((i + 1) * backoff)
-    raise last_err  # type: ignore[misc]
+    raise last_err
 
 def _safe_float(x):
     try:
@@ -64,54 +55,29 @@ def _safe_float(x):
     except Exception:
         return None
 
-def _normalize_time_to_utc_str(t_val) -> Optional[str]:
-    """
-    API returns 'time' as a UNIX timestamp (int) OR sometimes as a string.
-    Normalize to 'YYYY-MM-DD HH:MM:SS' (UTC).
-    """
+def _normalize_time_to_utc_str(t_val):
+    # API returns 'time' as a Unix timestamp (int) or sometimes a string
     if isinstance(t_val, (int, float)):
         dt = datetime.fromtimestamp(t_val, tz=timezone.utc)
         return _fmt_utc(dt)
     if isinstance(t_val, str):
-        # Try to parse common forms; if it already looks like 'YYYY-MM-DD HH:MM:SS', use as-is.
-        # We keep it simple: if parsing fails, return None.
         try:
             if "T" in t_val:  # ISO-ish: 'YYYY-MM-DDTHH:MM:SSZ'
                 t_val = t_val.replace("Z", " ").replace("T", " ").strip()
-            # strip fractional seconds, if any
-            t_val = t_val.split(".")[0]
+            t_val = t_val.split(".")[0]  # strip fractional seconds
             dt = datetime.strptime(t_val, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             return _fmt_utc(dt)
         except Exception:
             return None
     return None
 
-# ---- Public API -------------------------------------------------------------
-
-def fetch_skjalftalisa(
-    start_time_utc: datetime,
-    end_time_utc: datetime,
-    size_min: float = DEFAULT_MIN_MAG,
-    fields: Optional[Iterable[str]] = None,
-) -> List[Dict]:
-    """
-    Fetch earthquakes from Skjálftalísa within [start_time_utc, end_time_utc] UTC.
-    Respects the 1-year-per-request limit by chunking.
-    Returns a list of dicts with keys:
-      - event_id (int or str)
-      - time (str, 'YYYY-MM-DD HH:MM:SS' UTC)
-      - lat (float)
-      - long (float)
-      - depth (float or None)
-      - magnitude (float or None)
-    """
-    # Enforce UTC awareness
+def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG, fields=None):
+    """Fetch earthquakes from Skjálftalísa, chunked to respect the 1-year API limit."""
     if start_time_utc.tzinfo is None:
         start_time_utc = start_time_utc.replace(tzinfo=timezone.utc)
     if end_time_utc.tzinfo is None:
         end_time_utc = end_time_utc.replace(tzinfo=timezone.utc)
 
-    # Apply the global cutoff (June 1, 2020)
     if end_time_utc < CUTOFF_UTC:
         return []
     start_time_utc = max(start_time_utc, CUTOFF_UTC)
@@ -119,7 +85,7 @@ def fetch_skjalftalisa(
     if fields is None:
         fields = ["event_id", "lat", "long", "time", "magnitude", "depth"]
 
-    results: List[Dict] = []
+    results = []
 
     for chunk_start, chunk_end in _chunk_ranges(start_time_utc, end_time_utc, MAX_SPAN_DAYS):
         body = {
@@ -142,7 +108,7 @@ def fetch_skjalftalisa(
         keys = list(data.keys())
         first_col = data[keys[0]] if keys else None
         if not isinstance(first_col, list):
-            continue  # null columns = no results for this chunk
+            continue
 
         n_rows = len(first_col)
         for i in range(n_rows):
@@ -168,17 +134,13 @@ def fetch_skjalftalisa(
 
     return results
 
-def fetch_last_n_days(n_days: int = 30, size_min: float = DEFAULT_MIN_MAG) -> List[Dict]:
-    """Convenience helper: fetch last N days (UTC)."""
+def fetch_last_n_days(n_days=30, size_min=DEFAULT_MIN_MAG):
     end = datetime.now(timezone.utc).replace(microsecond=0)
     start = end - timedelta(days=n_days)
     return fetch_skjalftalisa(start, end, size_min=size_min)
 
 def store_skjalftalisa_rows(rows):
-    """
-    Insert/update Skjálftalísa rows by event_id.
-    Safe to call repeatedly; unchanged rows are updated idempotently.
-    """
+    """Upsert Skjálftalísa rows by event_id."""
     if not rows:
         return
 
@@ -224,11 +186,8 @@ def store_skjalftalisa_rows(rows):
         print(f"Inserted {inserted} | Updated {updated} Skjálftalísa rows.")
 
 
-def backfill_skjalftalisa_since_2020(size_min: float = 2.0):
-    """
-    Fetch Skjálftalísa in yearly chunks from 2020-06-01 → now and store to earthquake_s_raw.
-    size_min=2.0 is a good balance (you can use 0.0 but it'll be much slower).
-    """
+def backfill_skjalftalisa_since_2020(size_min=2.0):
+    # size_min=2.0 keeps it fast; use 0.0 for a full backfill
     start = datetime(2020, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
     end   = datetime.now(timezone.utc).replace(microsecond=0)
 

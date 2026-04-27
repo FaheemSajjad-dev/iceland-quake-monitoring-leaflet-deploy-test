@@ -1,14 +1,6 @@
-"""
-Merge MPGV (Earthquake) and Skjálftalísa (EarthquakeSRaw) events into EarthquakeMerged.
-
-Matching rules (all three must pass):
-  |Δt|    ≤ 2 s           (±2 second time bucket search)
-  dist     < DIST_LIMIT_KM (haversine surface distance)
-  |ΔMw|   < DM_LIMIT       (magnitude sanity check)
-
-When exactly one candidate matches: 'matched' — S lat/lon/depth used, V time/Mw.
-When zero or ≥2 candidates match: 'v_only' — all fields from MPGV.
-"""
+# Merges MPGV and Skjálftalísa events into EarthquakeMerged.
+# Match criteria: |Δt| ≤ 2s, dist < DIST_LIMIT_KM, |ΔMw| < DM_LIMIT.
+# Exactly one match → 'matched' (S location/depth, V time/Mw); 0 or 2+ → 'v_only'.
 from datetime import datetime, timedelta, timezone
 from math import radians, sin, cos, asin, sqrt
 
@@ -30,12 +22,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * asin(sqrt(a))
 
 def match_and_merge(start_utc, end_utc, min_mag=2.7):
-    """
-    Match MPGV events (Earthquake) against Skjálftalísa (earthquake_s_raw)
-    and write results to earthquake_merged.
-    """
     with app.app_context():
-        # 1) Load S rows into time-buckets (second -> list)
         s_rows = EarthquakeSRaw.query.filter(
             EarthquakeSRaw.date_time >= start_utc,
             EarthquakeSRaw.date_time <= end_utc
@@ -46,7 +33,6 @@ def match_and_merge(start_utc, end_utc, min_mag=2.7):
             # s.date_time is 'YYYY-MM-DD HH:MM:SS' UTC
             s_by_sec.setdefault(s.date_time, []).append(s)
 
-        # 2) Load V rows (MPGV)
         v_rows = Earthquake.query.filter(
             Earthquake.date_time >= start_utc,
             Earthquake.date_time <= end_utc,
@@ -60,33 +46,27 @@ def match_and_merge(start_utc, end_utc, min_mag=2.7):
         ).delete()
         db.session.commit()
 
-        # 4) Match each v to s
         inserted = 0
         n_matched = 0
         n_v_only = 0
         for v in v_rows:
-            # try ±2 seconds around v.date_time (enforces |Δt| ≤ 2s)
             vt = v.date_time  # 'YYYY-MM-DD HH:MM:SS'
-            # build nearby seconds strings
             base = datetime.strptime(vt, "%Y-%m-%d %H:%M:%S")
             secs = [(base + timedelta(seconds=delta)).strftime("%Y-%m-%d %H:%M:%S") for delta in (-2, -1, 0, 1, 2)]
 
             candidates = []
             for ts in secs:
                 for s in s_by_sec.get(ts, []):
-                    # |Δt| check satisfied by the ±2s list
                     dist = haversine_km(v.latitude, v.longitude, s.latitude, s.longitude)
                     if dist >= DIST_LIMIT_KM:
                         continue
                     dm = abs((v.mw_mean or 0.0) - (s.magnitude or v.mw_mean or 0.0))
                     if dm >= DM_LIMIT:
                         continue
-                    # keep (distance, abs dt, dm, s)
                     dt_abs = abs((datetime.strptime(vt, "%Y-%m-%d %H:%M:%S") - datetime.strptime(s.date_time, "%Y-%m-%d %H:%M:%S")).total_seconds())
                     candidates.append((dist, dt_abs, dm, s))
 
             if len(candidates) == 0:
-                # v_only
                 m = EarthquakeMerged(
                     date_time=v.date_time,
                     latitude=v.latitude,
@@ -104,12 +84,8 @@ def match_and_merge(start_utc, end_utc, min_mag=2.7):
                 n_v_only += 1
 
             elif len(candidates) == 1:
-                # exactly one → accept (use S location and depth)
                 dist, dt_abs, dm, s_best = candidates[0]
-                # ----- DEPTH POLICY -----
-                # 'v' = MPGV depth
-                # 's' = Skjalftalísa depth
-                # 'avg_if_close' = average if difference < threshold
+                # DEPTH_POLICY options: 'v' = MPGV, 's' = Skjálftalísa, 'avg_if_close' = average when |V-S| < threshold
                 if DEPTH_POLICY == 's':
                     depth_value = s_best.depth
                 elif DEPTH_POLICY == 'avg_if_close':
@@ -121,9 +97,7 @@ def match_and_merge(start_utc, end_utc, min_mag=2.7):
                     except Exception:
                         depth_value = v.depth
                 else:
-                    # default → MPGV depth
                     depth_value = v.depth
-                # ----- END DEPTH POLICY -----
 
                 m = EarthquakeMerged(
                     date_time=v.date_time,

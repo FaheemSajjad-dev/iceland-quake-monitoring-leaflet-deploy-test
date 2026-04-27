@@ -15,7 +15,6 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
     const value = parseFloat(e.target.value);
     const invertedValue = maxMagnitude - (value - minMagnitude);
     setFilterValue(invertedValue);
-    // Defer the filter+marker rebuild until dragging pauses
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       if (onMagnitudeFilterChange) onMagnitudeFilterChange(invertedValue);

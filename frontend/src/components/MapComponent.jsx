@@ -45,7 +45,7 @@ const getMarkerColor = (magnitude, maxMagnitude) => {
   const t = (parseFloat(magnitude) - MIN_MAG) / ((parseFloat(maxMagnitude) - MIN_MAG) || 1);
   return samplePalette(MAG_PALETTE_STOPS, t);
 };
-const MARKER_PX = 10; // fixed size for all markers
+const MARKER_PX = 10;
 
 const TWILIGHT_MONTH_COLORS = [
   "#b07888", // Jan
@@ -98,29 +98,28 @@ const TILE_PROPS = {
 
 // Layers to strip entirely from the default "light" theme.
 const PMTILES_REMOVE_LAYERS = new Set([
-  "landuse_park",        // greenery
-  "landuse_urban_green", // greenery
-  "landuse_hospital",    // building footprint
-  "landuse_industrial",  // industrial area
-  "landuse_school",      // building footprint
-  "landuse_zoo",         // greenery
-  "landuse_aerodrome",   // airfield fill
-  "landuse_runway",      // runway fill
-  "landuse_pedestrian",  // plazas / pedestrian zones
-  "landuse_pier",        // pier fill
-  "roads_runway",        // runway line
-  "roads_taxiway",       // taxiway line
-  "roads_pier",          // pier road
-  "roads_rail",          // railway lines
-  "buildings",           // building footprints
-  "address_label",       // door-number labels
-  "pois",                // POIs: peaks, parks, marinas — all unwanted
-  "landcover",           // low-zoom simplified layer replaced by glacier_landuse
+  "landuse_park",
+  "landuse_urban_green",
+  "landuse_hospital",
+  "landuse_industrial",
+  "landuse_school",
+  "landuse_zoo",
+  "landuse_aerodrome",
+  "landuse_runway",
+  "landuse_pedestrian",
+  "landuse_pier",
+  "roads_runway",
+  "roads_taxiway",
+  "roads_pier",
+  "roads_rail",
+  "buildings",
+  "address_label",
+  "pois",                // peaks, parks, marinas — all unwanted on this map
+  "landcover",           // replaced by glacier_landuse below
 ]);
 
 const GLACIER_PAINT = { "fill-color": "#dff2fb", "fill-opacity": 1 };
 
-// Produce a filtered + tweaked layer list for the roadmap PMTiles style.
 function buildPmtilesLayers() {
   const layers = pmLayers("protomaps", "light")
     .filter(l => !PMTILES_REMOVE_LAYERS.has(l.id))
@@ -705,7 +704,6 @@ const MapComponent = ({
   const [mapType, setMapType] = useState("roadmap");
   const [shakeUrl, setShakeUrl] = useState(null);
 
-  // Auto-deselect if quake disappears
   useEffect(() => {
     if (!selectedEarthquake) return;
     const still = earthquakes.some(
@@ -717,7 +715,6 @@ const MapComponent = ({
     if (!still) setSelectedEarthquake(null);
   }, [earthquakes, selectedEarthquake]);
 
-  // Auto-close after 15 s
   useEffect(() => {
     if (!selectedEarthquake) return;
     const t = setTimeout(() => setSelectedEarthquake(null), 15000);
@@ -726,7 +723,7 @@ const MapComponent = ({
 
   useEffect(() => {
     if (!selectedVolcano) return;
-    const t = setTimeout(() => setSelectedVolcano(null), 15000);
+    const t = setTimeout(() => setSelectedVolcano(null), 15_000);
     return () => clearTimeout(t);
   }, [selectedVolcano]);
 

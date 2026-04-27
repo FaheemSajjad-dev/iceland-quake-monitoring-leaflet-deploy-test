@@ -13,7 +13,6 @@ PID_FILE="$REPO_DIR/server.pid"
 
 echo "==> Project root: $REPO_DIR"
 
-# 1. Python virtualenv
 if [ ! -d "$VENV_DIR" ]; then
     echo "==> Creating Python virtualenv..."
     python3 -m venv "$VENV_DIR"
@@ -23,14 +22,12 @@ source "$VENV_DIR/bin/activate"
 echo "==> Installing Python dependencies..."
 pip install --quiet -r "$BACKEND_DIR/requirements.txt"
 
-# 2. Build frontend
 echo "==> Installing Node dependencies..."
 npm ci --prefix "$FRONTEND_DIR"
 
 echo "==> Building frontend..."
 VITE_BASE_PATH=/mpgv/ npm run build --prefix "$FRONTEND_DIR"
 
-# 3. Stop existing server if running
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
     if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -41,9 +38,8 @@ if [ -f "$PID_FILE" ]; then
     rm -f "$PID_FILE"
 fi
 
-# 4. Start gunicorn on port 6000
-# 1 worker + 8 threads: handles ~20-30 concurrent users without spawning
-# multiple APScheduler instances (which would race on the SQLite DB).
+# 1 worker + 8 threads: handles concurrent users without spawning multiple
+# APScheduler instances, which would race on the SQLite database.
 echo "==> Starting gunicorn on port $PORT..."
 PORT=$PORT nohup "$VENV_DIR/bin/gunicorn" \
     --chdir "$BACKEND_DIR" \

@@ -57,7 +57,6 @@ CORS(app, origins=_ALLOWED_ORIGINS)
 if Compress:
     Compress(app)
 
-# quiet down apscheduler logs
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 DB_DIR = os.path.join(CURRENT_FILE_PATH, "data")
@@ -203,12 +202,12 @@ def _refresh_derived_data() -> None:
         rows = fetch_last_n_days(7, size_min=2.7)
         store_skjalftalisa_rows(rows)
     except Exception as e:
-        print(f"[WARN] Skjalftalisa fetch failed: {e}")
+        print(f"Skjalftalisa fetch failed: {e}")
 
     try:
         refresh_volcanoes(DB_PATH)
     except Exception as e:
-        print(f"[WARN] Volcano refresh failed: {e}")
+        print(f"Volcano refresh failed: {e}")
 
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     start = "2020-06-01 00:00:00"
@@ -236,17 +235,14 @@ def scheduled_scrape() -> None:
         fetch_last_n_days = _sk.fetch_last_n_days
         store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
 
-        # Step 1: scrape MPGV (already filtered at Mw >= 2.7 in scrape.py)
         scrape_all_earthquake_data()
 
-        # Step 2: fetch recent Skjálftalísa events (incremental, last 7 days)
         try:
             rows = fetch_last_n_days(7, size_min=2.7)
             store_skjalftalisa_rows(rows)
         except Exception as e:
-            print(f"[WARN] Skjálftalísa fetch failed: {e}")
+            print(f"Skjálftalísa fetch failed: {e}")
 
-        # Step 3: reconcile v & s into merged
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         start = "2020-06-01 00:00:00"
         match_and_merge(start, end, min_mag=2.7)
@@ -328,13 +324,7 @@ def home(path: str):
 
 @app.route("/earthquakes", methods=["GET"])
 def get_earthquake_data():
-    """
-    Returns merged earthquake data.
-    - default: ALL data (to preserve existing frontend behavior)
-    - optional: ?days=NN to limit to recent window
-    - optional: ?days=all explicitly returns all
-    Cached for _EQ_CACHE_TTL seconds; cache is also invalidated after each scrape.
-    """
+    """Return merged earthquake data. Optional ?days=NN limits to recent window."""
     days_param = (request.args.get("days") or "all").strip().lower()
 
     with app.app_context():
@@ -378,14 +368,7 @@ def get_earthquake_data():
 
 @app.route("/earthquakes_csv", methods=["GET"])
 def get_earthquake_data_csv():
-    """
-    Download merged earthquake data as CSV.
-
-    Mirrors /earthquakes default behaviour:
-      - uses EarthquakeMerged (polished, Mw >= 2.7)
-      - by default returns ALL data (2020-06-01 → now)
-      - optional: ?days=NN to limit to recent window
-    """
+    """Download merged earthquake data as CSV. Optional ?days=NN limits the window."""
     days_param = (request.args.get("days") or "all").strip().lower()
 
     with app.app_context():
@@ -498,10 +481,7 @@ def _km_distance(lat1, lon1, lat2, lon2):
 
 @app.route("/shakemap_lookup", methods=["GET"])
 def shakemap_lookup():
-    """
-    Query EPOS /seismic/shakemaps around the event time/loc and return a view URL if found.
-    Params: dt=YYYY-MM-DD HH:MM:SS, lat=..., lon=...
-    """
+    """Query EPOS shakemaps near an event. Params: dt, lat, lon."""
     dt_str = (request.args.get("dt") or "").strip()
     lat = request.args.get("lat", type=float)
     lon = request.args.get("lon", type=float)

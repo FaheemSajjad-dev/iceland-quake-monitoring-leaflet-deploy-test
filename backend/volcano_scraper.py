@@ -2,7 +2,6 @@ import os
 import re
 import time
 import sqlite3
-from typing import List, Dict, Optional
 import unicodedata
 import requests
 
@@ -25,7 +24,7 @@ DEFAULT_HEADERS = {
     "Accept": "application/json",
 }
 
-def _get_json(url: str, timeout: int = 25):
+def _get_json(url, timeout=25):
     for i in range(3):
         try:
             r = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout)
@@ -33,13 +32,13 @@ def _get_json(url: str, timeout: int = 25):
             return r.json()
         except Exception as e:
             if i == 2:
-                print(f"[ERROR] GET {url} failed: {e}")
+                print(f"GET {url} failed: {e}")
                 return None
             time.sleep(0.7 * (i + 1))
     return None
 
 
-def _get_first_json(paths, timeout: int = 25):
+def _get_first_json(paths, timeout=25):
     if isinstance(paths, str):
         paths = (paths,)
 
@@ -61,9 +60,7 @@ def _extract_items(payload):
                 return value
     return []
 
-# ---------- utils ----------
-def _norm_name(s: str) -> str:
-    """lowercase, strip spaces, remove accents and non-letters for stable matching."""
+def _norm_name(s):
     if not s:
         return ""
     s = unicodedata.normalize("NFKD", s)
@@ -77,13 +74,7 @@ def _ft(m):
     except Exception:
         return None
 
-# ------------------ fetch and merge ----------------#
-
-def fetch_and_merge() -> List[Dict]:
-    """
-    Fetch volcanoes from EPOS API and normalize to our database schema.
-    Uses 'height' as elevation in meters.
-    """
+def fetch_and_merge():
     catalog = _get_first_json(ENDPOINTS["catalog"]) or []
 
     merged = []
@@ -121,16 +112,15 @@ def fetch_and_merge() -> List[Dict]:
         })
 
     if merged:
-        print(f"[OK] Loaded {len(merged)} volcanoes from EPOS catalog with 'height' as elevation.")
+        print(f"Loaded {len(merged)} volcanoes from EPOS catalog.")
         return merged
 
-    print("[ERROR] EPOS volcano catalog returned no usable volcano rows.")
+    print("EPOS catalog returned no usable volcano rows.")
     return []
 
-# ---------- db ----------
-def save_volcanoes_to_db(volcanoes: List[Dict], db_path: Optional[str] = None) -> bool:
+def save_volcanoes_to_db(volcanoes, db_path=None):
     if not volcanoes:
-        print("[WARN] No volcano data to save; skipping DELETE to preserve existing rows.")
+        print("No volcano data to save, skipping update.")
         return False
 
     if db_path is None:
@@ -176,16 +166,16 @@ def save_volcanoes_to_db(volcanoes: List[Dict], db_path: Optional[str] = None) -
             ))
             count += 1
         except Exception as e:
-            print(f"[WARN] skipped {v.get('name')}: {e}")
+            print(f"Skipped {v.get('name')}: {e}")
     conn.commit()
     conn.close()
-    print(f"[DB] Saved {count} volcano rows to {db_path}.")
+    print(f"Saved {count} volcano rows.")
     return count > 0
 
-def refresh_volcanoes(db_path: Optional[str] = None):
+def refresh_volcanoes(db_path=None):
     rows = fetch_and_merge()
     if not rows:
-        print("[ERROR] No volcanoes loaded.")
+        print("No volcanoes loaded.")
         return False
     return save_volcanoes_to_db(rows, db_path)
 
