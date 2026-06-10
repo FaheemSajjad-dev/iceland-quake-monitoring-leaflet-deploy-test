@@ -442,7 +442,8 @@
 /* Align scale bar bottom with the volcano/grid toggles (bottom: 39px); right matches left components (20px) */
 .leaflet-bottom.leaflet-right .leaflet-control-scale {
   margin-bottom: 29px; /* Leaflet adds ~10px default bottom padding → 10 + 29 = 39px */
-  margin-right: 10px;  /* Leaflet's default margin-right is 10px → 10 + 10 = 20px from edge */
+  margin-right: calc(10px + var(--right-panel-shift, 0px));  /* Leaflet default margin adds another 10px */
+  transition: margin-right 0.25s ease;
 }
 
 .faults-toggle-icon {
@@ -456,5 +457,6 @@
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
   margin-bottom: -36px;
-  margin-right: 14px;
+  margin-right: calc(14px + var(--right-panel-shift, 0px));
+  transition: margin-right 0.25s ease;
 }

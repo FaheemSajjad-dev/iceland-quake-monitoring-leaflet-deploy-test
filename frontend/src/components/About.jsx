@@ -7,16 +7,16 @@ const VERSION = "1.1";
 
 const DATA_CADENCE = {
   en: [
-    ["Earthquakes", "MPGV, Skjalftalisa, and the merged catalogue refresh every 3 minutes."],
-    ["Volcanoes", "EPOS volcano metadata is refreshed by the backend scheduler and reloaded by the map every 3 minutes."],
-    ["Faults", "EGDI/HIKE WFS fault and fissure linework refreshes while the overlay is visible."],
-    ["ShakeMaps", "ShakeMap links are looked up on demand for selected earthquake events."],
+    ["Earthquakes", "MPGV and Skjalftalisa are checked by the backend every 3 minutes, then reconciled into the merged catalogue."],
+    ["Volcanoes", "IMO EPOS volcano metadata is refreshed by the backend scheduler and reloaded by the map every 3 minutes."],
+    ["Faults", "EGDI/HIKE WFS fault and fissure linework is checked every 3 minutes while the overlay is visible."],
+    ["ShakeMaps", "IMO EPOS ShakeMaps are checked on demand when an earthquake is selected, avoiding heavy bulk requests on every refresh."],
   ],
   is: [
-    ["Jardskjalftar", "MPGV, Skjalftalisa og sameinadi gagnagrunnurinn uppfaerast a 3 minutna fresti."],
-    ["Eldfjoll", "EPOS eldfjallagogn eru uppfaerd i bakenda og endurhladin i kortinu a 3 minutna fresti."],
-    ["Misgengi", "EGDI/HIKE WFS linur fyrir misgengi og sprungur endurhladast medan yfirlagid er synilegt."],
-    ["ShakeMaps", "ShakeMap tenglar eru sottir eftir thorfum fyrir valda jardskjalfta."],
+    ["Jardskjalftar", "MPGV og Skjalftalisa eru athugud i bakenda a 3 minutna fresti og samraemd i sameinadan grunn."],
+    ["Eldfjoll", "IMO EPOS eldfjallagogn eru uppfaerd i bakenda og endurhladin i kortinu a 3 minutna fresti."],
+    ["Misgengi", "EGDI/HIKE WFS linur fyrir misgengi og sprungur eru athugadar a 3 minutna fresti medan yfirlagid er synilegt."],
+    ["ShakeMaps", "IMO EPOS ShakeMaps eru athugud eftir thorfum thegar jardskjalfti er valinn, til ad forda thungum fjoldafyrirspurnum."],
   ],
 };
 
@@ -39,16 +39,16 @@ const MAP_LAYERS = {
 
 const SOURCES = {
   en: [
-    ["MPGV", "Historical and near-real-time M >= 3.0 earthquake listings from IMO."],
-    ["Skjalftalisa", "Recent IMO event metadata used to improve location, depth, and event identity."],
-    ["EPOS", "Volcano catalogue and ShakeMap information from IMO EPOS services."],
-    ["EGDI/HIKE", "Fault and fissure linework filtered to Iceland onshore records."],
+    ["MPGV", "Historical and near-real-time M >= 3.0 earthquake listings from hraun.vedur.is/ja/Mpgv/."],
+    ["Skjalftalisa", "Recent event metadata from api.vedur.is/skjalftalisa used to improve location, depth, and event identity."],
+    ["EPOS", "Volcano catalogue and ShakeMap information from api.vedur.is/epos."],
+    ["EGDI/HIKE", "Fault and fissure WFS linework from maps.europe-geology.eu, filtered to Iceland onshore records."],
   ],
   is: [
-    ["MPGV", "Sogulegar og naer rauntima skraningar M >= 3.0 jardskjalfta fra Vedurstofu Islands."],
-    ["Skjalftalisa", "Nyleg atburdagogn fra Vedurstofu sem baeta stadsetningu, dypt og audkenni."],
-    ["EPOS", "Eldfjallaskra og ShakeMap upplysingar fra EPOS thjonustum Vedurstofu."],
-    ["EGDI/HIKE", "Linugogn fyrir misgengi og sprungur, siud i islenskar landfaerslur."],
+    ["MPGV", "Sogulegar og naer rauntima skraningar M >= 3.0 jardskjalfta fra hraun.vedur.is/ja/Mpgv/."],
+    ["Skjalftalisa", "Nyleg atburdagogn fra api.vedur.is/skjalftalisa sem baeta stadsetningu, dypt og audkenni."],
+    ["EPOS", "Eldfjallaskra og ShakeMap upplysingar fra api.vedur.is/epos."],
+    ["EGDI/HIKE", "WFS linugogn fra maps.europe-geology.eu fyrir misgengi og sprungur, siud i islenskar landfaerslur."],
   ],
 };
 

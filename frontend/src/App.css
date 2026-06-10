@@ -14,6 +14,7 @@ html, body, #root {
 }
 
 .map-container {
+  --right-panel-shift: 0px;
   width: 100vw;
   height: 100vh;
   position: relative;
@@ -176,6 +177,15 @@ input:checked + .slider:before {
   top: 16px;
   right: 14px;
   z-index: 1001;
+  transition: right 0.25s ease;
 }
 
 
+
+.map-container.right-panel-open {
+  --right-panel-shift: 203px;
+}
+
+.map-container.right-panel-open .about-button-container {
+  right: calc(14px + var(--right-panel-shift));
+}

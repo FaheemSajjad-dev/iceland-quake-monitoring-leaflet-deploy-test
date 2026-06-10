@@ -138,7 +138,7 @@ const App = () => {
 
     return (
         <div className="app-container">
-            <div className="map-container">
+            <div className={`map-container${showVolcanoes ? " right-panel-open" : ""}`}>
                 <div className="about-button-container">
                     <button className="nav-button" onClick={() => setShowAbout(true)}>
                         {t('about')}
