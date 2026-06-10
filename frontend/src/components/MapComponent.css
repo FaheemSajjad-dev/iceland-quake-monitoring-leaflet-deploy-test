@@ -129,7 +129,9 @@
   padding: 0 0 0 6px;
   flex-shrink: 0;
   transition: color 0.15s;
+  outline: none;
 }
+.info-card__close:focus { outline: none; }
 .info-card__close:hover { color: #333; }
 
 /* Body */
