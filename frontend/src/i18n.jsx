@@ -20,7 +20,7 @@ const T = {
     reload_page: "Reload page",
     default_location: "Default map view",
     // Map types
-    map_map: "Positron",
+    map_map: "Map",
     map_satellite: "Satellite",
     map_terrain: "Terrain",
     map_gray: "Gray",
@@ -82,7 +82,7 @@ const T = {
     reload_page: "Endurhlaða",
     default_location: "Sjálfgefin kortasýn",
     // Map types
-    map_map: "Positron",
+    map_map: "Map",
     map_satellite: "Gervihnöttur",
     map_terrain: "Landslag",
     map_gray: "Grátt",

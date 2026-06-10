@@ -13,7 +13,7 @@ This is the Leaflet version of the original Google Maps project. It does not req
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat |
-| Map tiles | OpenFreeMap Positron, IMO terrain, Esri World Imagery, CARTO light/dark tiles |
+| Map tiles | OpenFreeMap map tiles, IMO terrain, Esri World Imagery, CARTO light/dark tiles |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
 | Tests | pytest backend tests, Vitest + Testing Library frontend tests |
@@ -64,7 +64,7 @@ When a unique match is found, the Skjalftalisa location and depth replace the MP
 
 | Layer | Provider | Notes |
 |---|---|---|
-| Positron | OpenFreeMap vector style via MapLibre | Roadmap-style base with custom glacier handling and labels |
+| Map | OpenFreeMap vector style via MapLibre | Default map base with custom glacier handling and labels |
 | Satellite | Esri World Imagery | Visual imagery context |
 | Terrain | Icelandic Meteorological Office raster tiles | `geo.vedur.is` terrain basemap |
 | Gray | CARTO light basemap | Quiet inspection layer |
@@ -177,7 +177,7 @@ The app uses public third-party map tiles and data services. Confirm licensing b
 
 | Layer | Provider |
 |---|---|
-| Positron | OpenFreeMap / OpenMapTiles / OpenStreetMap |
+| Map | OpenFreeMap / OpenMapTiles / OpenStreetMap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office terrain raster tiles |
 | Gray | CARTO light tiles |

@@ -6,7 +6,7 @@ React 18 + Vite frontend for the Iceland Earthquake Monitoring Leaflet app.
 
 - React 18 and Vite
 - react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat
-- OpenFreeMap Positron, IMO terrain tiles, Esri imagery, and CARTO basemaps
+- OpenFreeMap map tiles, IMO terrain tiles, Esri imagery, and CARTO basemaps
 - Vitest + Testing Library
 
 ## Running
@@ -37,7 +37,7 @@ src/
 
 | Name | Provider |
 |---|---|
-| Positron | OpenFreeMap vector style rendered with MapLibre |
+| Map | OpenFreeMap vector style rendered with MapLibre |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office raster terrain tiles |
 | Gray | CARTO light basemap |

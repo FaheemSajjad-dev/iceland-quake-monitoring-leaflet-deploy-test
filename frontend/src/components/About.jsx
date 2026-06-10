@@ -22,14 +22,14 @@ const DATA_CADENCE = {
 
 const MAP_LAYERS = {
   en: [
-    ["Positron", "OpenFreeMap vector basemap with Iceland glacier labels."],
+    ["Map", "OpenFreeMap vector basemap with Iceland glacier labels."],
     ["Satellite", "Esri World Imagery for visual terrain context."],
     ["Terrain", "Icelandic Meteorological Office raster terrain tiles."],
     ["Gray", "CARTO light basemap for quiet inspection."],
     ["Heatmap", "Density-first earthquake heatmap with label overlay."],
   ],
   is: [
-    ["Positron", "OpenFreeMap vektorkort med islenskum joklaheitum."],
+    ["Map", "OpenFreeMap vektorkort med islenskum joklaheitum."],
     ["Gervihnottur", "Esri World Imagery fyrir myndraent landslagssamhengi."],
     ["Landslag", "Raster landslagsflisar fra Vedurstofu Islands."],
     ["Gratt", "Ljost CARTO grunnkort fyrir rolega skodun."],
