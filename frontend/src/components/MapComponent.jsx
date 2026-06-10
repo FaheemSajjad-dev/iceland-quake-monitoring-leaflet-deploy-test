@@ -903,6 +903,15 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     else if (zoom < 15) { gridSpacing = 0.05; subGridSpacing = 0.01;  decimals = 3; }
     else                { gridSpacing = 0.01; subGridSpacing = 0.002; decimals = 4; }
 
+    const latGridSpacing = gridSpacing / 2;
+    const decimalPlacesFor = (step) => {
+      const text = String(step);
+      if (text.includes("e-")) return Number(text.split("e-")[1]);
+      return text.includes(".") ? text.split(".")[1].length : 0;
+    };
+    const latDecimals = Math.max(decimals, decimalPlacesFor(latGridSpacing));
+    const isOnStep = (value, step) => Math.abs(value / step - Math.round(value / step)) < 0.001;
+
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
     const subColor   = darkLike ? "#bbb5aa" : "#888888";
     const lblColor   = darkLike ? "#ffffff" : "#333333";
@@ -935,8 +944,8 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
       );
     };
 
-    const startLat = Math.floor(extS / gridSpacing) * gridSpacing;
-    const endLat   = Math.ceil(extN / gridSpacing) * gridSpacing;
+    const startLat = Math.floor(extS / latGridSpacing) * latGridSpacing;
+    const endLat   = Math.ceil(extN / latGridSpacing) * latGridSpacing;
     const startLng = Math.floor(extW / gridSpacing) * gridSpacing;
     const endLng   = Math.ceil(extE / gridSpacing) * gridSpacing;
 
@@ -948,11 +957,11 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     const safeLatLabelLng = map.containerPointToLatLng([SAFE_LEFT_PX, mapHeight / 2]).lng;
     const latLabelLng = (lng) => Math.max(lng, safeLatLabelLng);
 
-    for (let lat = startLat; lat <= endLat; lat += gridSpacing) {
+    for (let lat = startLat; lat <= endLat; lat += latGridSpacing) {
       if (lat < -85 || lat > 85) continue;
       addLine([[lat, extW], [lat, extE]], mainColor, 1, 0.8);
       addLabel(lat, latLabelLng(west + (east - west) * 0.02),
-        `${lat.toFixed(decimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
+        `${lat.toFixed(latDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
         lblColor, "10px");
     }
     for (let lng = startLng; lng <= endLng; lng += gridSpacing) {
@@ -970,18 +979,18 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
       for (let lat = sLat; lat <= eLat; lat += subGridSpacing) {
         if (lat < -85 || lat > 85) continue;
-        if (Math.abs(lat % gridSpacing) < subGridSpacing * 0.1) continue;
+        if (isOnStep(lat, latGridSpacing)) continue;
         addLine([[lat, extW], [lat, extE]], subColor, 0.5, 0.5);
-        if (zoom > 12 && lat % (subGridSpacing * 5) < subGridSpacing * 0.1) {
+        if (zoom > 12 && isOnStep(lat, subGridSpacing * 5)) {
           addLabel(lat, latLabelLng(west + (east - west) * 0.02),
-            `${lat.toFixed(decimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
+            `${lat.toFixed(latDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
             subLblColor, "9px", "400");
         }
       }
       for (let lng = sLng; lng <= eLng; lng += subGridSpacing) {
-        if (Math.abs(lng % gridSpacing) < subGridSpacing * 0.1) continue;
+        if (isOnStep(lng, gridSpacing)) continue;
         addLine([[extS, lng], [extN, lng]], subColor, 0.5, 0.5);
-        if (zoom > 12 && lng % (subGridSpacing * 5) < subGridSpacing * 0.1) {
+        if (zoom > 12 && isOnStep(lng, subGridSpacing * 5)) {
           addLabel(south + (north - south) * 0.05, lng,
             `${lng.toFixed(decimals)}°${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
             subLblColor, "9px", "400");
