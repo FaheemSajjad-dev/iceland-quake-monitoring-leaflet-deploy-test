@@ -901,8 +901,8 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     else                { lngGridSpacing = 0.2; subLngGridSpacing = 0.1; }
 
     const labelDecimals = 1;
-    const latGridSpacing = lngGridSpacing / 2;
-    const subLatGridSpacing = subLngGridSpacing !== null ? subLngGridSpacing / 2 : null;
+    const latGridSpacing = lngGridSpacing / 4;
+    const subLatGridSpacing = subLngGridSpacing !== null ? subLngGridSpacing / 4 : null;
     const isOnStep = (value, step) => Math.abs(value / step - Math.round(value / step)) < 0.001;
 
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
