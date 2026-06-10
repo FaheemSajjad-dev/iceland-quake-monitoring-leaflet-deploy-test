@@ -388,17 +388,20 @@
   flex-shrink: 0;
   border-radius: 3px;
 }
-/* official HIKE WMS linework */
-.tec-swatch--official {
-  height: 8px;
+/* mapped HIKE/EGDI fault and fissure linework */
+.tec-swatch--fault-line,
+.tec-swatch--fissure-line {
+  width: 28px;
+  height: 10px;
   margin-top: 1px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(48, 48, 48, 0.86) 0 7px,
-      transparent 7px 10px
-    );
-  border: 1px solid rgba(48, 48, 48, 0.28);
+  border: 0;
+  border-radius: 0;
+}
+.tec-swatch--fault-line {
+  background: linear-gradient(90deg, #8f1f1f, #8f1f1f) center / 100% 2px no-repeat;
+}
+.tec-swatch--fissure-line {
+  background: repeating-linear-gradient(90deg, #b8322c 0 4px, transparent 4px 7px) center / 100% 2px no-repeat;
 }
 /* rift swatch: soft orange fill, no border */
 .tec-swatch--rift {

@@ -47,12 +47,14 @@ const faultStyle = (feature) => {
 
 const getLegendHtml = (lang) => {
   const title = lang === "is" ? "Misgengi / sprungur" : "Faults / Fissures";
-  const official = lang === "is" ? "Kortlogd HIKE/EGDI linugogn" : "Mapped HIKE/EGDI linework";
+  const fault = lang === "is" ? "Misgengi" : "Fault";
+  const fissure = lang === "is" ? "Sprunga" : "Fissure";
   const source = lang === "is" ? "Heimild: EGDI/HIKE, ISOR" : "Source: EGDI/HIKE, ISOR";
   return `
     <div class="tectonic-legend">
       <div class="tectonic-legend__title">${title}</div>
-      <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--official"></span><span>${official}</span></div>
+      <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--fault-line"></span><span>${fault}</span></div>
+      <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--fissure-line"></span><span>${fissure}</span></div>
       <a class="tectonic-legend__source" href="${HIKE_METADATA_URL}" target="_blank" rel="noreferrer">${source}</a>
     </div>`;
 };
