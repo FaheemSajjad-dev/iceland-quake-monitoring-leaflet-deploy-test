@@ -893,29 +893,21 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     const east = bounds.getEast();
     const west = bounds.getWest();
 
-    let lngGridSpacing, subLngGridSpacing = null, decimals = 0;
-    if (zoom < 5)       { lngGridSpacing = 2;    decimals = 0; }
-    else if (zoom < 7)  { lngGridSpacing = 1;    subLngGridSpacing = 0.5;   decimals = 1; }
-    else if (zoom < 8)  { lngGridSpacing = 0.5;  subLngGridSpacing = 0.25;  decimals = 2; }
-    else if (zoom < 9)  { lngGridSpacing = 0.2;  subLngGridSpacing = 0.1;   decimals = 2; }
-    else if (zoom < 11) { lngGridSpacing = 0.1;  subLngGridSpacing = 0.05;  decimals = 2; }
-    else if (zoom < 13) { lngGridSpacing = 0.05; subLngGridSpacing = 0.025; decimals = 3; }
-    else if (zoom < 15) { lngGridSpacing = 0.02; subLngGridSpacing = 0.01;  decimals = 3; }
-    else                { lngGridSpacing = 0.01; subLngGridSpacing = 0.005; decimals = 4; }
+    let lngGridSpacing, subLngGridSpacing = null;
+    if (zoom < 5)       { lngGridSpacing = 4; }
+    else if (zoom < 7)  { lngGridSpacing = 2; }
+    else if (zoom < 8)  { lngGridSpacing = 1;   subLngGridSpacing = 0.5; }
+    else if (zoom < 9)  { lngGridSpacing = 0.5; subLngGridSpacing = 0.25; }
+    else                { lngGridSpacing = 0.2; subLngGridSpacing = 0.1; }
 
+    const labelDecimals = 1;
     const latGridSpacing = lngGridSpacing / 2;
     const subLatGridSpacing = subLngGridSpacing !== null ? subLngGridSpacing / 2 : null;
-    const decimalPlacesFor = (step) => {
-      const text = String(step);
-      if (text.includes("e-")) return Number(text.split("e-")[1]);
-      return text.includes(".") ? text.split(".")[1].length : 0;
-    };
-    const latDecimals = Math.max(decimals, decimalPlacesFor(latGridSpacing));
     const isOnStep = (value, step) => Math.abs(value / step - Math.round(value / step)) < 0.001;
+
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
     const subColor   = darkLike ? "#bbb5aa" : "#888888";
     const lblColor   = darkLike ? "#ffffff" : "#333333";
-    const subLblColor = darkLike ? "#e6e6e6" : "#666666";
 
     const latExt = (north - south) * 0.1;
     const lngExt = (east - west) * 0.1;
@@ -929,14 +921,14 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
         L.polyline(coords, { color, weight, opacity, interactive: false }).addTo(map)
       );
     };
-    const addLabel = (lat, lng, text, color, size, fontWeight = "bold") => {
+    const addLabel = (lat, lng, text, color, size, fontWeight = "bold", iconAnchor = [0, 13]) => {
       gridRef.current.push(
         L.marker([lat, lng], {
           icon: L.divIcon({
             className: "grid-label-icon",
             html: `<span style="color:${color};font-size:${size};font-weight:${fontWeight};white-space:nowrap;pointer-events:none;">${text}</span>`,
             iconSize: [80, 16],
-            iconAnchor: [0, 13],
+            iconAnchor,
           }),
           interactive: false,
           zIndexOffset: -9000,
@@ -949,10 +941,10 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     const startLng = Math.floor(extW / lngGridSpacing) * lngGridSpacing;
     const endLng   = Math.ceil(extE / lngGridSpacing) * lngGridSpacing;
 
-    // Safe left margin: 200px clears the 185px left panel drawer + a small gap.
+    // Safe left margin: 260px clears the left panel and gives latitude labels breathing room.
     // Convert that pixel column back to a geographic longitude so lat labels never
     // land underneath the left-side UI panel regardless of zoom or pan position.
-    const SAFE_LEFT_PX = 200;
+    const SAFE_LEFT_PX = 260;
     const mapHeight = map.getSize().y;
     const safeLatLabelLng = map.containerPointToLatLng([SAFE_LEFT_PX, mapHeight / 2]).lng;
     const latLabelLng = (lng) => Math.max(lng, safeLatLabelLng);
@@ -961,13 +953,13 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
       if (lat < -85 || lat > 85) continue;
       addLine([[lat, extW], [lat, extE]], mainColor, 1, 0.8);
       addLabel(lat, latLabelLng(west + (east - west) * 0.02),
-        `${lat.toFixed(latDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-        lblColor, "10px");
+        `${lat.toFixed(labelDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
+        lblColor, "10px", "bold", [0, 16]);
     }
     for (let lng = startLng; lng <= endLng; lng += lngGridSpacing) {
       addLine([[extS, lng], [extN, lng]], mainColor, 1, 0.8);
       addLabel(south + (north - south) * 0.05, lng,
-        `${lng.toFixed(decimals)}°${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
+        `${lng.toFixed(labelDecimals)}°${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
         lblColor, "10px");
     }
 
@@ -981,20 +973,10 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
         if (lat < -85 || lat > 85) continue;
         if (isOnStep(lat, latGridSpacing)) continue;
         addLine([[lat, extW], [lat, extE]], subColor, 0.5, 0.5);
-        if (zoom > 12 && isOnStep(lat, subLatGridSpacing * 5)) {
-          addLabel(lat, latLabelLng(west + (east - west) * 0.02),
-            `${lat.toFixed(latDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-            subLblColor, "9px", "400");
-        }
       }
       for (let lng = sLng; lng <= eLng; lng += subLngGridSpacing) {
         if (isOnStep(lng, lngGridSpacing)) continue;
         addLine([[extS, lng], [extN, lng]], subColor, 0.5, 0.5);
-        if (zoom > 12 && isOnStep(lng, subLngGridSpacing * 5)) {
-          addLabel(south + (north - south) * 0.05, lng,
-            `${lng.toFixed(decimals)}°${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
-            subLblColor, "9px", "400");
-        }
       }
     }
   }, [map, show, darkLike]);

@@ -82,10 +82,10 @@
 /* ── Info cards (earthquake + volcano) ── */
 .info-card {
   position: absolute;
-  left: 200px;
+  left: 270px;
   top: 60px;
   width: 220px;
-  max-width: calc(100vw - 200px - 200px);
+  max-width: calc(100vw - 270px - 200px);
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
