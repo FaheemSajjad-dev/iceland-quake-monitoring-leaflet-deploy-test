@@ -436,6 +436,6 @@
 }
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
-  margin-bottom: 12px;
-  margin-right: 172px;
+  margin-bottom: -36px;
+  margin-right: 190px;
 }
