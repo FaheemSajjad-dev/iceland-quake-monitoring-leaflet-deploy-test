@@ -941,28 +941,39 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     const startLng = Math.floor(extW / lngGridSpacing) * lngGridSpacing;
     const endLng   = Math.ceil(extE / lngGridSpacing) * lngGridSpacing;
 
-    // Safe left margin: 260px clears the left panel and gives latitude labels breathing room.
-    // Convert that pixel column back to a geographic longitude so lat labels never
-    // land underneath the left-side UI panel regardless of zoom or pan position.
-    const SAFE_LEFT_PX = 260;
-    const mapHeight = map.getSize().y;
-    const safeLatLabelLng = map.containerPointToLatLng([SAFE_LEFT_PX, mapHeight / 2]).lng;
-    const latLabelLng = (lng) => Math.max(lng, safeLatLabelLng);
+    const mapSize = map.getSize();
+    const center = map.getCenter();
+    const LAT_LABEL_X = 285;
+    const LAT_LABEL_Y_OFFSET = -6;
+    const LNG_LABEL_Y = mapSize.y - 34;
+    const MIN_LNG_LABEL_GAP = 72;
+    let lastLngLabelX = -Infinity;
+
+    const labelLatLngFromPoint = (x, y) => map.containerPointToLatLng([x, y]);
 
     for (let lat = startLat; lat <= endLat; lat += latGridSpacing) {
       if (lat < -85 || lat > 85) continue;
       addLine([[lat, extW], [lat, extE]], mainColor, 1, 0.8);
-      addLabel(lat, latLabelLng(west + (east - west) * 0.02),
-        `${lat.toFixed(labelDecimals)}°${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-        lblColor, "10px", "bold", [0, 16]);
+
+      const labelY = map.latLngToContainerPoint([lat, center.lng]).y + LAT_LABEL_Y_OFFSET;
+      if (labelY < 24 || labelY > mapSize.y - 38) continue;
+      const labelPoint = labelLatLngFromPoint(LAT_LABEL_X, labelY);
+      addLabel(labelPoint.lat, labelPoint.lng,
+        `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
+        lblColor, "10px", "bold", [0, 13]);
     }
     for (let lng = startLng; lng <= endLng; lng += lngGridSpacing) {
       addLine([[extS, lng], [extN, lng]], mainColor, 1, 0.8);
-      addLabel(south + (north - south) * 0.05, lng,
-        `${lng.toFixed(labelDecimals)}°${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
-        lblColor, "10px");
-    }
 
+      const labelX = map.latLngToContainerPoint([center.lat, lng]).x;
+      if (labelX < 210 || labelX > mapSize.x - 40) continue;
+      if (labelX - lastLngLabelX < MIN_LNG_LABEL_GAP) continue;
+      lastLngLabelX = labelX;
+      const labelPoint = labelLatLngFromPoint(labelX, LNG_LABEL_Y);
+      addLabel(labelPoint.lat, labelPoint.lng,
+        `${lng.toFixed(labelDecimals)}\u00b0${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
+        lblColor, "10px", "bold", [20, 13]);
+    }
     if (subLngGridSpacing !== null && subLatGridSpacing !== null) {
       const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
       const eLat = Math.ceil(extN / subLatGridSpacing) * subLatGridSpacing;
