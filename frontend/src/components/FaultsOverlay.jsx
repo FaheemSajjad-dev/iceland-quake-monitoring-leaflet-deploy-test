@@ -12,6 +12,7 @@ const HIKE_WFS_URL = "https://maps.europe-geology.eu/wfs/";
 const HIKE_METADATA_URL = "https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833";
 const ICELAND_BBOX = "-24.8,63.0,-13.0,66.7";
 const FAULTS_PANE = "faultsPane";
+const FAULTS_REFRESH_MS = 3 * 60 * 1000;
 
 const buildWfsUrl = () => {
   const params = new URLSearchParams({
@@ -21,6 +22,7 @@ const buildWfsUrl = () => {
     typename: "hike_detail_layer",
     outputformat: "geojson",
     bbox: ICELAND_BBOX,
+    _: Date.now().toString(),
   });
   return `${HIKE_WFS_URL}?${params.toString()}`;
 };
@@ -105,48 +107,60 @@ export default function FaultsOverlay({ show }) {
     const legend = legendRef.current;
     if (!legend) return;
 
+    const removeLayer = () => {
+      if (layerRef.current) {
+        layerRef.current.remove();
+        layerRef.current = null;
+      }
+    };
+
     if (!show) {
       abortRef.current?.abort();
-      if (layerRef.current) layerRef.current.remove();
+      removeLayer();
       legend.remove();
       return;
     }
 
     legend.addTo(map);
 
-    if (layerRef.current) {
-      layerRef.current.addTo(map);
-      return;
-    }
+    const loadFaults = () => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    fetch(buildWfsUrl(), { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Faults WFS request failed: ${response.status}`);
-        return response.json();
-      })
-      .then((geojson) => {
-        if (controller.signal.aborted) return;
-        const filtered = {
-          ...geojson,
-          features: (geojson.features ?? []).filter(isOnshoreIcelandFeature),
-        };
-        const layer = L.geoJSON(filtered, {
-          pane: FAULTS_PANE,
-          style: faultStyle,
-          interactive: false,
-          attribution: `Faults/fissures: <a href="${HIKE_METADATA_URL}" target="_blank" rel="noreferrer">EGDI/HIKE, ISOR</a>`,
+      fetch(buildWfsUrl(), { signal: controller.signal })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Faults WFS request failed: ${response.status}`);
+          return response.json();
+        })
+        .then((geojson) => {
+          if (controller.signal.aborted) return;
+          const filtered = {
+            ...geojson,
+            features: (geojson.features ?? []).filter(isOnshoreIcelandFeature),
+          };
+          const layer = L.geoJSON(filtered, {
+            pane: FAULTS_PANE,
+            style: faultStyle,
+            interactive: false,
+            attribution: `Faults/fissures: <a href="${HIKE_METADATA_URL}" target="_blank" rel="noreferrer">EGDI/HIKE, ISOR</a>`,
+          });
+          removeLayer();
+          layerRef.current = layer;
+          layer.addTo(map);
+        })
+        .catch((error) => {
+          if (error.name !== "AbortError") console.error(error);
         });
-        layerRef.current = layer;
-        layer.addTo(map);
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") console.error(error);
-      });
+    };
 
-    return () => controller.abort();
+    loadFaults();
+    const refresh = window.setInterval(loadFaults, FAULTS_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(refresh);
+      abortRef.current?.abort();
+    };
   }, [show, map]);
 
   return null;

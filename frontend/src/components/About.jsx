@@ -3,7 +3,97 @@ import "./About.css";
 import { API_URL } from "../api";
 import { useLang, useT } from "../i18n";
 
-const VERSION = "1.0";
+const VERSION = "1.1";
+
+const DATA_CADENCE = {
+  en: [
+    ["Earthquakes", "MPGV, Skjalftalisa, and the merged catalogue refresh every 3 minutes."],
+    ["Volcanoes", "EPOS volcano metadata is refreshed by the backend scheduler and reloaded by the map every 3 minutes."],
+    ["Faults", "EGDI/HIKE WFS fault and fissure linework refreshes while the overlay is visible."],
+    ["ShakeMaps", "ShakeMap links are looked up on demand for selected earthquake events."],
+  ],
+  is: [
+    ["Jardskjalftar", "MPGV, Skjalftalisa og sameinadi gagnagrunnurinn uppfaerast a 3 minutna fresti."],
+    ["Eldfjoll", "EPOS eldfjallagogn eru uppfaerd i bakenda og endurhladin i kortinu a 3 minutna fresti."],
+    ["Misgengi", "EGDI/HIKE WFS linur fyrir misgengi og sprungur endurhladast medan yfirlagid er synilegt."],
+    ["ShakeMaps", "ShakeMap tenglar eru sottir eftir thorfum fyrir valda jardskjalfta."],
+  ],
+};
+
+const MAP_LAYERS = {
+  en: [
+    ["Positron", "OpenFreeMap vector basemap with Iceland glacier labels."],
+    ["Satellite", "Esri World Imagery for visual terrain context."],
+    ["Terrain", "Icelandic Meteorological Office raster terrain tiles."],
+    ["Gray", "CARTO light basemap for quiet inspection."],
+    ["Heatmap", "Density-first earthquake heatmap with label overlay."],
+  ],
+  is: [
+    ["Positron", "OpenFreeMap vektorkort med islenskum joklaheitum."],
+    ["Gervihnottur", "Esri World Imagery fyrir myndraent landslagssamhengi."],
+    ["Landslag", "Raster landslagsflisar fra Vedurstofu Islands."],
+    ["Gratt", "Ljost CARTO grunnkort fyrir rolega skodun."],
+    ["Hitakort", "Thettleikakort jardskjalfta med merkjayfirlagslagi."],
+  ],
+};
+
+const SOURCES = {
+  en: [
+    ["MPGV", "Historical and near-real-time M >= 3.0 earthquake listings from IMO."],
+    ["Skjalftalisa", "Recent IMO event metadata used to improve location, depth, and event identity."],
+    ["EPOS", "Volcano catalogue and ShakeMap information from IMO EPOS services."],
+    ["EGDI/HIKE", "Fault and fissure linework filtered to Iceland onshore records."],
+  ],
+  is: [
+    ["MPGV", "Sogulegar og naer rauntima skraningar M >= 3.0 jardskjalfta fra Vedurstofu Islands."],
+    ["Skjalftalisa", "Nyleg atburdagogn fra Vedurstofu sem baeta stadsetningu, dypt og audkenni."],
+    ["EPOS", "Eldfjallaskra og ShakeMap upplysingar fra EPOS thjonustum Vedurstofu."],
+    ["EGDI/HIKE", "Linugogn fyrir misgengi og sprungur, siud i islenskar landfaerslur."],
+  ],
+};
+
+const Copy = ({ lang }) => lang === "en" ? (
+  <>
+    <p>
+      This application is part of an MSc thesis at the University of Iceland. It
+      monitors Icelandic earthquakes from June 2020 onward, focusing on events
+      with <strong>M {">="} 3.0</strong>, and presents them on an interactive Leaflet
+      map for exploration, comparison, and export.
+    </p>
+    <p>
+      The backend keeps a merged earthquake catalogue by scraping MPGV records,
+      fetching recent Skjalftalisa data, and reconciling matching events by time,
+      location, and magnitude. The frontend then layers that catalogue with live
+      volcano metadata, ShakeMap links, coordinate grids, and filtered EGDI/HIKE
+      fault and fissure geometry.
+    </p>
+  </>
+) : (
+  <>
+    <p>
+      Thetta forrit er hluti af meistaraverkefni vid Haskola Islands. Thad
+      fylgist med islenskum jardskjalftum fra juni 2020, med aherslu a atburdi
+      med <strong>M {">="} 3.0</strong>, og synir tha a gagnvirku Leaflet-korti.
+    </p>
+    <p>
+      Bakendinn heldur utan um sameinadan jardskjalftagrunn med thvi ad lesa
+      MPGV-skra, saekja nyleg Skjalftalisa-gogn og samraema atburdi eftir tima,
+      stadsetningu og staerd. Framendinn baetir vid eldfjallagogn, ShakeMap
+      tenglum, hnitaneti og EGDI/HIKE linum fyrir misgengi og sprungur.
+    </p>
+  </>
+);
+
+const InfoGrid = ({ items }) => (
+  <div className="about-info-grid">
+    {items.map(([title, text]) => (
+      <article className="about-info-item" key={title}>
+        <h4>{title}</h4>
+        <p>{text}</p>
+      </article>
+    ))}
+  </div>
+);
 
 const About = ({ onClose }) => {
   const dialogRef = useRef(null);
@@ -33,167 +123,74 @@ const About = ({ onClose }) => {
     >
       <div className="about-content card" onMouseDown={(e) => e.stopPropagation()}>
         <header className="about-header">
-          <h2 id="about-title" className="about-title">
-            {t('about_title')}
-          </h2>
-          <button
-            ref={closeBtnRef}
-            className="close-button"
-            aria-label={t('about_close')}
-            onClick={onClose}
-          >
-            ×
-          </button>
+          <div>
+            <p className="about-kicker">{lang === "en" ? "Research map" : "Rannsoknarkort"}</p>
+            <h2 id="about-title" className="about-title">{t("about_title")}</h2>
+          </div>
+          <button ref={closeBtnRef} className="close-button" aria-label={t("about_close")} onClick={onClose}>x</button>
         </header>
 
         <div className="about-body" id="about-desc">
           <section className="about-section">
-            <h3>{t('about_overview')}</h3>
-
-            {lang === 'en' ? (
-              <>
-                <p>
-                  This web application is part of an MSc thesis at the University
-                  of Iceland (Háskóli Íslands). It visualizes earthquakes across
-                  Iceland in near-real time, focusing on events with magnitude{" "}
-                  <strong>M&nbsp;≥&nbsp;3.0</strong>. The primary source is the
-                  Icelandic Meteorological Office's MPGV feed, complemented by
-                  additional public datasets.
-                </p>
-                <p>
-                  The system integrates three main data providers:
-                  <br />
-                  • <strong>MPGV data</strong> — public earthquake listings at{" "}
-                  <a href="http://hraun.vedur.is/ja/Mpgv/" target="_blank" rel="noopener noreferrer">
-                    hraun.vedur.is/ja/Mpgv/
-                  </a>
-                  <br />
-                  • <strong>Skjálftalísa API</strong> — detailed event metadata via{" "}
-                  <a href="https://api.vedur.is/?urls.primaryName=Skj%C3%A1lftal%C3%ADsa" target="_blank" rel="noopener noreferrer">
-                    api.vedur.is (Skjálftalísa)
-                  </a>
-                  <br />
-                  • <strong>EPOS API</strong> — volcanic and shakemap information via{" "}
-                  <a href="https://api.vedur.is/?urls.primaryName=EPOS" target="_blank" rel="noopener noreferrer">
-                    api.vedur.is (EPOS)
-                  </a>
-                </p>
-                <p>
-                  The backend continuously reconciles earthquake information from different
-                  sources using a custom matching algorithm. Each MPGV event is compared
-                  against Skjálftalísa records based on time, location, and magnitude
-                  thresholds to identify corresponding events. The merged dataset—combining
-                  the most accurate attributes from each source—is then served through an
-                  API to the frontend, where it powers the interactive map and visualization
-                  features.
-                </p>
-                <p>
-                  Key features include an interactive <strong>timeline color mode</strong> that
-                  displays earthquakes by month and a <strong>magnitude color mode</strong> that
-                  dynamically shades markers according to their seismic strength. A{" "}
-                  <strong>time window slider</strong> lets users filter events by day, week,
-                  month, or year — scroll to zoom the time range, drag to pan it. Users can
-                  switch between map layers: roadmap, satellite, dark mode, and a{" "}
-                  <strong>heatmap layer</strong> for density analysis. A{" "}
-                  <strong>lat/lon grid overlay</strong> can be toggled on to display
-                  auto-density coordinate lines that adapt to the current zoom level.
-                  The system also integrates <strong>ShakeMap data</strong> for visualizing
-                  ground motion intensity, and <strong>volcano overlays</strong> featuring
-                  33 Icelandic volcanoes with their current status and detailed information
-                  retrieved from the <strong>EPOS API</strong>.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  Þetta vefforrit er hluti af meistararannsókn við Háskóla Íslands.
-                  Það sýnir jarðskjálfta um allt Ísland í nær rauntíma, með áherslu
-                  á atburði með stærð <strong>M&nbsp;≥&nbsp;3.0</strong>. Megingagnaveitan
-                  er MPGV-straumurinn frá Veðurstofu Íslands, ásamt opinberum viðbótargagnasöfnum.
-                </p>
-                <p>
-                  Kerfið sameinar þrjár meginuppruna gagna:
-                  <br />
-                  • <strong>MPGV-gögn</strong> — opinberar jarðskjálftaskrár á{" "}
-                  <a href="http://hraun.vedur.is/ja/Mpgv/" target="_blank" rel="noopener noreferrer">
-                    hraun.vedur.is/ja/Mpgv/
-                  </a>
-                  <br />
-                  • <strong>Skjálftalísa API</strong> — ítarlegur atburðargrunnur via{" "}
-                  <a href="https://api.vedur.is/?urls.primaryName=Skj%C3%A1lftal%C3%ADsa" target="_blank" rel="noopener noreferrer">
-                    api.vedur.is (Skjálftalísa)
-                  </a>
-                  <br />
-                  • <strong>EPOS API</strong> — eldfjalla- og skjálftakortaupplýsingar via{" "}
-                  <a href="https://api.vedur.is/?urls.primaryName=EPOS" target="_blank" rel="noopener noreferrer">
-                    api.vedur.is (EPOS)
-                  </a>
-                </p>
-                <p>
-                  Bakendinn samræmir jarðskjálftaupplýsingar frá mismunandi uppruna stöðugt
-                  með sérsniðnum reikniriti. Hvert MPGV-atvik er borið saman við
-                  Skjálftalísa-færslur á grundvelli tíma, staðsetningar og stærðarmarka
-                  til að þekkja samsvarandi atvik. Sameinuð gagnasafnið—sem sameinar
-                  nákvæmustu eiginleikana frá hverjum uppruna—er síðan afgreitt í gegnum
-                  API til framendans, þar sem það knýr gagnvirka kortið og myndrænar aðgerðir.
-                </p>
-                <p>
-                  Helstu eiginleikar eru gagnvirkur <strong>tímalínulitatilhögun</strong> sem
-                  sýnir jarðskjálfta eftir mánuðum og <strong>stærðarlitatilhögun</strong> sem
-                  litfærðir merkingar eftir jarðskjálftastyrk. <strong>Tímabilsglidari</strong>{" "}
-                  leyfir notendum að sía atvik eftir degi, viku, mánuði eða ári — skrunaðu
-                  til að þysja, dragðu til að færa. Hægt er að skipta á milli kortalaga:
-                  vegakort, gervihnöttull, dökk stilling og <strong>hitakort</strong> fyrir
-                  þéttleikagreiningu. <strong>Hnitanetyfirlag</strong> má víxla til að sýna
-                  sjálfvirkar hnitamarkar sem laga sig að þysju. Kerfið sameinar einnig{" "}
-                  <strong>ShakeMap-gögn</strong> og <strong>eldfjallayfirlög</strong> með
-                  33 íslenskum eldfjöllum frá <strong>EPOS API</strong>.
-                </p>
-              </>
-            )}
+            <h3>{t("about_overview")}</h3>
+            <Copy lang={lang} />
           </section>
 
           <section className="about-section">
-            <h3>{t('about_data_export')}</h3>
-            <p>{t('about_data_export_desc')}</p>
+            <h3>{lang === "en" ? "Data Sources" : "Gagnauppsprettur"}</h3>
+            <InfoGrid items={SOURCES[lang]} />
+          </section>
+
+          <section className="about-section">
+            <h3>{lang === "en" ? "Update Cadence" : "Uppfaerslutidni"}</h3>
+            <InfoGrid items={DATA_CADENCE[lang]} />
+          </section>
+
+          <section className="about-section">
+            <h3>{lang === "en" ? "Map Layers" : "Kortalog"}</h3>
+            <InfoGrid items={MAP_LAYERS[lang]} />
+          </section>
+
+          <section className="about-section">
+            <h3>{t("about_data_export")}</h3>
+            <p>{t("about_data_export_desc")}</p>
             <button
               type="button"
               className="download-csv-button"
               onClick={() => window.open(`${API_URL}/earthquakes_csv`, "_blank", "noopener,noreferrer")}
             >
-              {t('about_download_csv')}
+              {t("about_download_csv")}
             </button>
           </section>
 
-          <section className="about-section">
-            <h3>{t('about_contact')}</h3>
-            <p>{t('about_contact_desc')}</p>
-            <ul className="contact-list">
-              <li><a href="mailto:mfs7@hi.is">mfs7@hi.is</a></li>
-              <li><a href="mailto:jonasson@hi.is">jonasson@hi.is</a></li>
-              <li><a href="mailto:esa@hi.is">esa@hi.is</a></li>
-            </ul>
-          </section>
-
-          <section className="about-section">
-            <h3>{t('about_credits')}</h3>
-            <ul>
-              <li>Muhammad Faheem Sajjad</li>
-              <li>Kristján Jónasson</li>
-              <li>Esa Olavi Hyytia</li>
-            </ul>
+          <section className="about-section about-two-column">
+            <div>
+              <h3>{t("about_contact")}</h3>
+              <p>{t("about_contact_desc")}</p>
+              <ul className="contact-list">
+                <li><a href="mailto:mfs7@hi.is">mfs7@hi.is</a></li>
+                <li><a href="mailto:jonasson@hi.is">jonasson@hi.is</a></li>
+                <li><a href="mailto:esa@hi.is">esa@hi.is</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3>{t("about_credits")}</h3>
+              <ul>
+                <li>Muhammad Faheem Sajjad</li>
+                <li>Kristjan Jonasson</li>
+                <li>Esa Olavi Hyytia</li>
+              </ul>
+            </div>
           </section>
 
           <section className="about-section disclaimer">
-            <h3>{t('about_disclaimer')}</h3>
-            <p>{t('about_disclaimer_desc')}</p>
+            <h3>{t("about_disclaimer")}</h3>
+            <p>{t("about_disclaimer_desc")}</p>
           </section>
         </div>
 
         <footer className="about-footer">
-          <small>
-            {t('about_version')} {VERSION} · © {new Date().getFullYear()} {t('about_university')}
-          </small>
+          <small>{t("about_version")} {VERSION} | (c) {new Date().getFullYear()} {t("about_university")}</small>
         </footer>
       </div>
     </div>

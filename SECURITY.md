@@ -1,30 +1,24 @@
 # Security Considerations
 
-Before handing this over to IMO for production deployment, the following things need to be addressed. Items marked **DONE** have already been fixed in the codebase.
+Before handing this over for production deployment, review the following items. Items marked **DONE** have already been addressed in the codebase.
 
----
+## 1. Flask Debug Mode - DONE
 
-## 1. Flask Debug Mode — DONE
-
-`backend/app.py`, line 477:
+`backend/app.py` runs with debug disabled for direct local execution:
 
 ```python
 app.run(debug=False, port=5001)
 ```
 
-Debug mode is now off. For production, use gunicorn instead of `app.run()` altogether:
+For production, run behind a WSGI server instead:
 
 ```bash
 gunicorn -b 0.0.0.0:5001 app:app --chdir backend
 ```
 
-Gunicorn ignores the debug flag entirely, so this is the cleaner production setup.
+## 2. CORS - DONE
 
----
-
-## 2. CORS — DONE
-
-`backend/app.py`, lines 33–37:
+CORS is restricted to local frontend dev origins:
 
 ```python
 _ALLOWED_ORIGINS = [
@@ -34,100 +28,74 @@ _ALLOWED_ORIGINS = [
 CORS(app, origins=_ALLOWED_ORIGINS)
 ```
 
-CORS is now restricted to the known frontend dev origins. **When deploying**, add the production domain to `_ALLOWED_ORIGINS` (or drop CORS entirely if frontend and backend are behind the same reverse proxy).
+When deploying, add the production domain or serve frontend and backend behind the same reverse proxy and remove cross-origin access.
 
----
+## 3. Localhost-Only Admin Endpoints - DONE
 
-## 3. Unprotected Admin Endpoints — DONE
+| Endpoint | Method | What it does | Protection |
+|---|---|---|---|
+| `/reconcile` | POST | Reruns reconciliation | `request.remote_addr` must be `127.0.0.1` or `::1` |
+| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same localhost check |
 
-Both admin endpoints now reject requests from non-localhost addresses with 403 Forbidden:
+The scheduler handles normal ingestion automatically, so these are only for local/server-side maintenance.
 
-| Endpoint | What it does | Protection |
-|---|---|---|
-| `POST /reconcile` | Reruns the full reconciliation algorithm | `request.remote_addr` must be `127.0.0.1` or `::1` |
-| `GET /scrape-volcanoes` | Triggers a live EPOS API scrape | Same localhost check |
+## 4. Error Message Leakage - DONE
 
-The scheduler handles all ingestion automatically, so these are only needed for manual debugging from the server itself.
+Client-facing errors are generic. Full exceptions are logged server-side with `logging.exception()`.
 
----
+Affected endpoints include `/scrape-volcanoes`, `/volcanoes`, and `/shakemap_lookup`.
 
-## 4. Error Message Leakage — DONE
+## 5. Content Security Policy - DONE
 
-Error responses no longer expose internal exception details to clients. Instead:
-- Full exceptions are logged server-side via `logging.exception()`
-- Clients receive generic messages like `"Internal server error"` or `"upstream fetch error"`
+`frontend/index.html` includes a CSP meta tag. It currently allows:
 
-Affected endpoints: `/scrape-volcanoes`, `/shakemap_lookup`.
+- Scripts and styles from `'self'`, with inline allowances needed by the current Leaflet/React stack
+- Images from `'self'`, data/blob URLs, Esri, OpenFreeMap, CARTO, IMO tile domains, and EGDI/HIKE map services
+- Connections to the local Flask API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
+- Fonts from `'self'` and OpenFreeMap
+- Frames blocked with `frame-ancestors 'none'`
 
----
+When deploying, update `connect-src` for the production API origin and remove development origins if they are not needed.
 
-## 5. Content Security Policy — DONE
+## 6. Unused API Keys - DONE
 
-`frontend/index.html` now includes a CSP meta tag restricting:
-- Scripts and styles to `'self'` (plus `'unsafe-inline'` for Leaflet/React compatibility)
-- Images to `'self'`, `data:` URIs, Esri's ArcGIS CDN (`server.arcgisonline.com`, `services.arcgisonline.com`, `basemaps.arcgis.com`), IMO raster tiles (`geo.vedur.is`), and OpenFreeMap/OpenMapTiles assets for the roadmap
-- API connections to `localhost:5001` / `127.0.0.1:5001`
-- Frames blocked entirely (`frame-ancestors 'none'`)
+The Leaflet version does not use Google Maps and does not require a Google Maps API key. The old `.env` file containing an unused key has been removed.
 
-**When deploying**, update `connect-src` to include the production API domain.
+## 7. Third-Party Tile and Data Services - REVIEW BEFORE PRODUCTION
 
----
+The app currently uses OpenFreeMap, Esri, CARTO, IMO, EPOS, Skjalftalisa, MPGV, and EGDI/HIKE services. Confirm licensing and rate limits before public or institutional deployment. For formal deployment, prefer institution-managed tile infrastructure or provider accounts where required.
 
-## 6. Unused API Key Removed — DONE
+## 8. Rate Limiting - TODO
 
-`frontend/.env` contained an unused Google Maps API key left over from the pre-Leaflet migration. The file has been deleted. The Leaflet version uses only free tile providers and requires no API keys.
-
----
-
-## 7. Rate Limiting — TODO
-
-No rate limiting on any endpoint. Worth adding at the nginx level if this goes on a public IP:
+There is no application-level rate limiting. Add rate limiting at nginx or another reverse proxy if the app is exposed publicly:
 
 ```nginx
 limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
 ```
 
-Or use Flask-Limiter if nginx isn't in the picture.
+Flask-Limiter is another option if reverse-proxy limiting is unavailable.
 
----
+## 9. Database File Permissions - TODO DEPLOYMENT
 
-## 8. Database File Permissions — TODO (deployment)
-
-`backend/data/earthquakes.db` — make sure permissions are tight on the server:
+Tighten SQLite permissions on the server:
 
 ```bash
 chmod 700 backend/data/
 chmod 600 backend/data/earthquakes.db
 ```
 
-Only matters if there are other users on the same machine, but worth doing anyway.
+## 10. HTTPS - TODO DEPLOYMENT
 
----
+Terminate TLS at the reverse proxy using Let's Encrypt or an institutional certificate. Flask does not need to serve TLS directly.
 
-## 9. HTTPS — TODO (deployment)
+## 11. Frontend API URL Detection - DONE
 
-The app doesn't enforce HTTPS (expected for local dev, not for production). TLS should be terminated at the reverse proxy; Flask doesn't need to handle it directly. Standard nginx setup with Let's Encrypt or an IMO cert is sufficient.
+`frontend/src/api.js` points to `http://localhost:5001` only for `localhost` and `127.0.0.1`. In production it uses same-origin requests based on `BASE_URL`.
 
----
+## 12. Secret Key - TODO IF AUTH IS ADDED
 
-## 10. Frontend API URL Detection
-
-`frontend/src/api.js`, lines 4–6:
-
-```javascript
-const isLocalDev = window.location.hostname === "localhost"
-    || window.location.hostname === "127.0.0.1";
-export const API_URL = isLocalDev ? "http://localhost:5001" : "";
-```
-
-No action needed — this correctly falls back to same-origin requests in production. Just noting it here so it doesn't look like a magic empty string to whoever reads the code next.
-
----
-
-## 11. Secret Key — TODO (if auth is added)
-
-Flask needs a `SECRET_KEY` for sessions and CSRF. The app doesn't use either right now, so it's not an issue, but if auth gets added later:
+The app currently does not use Flask sessions or CSRF. If authentication is added later, configure a real secret key:
 
 ```python
-app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "change-me-in-production")
+app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 ```

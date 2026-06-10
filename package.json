@@ -1,4 +1,7 @@
 {
+  "name": "iceland-quake-monitoring-leaflet",
+  "private": true,
+  "description": "Iceland earthquake, volcano, and fault monitoring map built with Leaflet.",
   "dependencies": {
     "maplibre-gl": "^5.18.0"
   }
