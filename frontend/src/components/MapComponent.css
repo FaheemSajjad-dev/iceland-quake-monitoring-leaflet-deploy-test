@@ -206,9 +206,9 @@
 
 /* Toggle switch colours (shared with LeftPanel) */
 .switch .slider { background-color: #ccc; }
-.switch input:checked + .slider { background-color: #FF5722; }
+.switch input:checked + .slider { background-color: #333; }
 .switch .slider:before { background-color: #fff; }
-.grid-toggle input:checked + .slider { background-color: #2196F3; }
+.grid-toggle input:checked + .slider { background-color: #333; }
 .switch input:checked + .slider,
 .grid-toggle input:checked + .slider,
 .faults-toggle input:checked + .slider {
@@ -456,5 +456,5 @@
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
   margin-bottom: -36px;
-  margin-right: 190px;
+  margin-right: 14px;
 }

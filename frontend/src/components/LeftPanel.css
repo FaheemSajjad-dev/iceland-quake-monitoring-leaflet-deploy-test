@@ -272,7 +272,7 @@
 .lang-toggle-btn:focus-visible { outline: none; }
 
 /* Faults toggle accent colour */
-.faults-toggle input:checked + .slider { background-color: #ff9800; }
+.faults-toggle input:checked + .slider { background-color: #333; }
 
 /* Volcano/grid toggle rows */
 .left-panel__body .volcano-toggle {
