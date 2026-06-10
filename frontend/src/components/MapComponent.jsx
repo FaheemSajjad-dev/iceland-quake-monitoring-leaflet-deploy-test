@@ -943,7 +943,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
     const mapSize = map.getSize();
     const center = map.getCenter();
-    const LAT_LABEL_X = 285;
+    const LAT_LABEL_X = 245;
     const LAT_LABEL_Y_OFFSET = -6;
     const LNG_LABEL_Y = mapSize.y - 34;
     const MIN_LNG_LABEL_GAP = 72;
