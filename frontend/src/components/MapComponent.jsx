@@ -902,7 +902,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
     const labelDecimals = 1;
     const latGridSpacing = lngGridSpacing / 2;
-    const subLatGridSpacing = subLngGridSpacing !== null ? subLngGridSpacing / 4 : latGridSpacing / 2;
+    const subLatGridSpacing = latGridSpacing / 2;
     const isOnStep = (value, step) => Math.abs(value / step - Math.round(value / step)) < 0.001;
 
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
@@ -974,17 +974,17 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
         `${lng.toFixed(labelDecimals)}\u00b0${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
         lblColor, "10px", "400", [20, 13]);
     }
-    if (subLngGridSpacing !== null && subLatGridSpacing !== null) {
-      const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
-      const eLat = Math.ceil(extN / subLatGridSpacing) * subLatGridSpacing;
+    const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
+    const eLat = Math.ceil(extN / subLatGridSpacing) * subLatGridSpacing;
+    for (let lat = sLat; lat <= eLat; lat += subLatGridSpacing) {
+      if (lat < -85 || lat > 85) continue;
+      if (isOnStep(lat, latGridSpacing)) continue;
+      addLine([[lat, extW], [lat, extE]], subColor, 0.5, 0.5);
+    }
+
+    if (subLngGridSpacing !== null) {
       const sLng = Math.floor(extW / subLngGridSpacing) * subLngGridSpacing;
       const eLng = Math.ceil(extE / subLngGridSpacing) * subLngGridSpacing;
-
-      for (let lat = sLat; lat <= eLat; lat += subLatGridSpacing) {
-        if (lat < -85 || lat > 85) continue;
-        if (isOnStep(lat, latGridSpacing)) continue;
-        addLine([[lat, extW], [lat, extE]], subColor, 0.5, 0.5);
-      }
       for (let lng = sLng; lng <= eLng; lng += subLngGridSpacing) {
         if (isOnStep(lng, lngGridSpacing)) continue;
         addLine([[extS, lng], [extN, lng]], subColor, 0.5, 0.5);
