@@ -21,7 +21,7 @@ except (ImportError, ModuleNotFoundError):
 BASE_URL = 'http://hraun.vedur.is/ja/Mpgv/'
 
 def get_monthly_data(year, month):
-    """Scrapes data for a specific month and filters by magnitude >= 2.7."""
+    """Scrapes data for a specific month and filters by magnitude >= 3.0."""
     url = f"{BASE_URL}{year}/{year}-{str(month).zfill(2)}.html"
     response = requests.get(url, timeout=20)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -52,7 +52,7 @@ def get_monthly_data(year, month):
 
             try:
                 mw_mean = float(mw_mean)
-                if mw_mean < 2.7:
+                if mw_mean < 3.0:
                     continue
             except ValueError:
                 continue
@@ -68,7 +68,7 @@ def get_monthly_data(year, month):
     return data
 
 def scrape_all_earthquake_data():
-    """Scrape MPGV and insert new records (M ≥ 2.7) into the database."""
+    """Scrape MPGV and insert new records (M ≥ 3.0) into the database."""
     if USING_FLASK:
         from app import app, db, Earthquake
         with app.app_context():

@@ -1,3 +1,19 @@
+/* ── Layout tokens ───────────────────────────────────────────────────────────
+   --mag-clearance: distance from the right viewport edge that the magnitude
+   scale + its filter label occupies.  Calculated as:
+     scale right margin (20px) + scale width (40px) + filter label right-offset (50px) + buffer (10px) = 120px
+   Info cards use this token so they always sit just to the left of the scale.
+   Update only these values if the scale geometry ever changes. */
+:root {
+  --mag-clearance: 120px;
+}
+@media (min-width: 1500px) {
+  :root { --mag-clearance: 130px; } /* scale grows to 50px */
+}
+@media (min-width: 2100px) {
+  :root { --mag-clearance: 140px; } /* scale grows to 60px */
+}
+
 /* Neutral fallback colour shown in blank tile areas during zoom/load transitions */
 .leaflet-container {
   background: #d4d0cb; /* approximate OSM/CartoDB base grey — less jarring than white during zoom */
@@ -13,17 +29,11 @@
   pointer-events: none !important;
 }
 
-/* Map Type Selector */
-.map-type-control {
-  position: absolute;
-  top: 10px;
-  left: 20px;
-  z-index: 1000;
-}
-
+/* Map Type Selector (rendered inside LeftPanel) */
 .map-type-selector {
   position: relative;
   display: inline-block;
+  z-index: 1002; /* above TimeWindowSlider (1000) and all panel sections */
 }
 
 .map-type-main {
@@ -47,6 +57,7 @@
   margin-top: 1px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
+  z-index: 1000;
 }
 
 .map-type-option {
@@ -68,189 +79,145 @@
   background-color: #e6e6e6;
 }
 
-/* Earthquake Info Window */
-.earthquake-info {
+/* ── Info cards (earthquake + volcano) ── */
+.info-card {
   position: absolute;
-  left: 15%;
-  top: 30%;
-  background-color: rgba(255, 255, 255, 0.6);
-  padding: 10px;
+  left: 200px;
+  top: 60px;
+  width: 220px;
+  max-width: calc(100vw - 200px - 200px);
+  background: #fff;
   border-radius: 10px;
-  box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
-  max-width: 250px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
   z-index: 1000;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
 }
 
-.earthquake-info p {
-  margin: 5px 0;
-  font-size: 14px;
+/* Coloured left accent border per type */
+.info-card--earthquake { border-left: 4px solid #4a6fa5; }
+.info-card--volcano    { border-left: 4px solid #e64a19; }
+
+/* Header row: title + close button */
+.info-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.earthquake-info button {
-  background-color: #FF5722;
-  color: #fff;
+.info-card--earthquake .info-card__header { background: #f0f4fb; }
+.info-card--volcano    .info-card__header { background: #fff5f2; }
+
+.info-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-card__close {
+  background: none;
   border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
   cursor: pointer;
-  font-size: 14px;
-  margin-top: 5px;
-  transition: background-color 0.2s;
+  font-size: 13px;
+  color: #999;
+  line-height: 1;
+  padding: 0 0 0 6px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.info-card__close:hover { color: #333; }
+
+/* Body */
+.info-card__body {
+  padding: 10px 12px 12px;
 }
 
-.earthquake-info button:hover {
-  background-color: #E64A19;
+/* Large magnitude number */
+.info-card__magnitude {
+  font-size: 28px;
+  font-weight: 800;
+  color: #4a6fa5;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  line-height: 1;
 }
 
-
-/* Volcano info */
-.volcano-info {
-  position: absolute;
-  left: 15%;
-  top: 30%;
-  background-color: rgba(255, 250, 245, 0.6);
-  padding: 12px;
-  border-radius: 10px;
-  box-shadow: 0px 3px 12px rgba(0,0,0,0.3);
-  max-width: 280px;
-  z-index: 1000;
-  font-family: Arial, sans-serif;
+/* Key-value rows */
+.info-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.volcano-info h3 {
-  margin: 0 0 8px 0;
-  color: #FF5722;
-  font-size: 16px;
-  border-bottom: 1px solid #FFCCBC;
-  padding-bottom: 5px;
+.info-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
 }
 
-.volcano-info p {
-  margin: 5px 0;
-  font-size: 14px;
+.info-card__row span:first-child {
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.info-card__row span:last-child {
+  color: #222;
+  text-align: right;
+  word-break: break-all;
+}
+
+/* Optional description text (volcano) */
+.info-card__desc {
+  font-size: 12px;
+  color: #555;
+  margin: 0 0 8px;
   line-height: 1.4;
 }
 
-.volcano-info .elevation {
-  color: #775533;
-  font-weight: bold;
-}
-
-.volcano-info .eruption {
-  color: #D50000;
-  font-weight: bold;
-}
-
-.volcano-info button {
-  background-color: #FF5722;
+/* Action button (ShakeMap link) */
+.info-card__action {
+  margin-top: 10px;
+  width: 100%;
+  padding: 6px 0;
+  background: #4a6fa5;
   color: #fff;
   border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  margin-top: 8px;
-  transition: background-color 0.2s;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: background 0.15s;
 }
+.info-card__action:hover { background: #3a5a8a; }
 
-.volcano-info button:hover {
-  background-color: #E64A19;
-}
-
-/* Color-by-time toggle */
-.color-toggle-container {
-  position: absolute;
-  bottom: 77px;
-  left: 20px;
-  z-index: 1000;
-}
-
-/* Base: solid backgrounds for all switches */
-.switch .slider { background-color: #ccc; }           /* OFF */
-.switch input:checked + .slider { background-color: #FF5722; } /* ON default (volcano) */
-.switch .slider:before { background-color: #fff; }    /* knob stays solid white */
-
-/* Grid override: solid blue when ON */
+/* Toggle switch colours (shared with LeftPanel) */
+.switch .slider { background-color: #ccc; }
+.switch input:checked + .slider { background-color: #FF5722; }
+.switch .slider:before { background-color: #fff; }
 .grid-toggle input:checked + .slider { background-color: #2196F3; }
-
-/* Color-by-time override: solid Twilight anchor when ON */
-.color-toggle input:checked + .slider { background-color: #6a51a3; }
-
 .switch input:checked + .slider,
 .grid-toggle input:checked + .slider,
-.color-toggle input:checked + .slider {
+.faults-toggle input:checked + .slider {
   opacity: 1 !important;
   filter: none !important;
 }
 
-/* Volcano and grid toggle row */
-.volcano-toggle-container {
-  position: absolute;
-  bottom: 39px;
-  left: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 11px;
-}
-
-/* ——— Always use dark text inside the light info cards ——— */
-.earthquake-info,
-.earthquake-info p,
-.earthquake-info strong,
-.earthquake-info b,
-.earthquake-info .eq-time {
-  color: #111 !important;      /* readable on the light card */
-  text-shadow: none !important; /* prevent any inherited shadows */
-}
-
-/* Volcano card text colors */
-.volcano-info,
-.volcano-info p,
-.volcano-info strong,
-.volcano-info b {
-  color: #222 !important;       /* default copy on the card */
-  text-shadow: none !important;
-}
-
-/* keep the custom accent colors you already use */
-.volcano-info h3 { color: #FF5722 !important; }
-.volcano-info .elevation { color: #775533 !important; }
-.volcano-info .eruption  { color: #D50000 !important; }
-
-.earthquake-info a,
-.volcano-info a { color: #0b57d0 !important; }
+/* Info card links */
+.info-card a { color: #0b57d0 !important; }
 
 
-.color-mode-switch {
-  display: flex;
-  background: rgba(255,255,255,0.9);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  overflow: hidden;
-}
-
-.color-mode-switch button {
-  flex: 1;
-  padding: 2px 6px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  color: #333;
-  transition: background 0.2s ease;
-}
-
-.color-mode-switch button.active {
-  background: #333;
-  color: #fff;
-}
-
-.color-mode-switch button:hover {
-  background: rgba(0,0,0,0.1);
-}
 
 /* Heatmap density legend — sits just above the Leaflet scale control (bottom-right) */
 .heatmap-legend {
@@ -327,8 +294,146 @@
   letter-spacing: 0.3px;
 }
 
+/* ── Tectonic zone tooltip ── */
+.tectonic-tt-wrap {
+  background: rgba(16, 16, 24, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  padding: 4px 9px;
+  color: #eee;
+  font-size: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.40);
+  white-space: nowrap;
+}
+.tectonic-tt-wrap::before { display: none; } /* hide Leaflet's arrow */
+.tectonic-tt b { color: #ffb74d; }
+
+/* ── Tectonic zone permanent label ── */
+.tectonic-zone-label {
+  background: none !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+.tectonic-zone-label span {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: rgba(180, 50, 10, 0.78);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+/* ── Tectonic zone map legend ── */
+.tectonic-legend {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 6px;
+  padding: 7px 10px 8px;
+  font-size: 11px;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+  min-width: 140px;
+  backdrop-filter: blur(3px);
+}
+.tectonic-legend__title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.tectonic-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #333;
+}
+.tectonic-legend__row:last-of-type { margin-bottom: 0; }
+.tectonic-legend__source {
+  display: block;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(0,0,0,0.10);
+  color: #245f9f;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.tectonic-wms-pane img {
+  filter:
+    contrast(1.5)
+    drop-shadow(0 0 1px rgba(255,255,255,0.95))
+    drop-shadow(0 0 1px rgba(0,0,0,0.85));
+}
+.tectonic-legend__source:hover {
+  text-decoration: underline;
+}
+.tec-swatch {
+  display: inline-block;
+  width: 26px;
+  height: 11px;
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+/* official HIKE WMS linework */
+.tec-swatch--official {
+  height: 8px;
+  margin-top: 1px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(48, 48, 48, 0.86) 0 7px,
+      transparent 7px 10px
+    );
+  border: 1px solid rgba(48, 48, 48, 0.28);
+}
+/* rift swatch: soft orange fill, no border */
+.tec-swatch--rift {
+  background: rgba(255, 109, 0, 0.50);
+  filter: blur(1.5px);
+}
+/* fault swatch: soft red band */
+.tec-swatch--fault {
+  background: rgba(229, 57, 53, 0.55);
+  height: 8px;
+  margin-top: 1px;
+  filter: blur(1.5px);
+}
+/* ridge swatch: soft purple band */
+.tec-swatch--ridge {
+  background: rgba(142, 36, 170, 0.45);
+  height: 6px;
+  margin-top: 2px;
+  filter: blur(1.5px);
+}
+
 /* Align scale bar bottom with the volcano/grid toggles (bottom: 39px); right matches left components (20px) */
 .leaflet-bottom.leaflet-right .leaflet-control-scale {
   margin-bottom: 29px; /* Leaflet adds ~10px default bottom padding → 10 + 29 = 39px */
   margin-right: 10px;  /* Leaflet's default margin-right is 10px → 10 + 10 = 20px from edge */
+}
+
+.faults-toggle-icon {
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1;
+  transform: rotate(22deg);
+}
+
+.leaflet-bottom.leaflet-right .faults-legend-control {
+  margin-bottom: 12px;
+  margin-right: 172px;
 }

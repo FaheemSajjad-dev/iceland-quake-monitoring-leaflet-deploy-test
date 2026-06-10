@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import logging
+import hmac
 import threading
 from pathlib import Path
 
@@ -58,6 +59,21 @@ if Compress:
     Compress(app)
 
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
+_LOCAL_ADMIN_ADDRS = {"127.0.0.1", "::1", "localhost"}
+
+def _request_admin_token() -> str:
+    auth_header = request.headers.get("Authorization", "").strip()
+    if auth_header.lower().startswith("bearer "):
+        return auth_header[7:].strip()
+    return request.headers.get("X-Admin-Token", "").strip()
+
+def _is_admin_request() -> bool:
+    if ADMIN_TOKEN:
+        token = _request_admin_token()
+        return bool(token) and hmac.compare_digest(token, ADMIN_TOKEN)
+    return request.remote_addr in _LOCAL_ADMIN_ADDRS
 
 DB_DIR = os.path.join(CURRENT_FILE_PATH, "data")
 os.makedirs(DB_DIR, exist_ok=True)
@@ -199,7 +215,7 @@ def _refresh_derived_data() -> None:
     refresh_volcanoes = _volcanoes.refresh_volcanoes
 
     try:
-        rows = fetch_last_n_days(7, size_min=2.7)
+        rows = fetch_last_n_days(7, size_min=3.0)
         store_skjalftalisa_rows(rows)
     except Exception as e:
         print(f"Skjalftalisa fetch failed: {e}")
@@ -211,7 +227,7 @@ def _refresh_derived_data() -> None:
 
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     start = "2020-06-01 00:00:00"
-    match_and_merge(start, end, min_mag=2.7)
+    match_and_merge(start, end, min_mag=3.0)
 
     _eq_cache["data"] = None
 
@@ -230,22 +246,29 @@ def scheduled_scrape() -> None:
         import scrape as _scrape; importlib.reload(_scrape)
         import reconcile as _reconcile; importlib.reload(_reconcile)
         import skjalftalisa_client as _sk; importlib.reload(_sk)
+        import volcano_scraper as _volcano; importlib.reload(_volcano)
         scrape_all_earthquake_data = _scrape.scrape_all_earthquake_data
         match_and_merge = _reconcile.match_and_merge
         fetch_last_n_days = _sk.fetch_last_n_days
         store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
+        refresh_volcanoes = _volcano.refresh_volcanoes
 
         scrape_all_earthquake_data()
 
         try:
-            rows = fetch_last_n_days(7, size_min=2.7)
+            rows = fetch_last_n_days(7, size_min=3.0)
             store_skjalftalisa_rows(rows)
         except Exception as e:
             print(f"Skjálftalísa fetch failed: {e}")
 
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         start = "2020-06-01 00:00:00"
-        match_and_merge(start, end, min_mag=2.7)
+        match_and_merge(start, end, min_mag=3.0)
+
+        try:
+            refresh_volcanoes(DB_PATH)
+        except Exception as e:
+            print(f"EPOS volcano refresh failed: {e}")
 
         # Invalidate response cache so next request gets fresh reconciled data
         _eq_cache["data"] = None
@@ -338,7 +361,7 @@ def get_earthquake_data():
             return _eq_cache["data"]
 
     with app.app_context():
-        q = EarthquakeMerged.query
+        q = EarthquakeMerged.query.filter(EarthquakeMerged.mw_mean >= 3.0)
 
         if days_param != "all":
             try:
@@ -372,7 +395,7 @@ def get_earthquake_data_csv():
     days_param = (request.args.get("days") or "all").strip().lower()
 
     with app.app_context():
-        q = EarthquakeMerged.query
+        q = EarthquakeMerged.query.filter(EarthquakeMerged.mw_mean >= 3.0)
 
         if days_param != "all":
             try:
@@ -410,8 +433,8 @@ def get_earthquake_data_csv():
 
 @app.route('/scrape-volcanoes', methods=['GET'])
 def scrape_volcanoes():
-    """Fetch and save live volcano data from EPOS Iceland API (localhost only)."""
-    if request.remote_addr not in ("127.0.0.1", "::1"):
+    """Fetch and save live volcano data from EPOS Iceland API (admin only)."""
+    if not _is_admin_request():
         return jsonify({"error": "Forbidden"}), 403
     try:
         sys.path.append(CURRENT_FILE_PATH)
@@ -448,13 +471,13 @@ def get_volcano_data():
 
 @app.route("/reconcile", methods=["POST"])
 def run_reconcile():
-    """Manual trigger to rerun the reconcile step (localhost only)."""
-    if request.remote_addr not in ("127.0.0.1", "::1"):
+    """Manual trigger to rerun the reconcile step (admin only)."""
+    if not _is_admin_request():
         return jsonify({"error": "Forbidden"}), 403
     from reconcile import match_and_merge
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     start = "2020-06-01 00:00:00"
-    match_and_merge(start, end, min_mag=2.7)
+    match_and_merge(start, end, min_mag=3.0)
     return jsonify({"message": "Reconcile completed"}), 200
 
 

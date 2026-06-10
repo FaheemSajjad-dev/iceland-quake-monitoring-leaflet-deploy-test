@@ -1,0 +1,283 @@
+/* ── Left control panel ── */
+.left-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1001;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  pointer-events: none;
+  --slider-top: 498px;      /* TimeWindowSlider CSS top at this breakpoint */
+  --slider-half-h: 44px;    /* half the slider container CSS height (26+52+10=88 → 44) */
+}
+
+/* Sliding drawer that clips content when collapsing */
+.left-panel__drawer {
+  max-width: 185px;
+  width: 185px;
+  height: 100%;
+  overflow: hidden;
+  transition: max-width 0.25s ease;
+  pointer-events: all;
+  flex-shrink: 0;
+}
+
+.left-panel--collapsed .left-panel__drawer {
+  max-width: 0;
+}
+
+/* Slider and scale fade in sync with the drawer; visibility hides them fully after fade completes */
+.left-panel .time-window-slider-container.vertical,
+.left-panel .magnitude-scale.vertical {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+
+.left-panel--collapsed .time-window-slider-container.vertical,
+.left-panel--collapsed .magnitude-scale.vertical {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+/* White card body */
+.left-panel__body {
+  width: 185px;
+  min-height: 100%;
+  background: #fff;
+  box-shadow: 3px 0 16px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 14px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Section grouping */
+.left-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Small section header label */
+.left-panel__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #999;
+  user-select: none;
+}
+
+/* Collapse / expand tab on the right edge of the drawer */
+.left-panel__toggle {
+  pointer-events: all;
+  align-self: flex-start;
+  margin-top: 60px;
+  width: 18px;
+  height: 38px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 9px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 3px 1px 8px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.left-panel__toggle:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* ── Vertical time-window slider positioning ─────────────────────────────────
+   Goal: sit the slider just below the panel bottom (24px visual gap).
+   Geometry: visual_top = CSS_top − CSS_width/2  →  CSS_top = panel_bottom + 24 + CSS_width/2
+   Panel heights (gap:16px, padding:16px, 3 overlay toggles incl. faults):
+     non-heatmap ≈ 284px  →  CSS_top = 284+24+190 = 498px
+     heatmap     ≈ 219px  →  CSS_top = 219+24+190 = 433px              */
+
+.left-panel .time-window-slider-container.vertical {
+  top: var(--slider-top);
+  left: -84px;
+  transform: translateX(-60px) rotate(-90deg);
+}
+
+.left-panel .time-window-slider-container.vertical .zoom-indicator {
+  bottom: auto;
+  top: -22px;
+}
+
+.left-panel .magnitude-scale.vertical {
+  right: auto;
+  left: 0;
+  top: calc(var(--slider-top) + var(--slider-half-h));
+  transform: translateX(120px) translateY(-50%);
+  pointer-events: all;
+}
+.left-panel .time-window-slider-container.vertical.heatmap-mode {
+  top: 433px;
+}
+.left-panel .magnitude-scale.vertical.heatmap-mode {
+  top: calc(433px + var(--slider-half-h));
+}
+
+/* ── Width breakpoints: update --slider-top, both components follow automatically ── */
+@media (min-width: 1500px) {
+  /* slider height = 26+60+10 = 96 → half = 48 */
+  .left-panel { --slider-top: 538px; --slider-half-h: 48px; }
+  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 473px; }
+  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(473px + 48px); }
+}
+@media (min-width: 2100px) {
+  /* slider height = 26+72+10 = 108 → half = 54 */
+  .left-panel { --slider-top: 588px; --slider-half-h: 54px; }
+  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 523px; }
+  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(523px + 54px); }
+}
+
+/* ── Height breakpoints: panel shrinks → update --slider-top ── */
+@media (max-height: 800px) {
+  .left-panel { --slider-top: 482px; }
+  .left-panel__body { gap: 12px; padding: 12px 14px; }
+  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 421px; }
+  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(421px + var(--slider-half-h)); }
+}
+@media (max-height: 700px) {
+  .left-panel { --slider-top: 450px; }
+  .left-panel__body { gap: 8px; padding: 10px 12px; }
+  .left-panel__section { gap: 5px; }
+  .left-panel__label { font-size: 9px; letter-spacing: 0.4px; }
+  .left-panel__body .volcano-toggle { padding: 3px 8px; }
+  .toggle-label { font-size: 11px; }
+  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 395px; }
+  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(395px + var(--slider-half-h)); }
+}
+@media (max-height: 620px) {
+  /* slider height = 26+42+10 = 78 → half = 39 */
+  .left-panel { --slider-top: 358px; --slider-half-h: 39px; }
+  .left-panel__body { gap: 6px; padding: 8px 10px; }
+  .left-panel__section { gap: 3px; }
+  .left-panel__label { display: none; }
+  .left-panel__body .volcano-toggle { padding: 2px 8px; }
+  .left-panel .time-window-slider-container.vertical { width: 300px; left: -44px; }
+  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 322px; }
+  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(322px + var(--slider-half-h)); }
+  .left-panel .time-window-slider-container.vertical .timeline-slider { height: 42px; }
+  .left-panel .time-window-slider-container.vertical .timeline-track  { height: 18px; bottom: 8px; }
+  .left-panel .time-window-slider-container.vertical .year-labels,
+  .left-panel .time-window-slider-container.vertical .day-labels      { top: 4px; }
+  /* track centre: 26 + 42 - 8 - 9 = 51 */
+  .left-panel .time-window-slider-container.vertical .vertical-letter-label { top: 45px; }
+}
+
+
+/* ── Colour-mode switch ── */
+.left-panel__body .color-mode-switch {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.left-panel__body .color-mode-switch button {
+  flex: 1;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  transition: background 0.15s;
+}
+
+.left-panel__body .color-mode-switch button.active {
+  background: #333;
+  color: #fff;
+}
+
+/* Reset / reload button */
+.left-panel__body .reset-view-btn {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin: 0;
+  cursor: pointer;
+  color: #1a3a5c;
+  outline: none;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+.left-panel__body .reset-view-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.left-panel__body .reset-view-btn:hover { border-color: transparent; }
+.left-panel__body .reset-view-btn:focus,
+.left-panel__body .reset-view-btn:focus-visible { outline: none; }
+@media (max-height: 700px) {
+  .left-panel__body .reset-view-btn svg { width: 17px; height: 17px; }
+}
+@media (max-height: 620px) {
+  .left-panel__body .reset-view-btn svg { width: 15px; height: 15px; }
+}
+
+.left-panel__body .color-mode-switch button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Reset + IS/EN row */
+.left-panel__action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* IS/EN language toggle */
+.lang-toggle-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+  line-height: 1.6;
+}
+.lang-toggle-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #bbb;
+}
+.lang-toggle-btn:focus,
+.lang-toggle-btn:focus-visible { outline: none; }
+
+/* Faults toggle accent colour */
+.faults-toggle input:checked + .slider { background-color: #ff9800; }
+
+/* Volcano/grid toggle rows */
+.left-panel__body .volcano-toggle {
+  background: #f7f7f7;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  padding: 5px 10px;
+}

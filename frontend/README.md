@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Opens at [http://localhost:5174](http://localhost:5174). Requires the backend running on port 5002 (default). Note: `api.js` hard-codes port 5001 for localhost dev — align the backend port accordingly.
+Opens at [http://localhost:5174](http://localhost:5174). Requires the backend running on port 5001.
 
 ## Testing
 
@@ -36,10 +36,10 @@ src/
 
 | Name | Provider |
 |---|---|
-| Roadmap | Self-hosted PMTiles (MapLibre GL, OpenStreetMap-derived) |
+| Roadmap | OpenStreetMap |
 | Satellite | Esri World Imagery |
-| Dark mode | Esri World Dark Gray Base |
-| Heatmap | Esri World Dark Gray Base + leaflet.heat overlay |
+| Dark mode | CartoDB Dark Matter |
+| Heatmap | CartoDB Dark Matter + leaflet.heat overlay |
 
 ## Heatmap
 
@@ -52,4 +52,4 @@ src/
 ## Notes
 
 - `leaflet.heat` requires `window.L` before import — loaded dynamically in a `useEffect` after `window.L = L`.
-- Smooth zoom: `zoomSnap=0.5`, `zoomDelta=0.5`, `keepBuffer=4`, `minZoom=4.5`.
+- Smooth zoom: `zoomSnap=0.5`, `zoomDelta=0.5`, `keepBuffer=4`, `minZoom=5.5`.

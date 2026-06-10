@@ -135,6 +135,22 @@ input:checked + .slider:before {
   .toggle-label { font-size: 16px; }
 }
 
+/* Volcano name labels */
+.volcano-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #ff3c00;
+  text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 3px rgba(255,255,255,0.9);
+  white-space: nowrap;
+  padding: 0;
+}
+.volcano-label::before {
+  display: none;
+}
+
 /*About Page*/
 
 .nav-button {
@@ -148,6 +164,7 @@ input:checked + .slider:before {
   text-align: center;
   text-decoration: none;
   color: #333;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .nav-button:hover {
@@ -156,8 +173,8 @@ input:checked + .slider:before {
 
 .about-button-container {
   position: absolute;
-  top: 10px;
-  right: 20px;
+  top: 16px;
+  right: 14px;
   z-index: 1001;
 }
 

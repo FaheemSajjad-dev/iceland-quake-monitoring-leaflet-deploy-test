@@ -1,3 +1,10 @@
+"""
+Validate and cache EPOS ShakeMap associations for merged earthquake events.
+
+For each event in EarthquakeMerged, queries the EPOS ShakeMap API within a
+±30 min / ±0.3° window, picks the best candidate by (distance, time, magnitude),
+and writes the result to the shakemap_links cache table.
+"""
 from __future__ import annotations
 import os, sys, math, json, time
 from datetime import datetime, timedelta
@@ -12,7 +19,6 @@ from app import app, db, EarthquakeMerged, ShakeMapLink
 
 EPOS_SHAKEMAP_API = "https://api.epos-iceland.is/v1/seismic/shakemaps"
 
-# CONFIG: tune these 
 DT_LIMIT_SEC = 10 * 60     # 10 minutes
 DIST_LIMIT_KM = 10.0       # 10 km (set 5.0 to be stricter)
 DM_LIMIT = 0.5             # magnitude tolerance for ShakeMap (often ML)
@@ -20,7 +26,6 @@ BBOX_PAD_DEG = 0.3         # bbox padding around event for API query
 OUT_DIR = os.path.join(BASE_DIR, "reports")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# utils 
 def hav_km(a_lat, a_lon, b_lat, b_lon) -> float:
     R=6371.0
     from math import radians, sin, cos, asin
@@ -42,7 +47,6 @@ def within_limits(dt_sec: float, dist_km: float, dm: Optional[float]) -> bool:
     if dm is not None and abs(dm) > DM_LIMIT: return False
     return True
 
-# EPOS query 
 def fetch_shakemaps_window(dt: datetime, lat: float, lon: float) -> List[Dict[str, Any]]:
     start = (dt - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S")
     end   = (dt + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S")
@@ -81,7 +85,6 @@ def ensure_table():
     with app.app_context():
         db.create_all()
 
-# audit all events 
 def audit_all():
     ensure_table()
     rows_out = []
@@ -152,7 +155,6 @@ def audit_all():
                 ))
                 time.sleep(0.2)
 
-    # writing CSV summary
     df = pd.DataFrame(rows_out)
     csv_path = os.path.join(OUT_DIR, "shakemap_audit.csv")
     df.to_csv(csv_path, index=False)

@@ -2,7 +2,7 @@
 Unit tests for get_monthly_data() in scrape.py.
 
 get_monthly_data(year, month) fetches an HTML table from hraun.vedur.is and
-returns a list of earthquake dicts filtered to magnitude >= 2.7.
+returns a list of earthquake dicts filtered to magnitude >= 3.0.
 
 All network calls are mocked so no real HTTP requests are made.
 """
@@ -75,7 +75,7 @@ class TestGetMonthlyDataParsing:
 
 
 # ---------------------------------------------------------------------------
-# Magnitude filter (must be >= 2.7)
+# Magnitude filter (must be >= 3.0)
 # ---------------------------------------------------------------------------
 
 class TestMagnitudeFilter:
@@ -87,7 +87,7 @@ class TestMagnitudeFilter:
         assert result == []
 
     def test_exactly_at_threshold_included(self):
-        html = _html_table(("2023-06-15 12:00:00", "64.1", "-22.0", "5.0", "", "", "2.7", ""))
+        html = _html_table(("2023-06-15 12:00:00", "64.1", "-22.0", "5.0", "", "", "3.0", ""))
         with patch("scrape.requests.get", return_value=_make_response(html)):
             result = get_monthly_data(2023, 6)
         assert len(result) == 1
@@ -101,13 +101,13 @@ class TestMagnitudeFilter:
     def test_mixed_magnitudes_filtered_correctly(self):
         html = _html_table(
             ("2023-06-01 08:00:00", "64.0", "-22.0", "5.0", "", "", "2.5", ""),  # excluded
-            ("2023-06-02 09:30:00", "64.0", "-22.0", "5.0", "", "", "2.7", ""),  # included
+            ("2023-06-02 09:30:00", "64.0", "-22.0", "5.0", "", "", "3.0", ""),  # included
             ("2023-06-03 10:00:00", "64.0", "-22.0", "5.0", "", "", "3.5", ""),  # included
         )
         with patch("scrape.requests.get", return_value=_make_response(html)):
             result = get_monthly_data(2023, 6)
         assert len(result) == 2
-        assert all(r["mw_mean"] >= 2.7 for r in result)
+        assert all(r["mw_mean"] >= 3.0 for r in result)
 
 
 # ---------------------------------------------------------------------------

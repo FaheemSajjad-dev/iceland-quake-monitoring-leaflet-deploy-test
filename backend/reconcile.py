@@ -21,7 +21,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     a = sin(dphi/2)**2 + cos(p1)*cos(p2)*sin(dlmb/2)**2
     return 2 * R * asin(sqrt(a))
 
-def match_and_merge(start_utc, end_utc, min_mag=2.7):
+def match_and_merge(start_utc, end_utc, min_mag=3.0):
     with app.app_context():
         s_rows = EarthquakeSRaw.query.filter(
             EarthquakeSRaw.date_time >= start_utc,
@@ -50,7 +50,7 @@ def match_and_merge(start_utc, end_utc, min_mag=2.7):
         n_matched = 0
         n_v_only = 0
         for v in v_rows:
-            vt = v.date_time  # 'YYYY-MM-DD HH:MM:SS'
+            vt = v.date_time
             base = datetime.strptime(vt, "%Y-%m-%d %H:%M:%S")
             secs = [(base + timedelta(seconds=delta)).strftime("%Y-%m-%d %H:%M:%S") for delta in (-2, -1, 0, 1, 2)]
 
@@ -144,4 +144,4 @@ if __name__ == "__main__":
     start = end - timedelta(days=30)
     start_str = start.strftime("%Y-%m-%d %H:%M:%S")
     end_str   = end.strftime("%Y-%m-%d %H:%M:%S")
-    match_and_merge(start_str, end_str, min_mag=2.7)
+    match_and_merge(start_str, end_str, min_mag=3.0)

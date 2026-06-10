@@ -517,6 +517,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 
   return (
     <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
+      {vertical && <span className="vertical-letter-label">T</span>}
       <div className="timeline-slider" ref={sliderRef}>
         <div
           className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : 'colored'}`}

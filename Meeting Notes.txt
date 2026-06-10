@@ -1,3 +1,12 @@
+# src files → frontend/ (not frontend/src)
+scp -r "F:\iceland-quake-monitoring-leaflet-deploy-test\frontend\src" mfs7@pluto:~/iceland-quake/frontend/
+
+# then SSH into pluto and rebuild
+kill $(cat /home/mfs7/iceland-quake/server.pid)
+bash deploy.sh
+
+--------------------------------------------------
+
 The site is live at http://pluto.cs.hi.is/mpgv/.
 ----------------------------------------------
 after every change locally and after scp to pluto
@@ -9,31 +18,29 @@ bash ~/iceland-quake/stop.sh && bash ~/iceland-quake/deploy.sh
 ----------------------------------------
 Then future deploys on the server are just bash deploy.sh
 ------------------------------------------------
-For true 1000 concurrent users you'd need:
-
-Sudo — nginx caching for tiles/sprites/fonts (those never need to hit Python)
-PostgreSQL instead of SQLite
-A CDN or object storage for the .pmtiles file
--------------------------------------------------
-change other 3 maps too (if needed)
-----------------------------
-
 
 fix the front-end maps screenshots in the documentation. 
 Second, fix the flowcharts, diagrams, according to the new map methodology, 
 and fix the deployment methodology that I have used right now in the documentation.
 
+---------------
+
 code/comments fix
 
+-------------------------------------------------
+For true 1000 concurrent users you'd need:
 
-------------------------------------------------
-
+Sudo — nginx caching for tiles/sprites/fonts (those never need to hit Python)
+PostgreSQL instead of SQLite
+-------------------------------------------------
+change other 3 maps too (maybe)
+----------------------------
 deployment of webapp on local server (done) and a proper host (talk to met office)
 --------------------------------------
 after deployment stress test through students in department (to do)
 ---------------------------------------------
 
-fix map for all kind of screens, tabs to laptops to screens to bigger screens, when opened in browser (not just hdmi
+fix map for all kind of screens, tabs to laptops to screens to bigger screens, when opened in browser (with hdmi it's fine)
 
 ------------------------------------------------------------)
 rate limiting (not applied yet) -------------------------- 
@@ -51,4 +58,4 @@ marker rendering performance (~297 MB, slow pan/zoom locally)
   - observed memory improvement: browser tab usage dropped from about 297 MB to about 66-70 MB; hovering over the webapp tab now shows around 66 MB
   - result: improved marker rendering quality, smoother pan/zoom behaviour, and faster overall map rendering
 
-.md files and documentation updated to reflect circular L.circleMarker (fixed 5 px radius) — square marker references removed from README, frontend README, SECURITY, stress_test, and LaTeX thesis documentation
+.md files and documentation updated to reflect circular L.circleMarker (fixed 5 px radius) — square marker references removed from README, SECURITY, and LaTeX thesis documentation

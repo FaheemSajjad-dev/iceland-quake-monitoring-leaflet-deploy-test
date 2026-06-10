@@ -1,3 +1,9 @@
+"""
+Fetch Icelandic volcano metadata from the EPOS API and store in SQLite.
+
+Tries the current endpoint first, falls back to /v1/ if unavailable.
+Normalises field names across different API response schemas.
+"""
 import os
 import re
 import time

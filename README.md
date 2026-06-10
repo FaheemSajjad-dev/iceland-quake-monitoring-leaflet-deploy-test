@@ -17,7 +17,7 @@ This is the **Leaflet clone** of the original Google Maps version — no API key
 | Layer | Technology |
 |---|---|
 | Frontend | React 18 + Vite, react-leaflet 4, leaflet.heat |
-| Map tiles | Self-hosted PMTiles (MapLibre GL) · Esri World Imagery · Esri World Dark Gray |
+| Map tiles | OpenFreeMap Positron (MapLibre GL) · Esri World Imagery · IMO Terrain · Esri World Dark Gray |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite (WAL mode) |
 | Tests | pytest (backend) · Vitest + Testing Library (frontend) |
@@ -75,9 +75,9 @@ The **Heatmap** is the 4th map type, designed for density analysis rather than i
 
 | Component | Detail |
 |---|---|
-| Base tile | Esri World Dark Gray Base (no-labels variant) |
+| Base tile | Esri World Dark Gray Base (`World_Dark_Gray_Base`) — no-labels variant |
 | Heat overlay | `leaflet.heat` — count-based density with small magnitude boost |
-| Labels tile | Esri World Dark Gray Reference in a Leaflet `Pane` at z-index 650, rendered above the heat |
+| Labels tile | Esri World Dark Gray Reference (`World_Dark_Gray_Reference`) in a Leaflet `Pane` at z-index 650, rendered above the heat |
 
 **Heatmap weight:** every earthquake counts equally (weight 1.0); events M 4–5 get a small boost (1.15) and M 5+ get 1.3 — density drives the visualization, not magnitude alone.
 
@@ -120,7 +120,7 @@ iceland-quake-monitoring-leaflet/
 
 ## Running Locally
 
-**Backend** (port 5002 by default):
+**Backend** (port 5001):
 ```bash
 backend/venv/Scripts/python.exe backend/app.py
 ```
@@ -144,7 +144,7 @@ Open [http://localhost:5174](http://localhost:5174).
    ```bash
    # In backend/app.py, line 477: change debug=True → debug=False
    # Then run with gunicorn (Linux/macOS) instead of the Flask dev server:
-   gunicorn -b 0.0.0.0:5002 app:app --chdir backend
+   gunicorn -b 0.0.0.0:5001 app:app --chdir backend
    ```
 
 2. **Frontend** — build static assets and serve them:
@@ -203,24 +203,28 @@ Key optimisations applied to the frontend:
 
 ---
 
-## Map Tile Licensing — Important for Production Deployment
+## Map Tile Licensing
 
-The current tile setup uses two providers; the licensing situation differs per layer.
+The roadmap layer uses OpenFreeMap Positron through MapLibre GL; satellite and dark/heatmap layers use Esri's ArcGIS CDN, and Terrain uses IMO raster tiles.
 
-| Layer | Provider | Development use | Production requirement |
-|---|---|---|---|
-| Roadmap | Self-hosted PMTiles (OpenStreetMap-derived, served locally via MapLibre GL) | No external CDN — fully self-hosted | **No changes required.** ODbL geodata, self-served via HTTP range requests from the bundled `iceland.pmtiles` file. |
-| Satellite | `server.arcgisonline.com` (Esri World Imagery) | Free for dev/personal | Requires an **Esri licence** for government / production use |
-| Dark mode + Heatmap base | `server.arcgisonline.com` (Esri World Dark Gray Base/Reference) | Free for dev/personal | Same Esri licence requirement as satellite |
+| Layer | Provider | Notes |
+|---|---|---|
+| Roadmap | OpenFreeMap Positron (MapLibre GL, OpenStreetMap-derived) | Vector style loaded from `tiles.openfreemap.org/styles/positron` |
+| Satellite | Esri `World_Imagery` (`server.arcgisonline.com`) | Free for dev/personal use |
+| Dark mode | Esri `World_Dark_Gray_Base` (`server.arcgisonline.com`) | Replaces CartoDB Dark Matter |
+| Heatmap base | Esri `World_Dark_Gray_Base` | No-labels variant; heatmap renders above |
+| Heatmap labels | Esri `World_Dark_Gray_Reference` | Labels-only, in a Leaflet Pane at z-index 650 |
 
-The roadmap layer has **no third-party tile dependency** — tiles are fetched locally from the bundled file and OSM geodata is free under ODbL.
+No API key is required for the Esri `server.arcgisonline.com` public CDN endpoints or OpenFreeMap Positron.
 
-### Recommended actions before handover to IMO
+### For production deployment at IMO
 
-1. **Check whether IMO already holds an Esri licence** — many national meteorological offices have agreements with Esri or a national mapping agency.
-2. **Free ArcGIS Developer account** — register at [developers.arcgis.com](https://developers.arcgis.com), obtain a free API key (2 million tile requests/month free), and append `?token=YOUR_KEY` to the Esri tile URLs.
-3. **IMO's own ArcGIS infrastructure** — IMO runs ArcGIS Server at `luk.vedur.is/arcgis/rest/services/`. If they provide a matching tile endpoint, swap the URLs in `TILE_LAYERS` in `MapComponent.jsx`.
-4. **Swap tile URLs in one place** — all tile layer URLs are defined in the `TILE_LAYERS` constant in `frontend/src/components/MapComponent.jsx`. Swapping satellite/dark providers requires changing only those URL strings.
+Esri's public CDN endpoints are technically classed as non-commercial/evaluation use without an account. For a formally licensed deployment, one of the following is recommended:
+
+1. **Free ArcGIS Developer account** — register at [developers.arcgis.com](https://developers.arcgis.com), obtain a free API key (2 million tile requests/month free), and append `?token=YOUR_KEY` to the Esri tile URLs.
+2. **IMO's own ArcGIS infrastructure** — IMO runs ArcGIS Server at `luk.vedur.is/arcgis/rest/services/`. If they provide a matching tile endpoint, swap the URLs in `TILE_LAYERS` in `MapComponent.jsx`.
+
+All tile URLs are defined in a single `TILE_LAYERS` constant in `frontend/src/components/MapComponent.jsx`. Changing providers requires updating only those URL strings.
 
 The data APIs (`hraun.vedur.is`, `api.vedur.is`) are IMO's own services and require no licensing changes.
 

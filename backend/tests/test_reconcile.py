@@ -37,7 +37,7 @@ def add_s(event_id, dt="2023-06-15 12:00:01", lat=64.005, lon=-22.005, depth=6.0
 
 def run_merge():
     """Shorthand: run match_and_merge over the test day window."""
-    rec.match_and_merge(START, END, min_mag=2.7)
+    rec.match_and_merge(START, END, min_mag=3.0)
 
 def merged_rows():
     """Return all EarthquakeMerged rows."""
@@ -172,10 +172,10 @@ def test_depth_policy_s_uses_skjalftalisa_depth(db_session):
 
 
 # ---------------------------------------------------------------------------
-# 10. min_mag filter: V event below 2.7 should NOT appear in merged
+# 10. min_mag filter: V event below 3.0 should NOT appear in merged
 # ---------------------------------------------------------------------------
 def test_v_below_min_mag_not_merged(db_session):
-    add_v(mw=2.5)  # below 2.7 threshold
+    add_v(mw=2.5)  # below 3.0 threshold
     run_merge()
     rows = merged_rows()
     assert len(rows) == 0

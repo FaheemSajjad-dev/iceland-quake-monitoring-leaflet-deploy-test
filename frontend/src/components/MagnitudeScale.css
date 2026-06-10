@@ -30,14 +30,24 @@
 
 .scale-bar-vertical {
   width: 10px;
-  height: 200px;
+  height: calc(100% - 16px); /* 8px thumb radius trimmed from each end */
   border-radius: 5px;
-  margin: 5px 0;
+  margin: 8px 0;
   transition: background 160ms ease;
 }
 
 .scale-bar-vertical.scale-bar-colored {
-  background: linear-gradient(to top, #8aa0c0, #5a7098, #344870, #1a2450, #060820);
+  background: linear-gradient(to top, #f5a623, #e07030, #c43c28, #8f1a1a, #4a0a0a);
+}
+
+.scale-letter-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #333;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  margin-bottom: 2px;
+  user-select: none;
 }
 
 .magnitude-scale.vertical .min-value,
@@ -116,14 +126,14 @@
 /* Current Filter Value */
 .current-filter {
   position: absolute;
-  right: 50px;
+  left: 50px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px 8px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  font-size: 12px;
+  background: transparent;
+  padding: 2px 3px;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 10px;
   font-weight: bold;
   white-space: nowrap;
 }
