@@ -439,10 +439,18 @@
   filter: blur(1.5px);
 }
 
+.leaflet-bottom.leaflet-right {
+  transition: right 0.25s ease;
+}
+
+.map-container.right-panel-open .leaflet-bottom.leaflet-right {
+  right: 203px;
+}
+
 /* Align scale bar bottom with the volcano/grid toggles (bottom: 39px); right matches left components (20px) */
 .leaflet-bottom.leaflet-right .leaflet-control-scale {
   margin-bottom: 29px; /* Leaflet adds ~10px default bottom padding → 10 + 29 = 39px */
-  margin-right: calc(10px + var(--right-panel-shift, 0px));  /* Leaflet default margin adds another 10px */
+  margin-right: 10px;  /* Leaflet default margin adds another 10px */
   transition: margin-right 0.25s ease;
 }
 
@@ -457,6 +465,6 @@
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
   margin-bottom: -36px;
-  margin-right: calc(14px + var(--right-panel-shift, 0px));
+  margin-right: 14px;
   transition: margin-right 0.25s ease;
 }
