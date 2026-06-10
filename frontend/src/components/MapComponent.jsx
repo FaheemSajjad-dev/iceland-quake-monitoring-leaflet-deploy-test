@@ -921,7 +921,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
         L.polyline(coords, { color, weight, opacity, interactive: false }).addTo(map)
       );
     };
-    const addLabel = (lat, lng, text, color, size, fontWeight = "bold", iconAnchor = [0, 13]) => {
+    const addLabel = (lat, lng, text, color, size, fontWeight = "400", iconAnchor = [0, 13]) => {
       gridRef.current.push(
         L.marker([lat, lng], {
           icon: L.divIcon({
@@ -953,17 +953,17 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
 
     for (let lat = startLat; lat <= endLat; lat += latGridSpacing) {
       if (lat < -85 || lat > 85) continue;
-      addLine([[lat, extW], [lat, extE]], mainColor, 1, 0.8);
+      addLine([[lat, extW], [lat, extE]], mainColor, 0.5, 0.5);
 
       const labelY = map.latLngToContainerPoint([lat, center.lng]).y + LAT_LABEL_Y_OFFSET;
       if (labelY < 24 || labelY > mapSize.y - 38) continue;
       const labelPoint = labelLatLngFromPoint(LAT_LABEL_X, labelY);
       addLabel(labelPoint.lat, labelPoint.lng,
         `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-        lblColor, "10px", "bold", [0, 13]);
+        lblColor, "10px", "400", [0, 13]);
     }
     for (let lng = startLng; lng <= endLng; lng += lngGridSpacing) {
-      addLine([[extS, lng], [extN, lng]], mainColor, 1, 0.8);
+      addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
 
       const labelX = map.latLngToContainerPoint([center.lat, lng]).x;
       if (labelX < 210 || labelX > mapSize.x - 40) continue;
@@ -972,7 +972,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
       const labelPoint = labelLatLngFromPoint(labelX, LNG_LABEL_Y);
       addLabel(labelPoint.lat, labelPoint.lng,
         `${lng.toFixed(labelDecimals)}\u00b0${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
-        lblColor, "10px", "bold", [20, 13]);
+        lblColor, "10px", "400", [20, 13]);
     }
     if (subLngGridSpacing !== null && subLatGridSpacing !== null) {
       const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
