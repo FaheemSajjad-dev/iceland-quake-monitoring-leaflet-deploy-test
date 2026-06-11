@@ -163,24 +163,23 @@ const About = ({ onClose }) => {
             </button>
           </section>
 
-          <section className="about-section about-two-column">
-            <div>
-              <h3>{t("about_contact")}</h3>
-              <p>{t("about_contact_desc")}</p>
-              <ul className="contact-list">
-                <li><a href="mailto:mfs7@hi.is">mfs7@hi.is</a></li>
-                <li><a href="mailto:jonasson@hi.is">jonasson@hi.is</a></li>
-                <li><a href="mailto:esa@hi.is">esa@hi.is</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3>{t("about_credits")}</h3>
-              <ul>
-                <li>Muhammad Faheem Sajjad</li>
-                <li>Kristjan Jonasson</li>
-                <li>Esa Olavi Hyytia</li>
-              </ul>
-            </div>
+          <section className="about-section">
+            <h3>{t("about_contact")}</h3>
+            <p>{t("about_contact_desc")}</p>
+            <ul className="contact-list">
+              <li>
+                <span className="contact-name">Muhammad Faheem Sajjad</span>
+                <a className="contact-email" href="mailto:mfs7@hi.is">mfs7@hi.is</a>
+              </li>
+              <li>
+                <span className="contact-name">Kristjan Jonasson</span>
+                <a className="contact-email" href="mailto:jonasson@hi.is">jonasson@hi.is</a>
+              </li>
+              <li>
+                <span className="contact-name">Esa Olavi Hyytia</span>
+                <a className="contact-email" href="mailto:esa@hi.is">esa@hi.is</a>
+              </li>
+            </ul>
           </section>
 
           <section className="about-section disclaimer">

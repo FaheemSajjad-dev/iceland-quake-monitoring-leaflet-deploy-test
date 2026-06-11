@@ -142,13 +142,31 @@
   line-height: 1.5;
 }
 
-.contact-list a,
+.contact-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.contact-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.contact-name {
+  color: #374151;
+  font-weight: 600;
+}
+
+.contact-email,
 .about-section a {
   color: #0b57d0;
   text-decoration: none;
 }
 
-.contact-list a:hover,
+.contact-email:hover,
 .about-section a:hover {
   text-decoration: underline;
 }
