@@ -31,7 +31,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 ## Data Sources
 
 - **MPGV** - public earthquake listings scraped from `hraun.vedur.is/ja/Mpgv/`
-- **Skjalftalisa API** - detailed event metadata from the Icelandic Met Office
+- **Quakes API** - detailed event metadata from the Icelandic Met Office
 - **EPOS API** - volcano catalogue and ShakeMap information from the Icelandic Met Office
 - **EGDI/HIKE WFS** - Iceland fault and fissure linework filtered to onshore records
 
@@ -39,14 +39,14 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 
 | Dataset | How it updates |
 |---|---|
-| Earthquakes | Backend scheduler runs every 3 minutes: scrape MPGV, fetch recent Skjalftalisa rows, reconcile merged catalogue |
+| Earthquakes | Backend scheduler runs every 3 minutes: scrape MPGV, fetch recent Quakes API rows, reconcile merged catalogue |
 | Volcanoes | Backend scheduler refreshes EPOS volcano metadata every 3 minutes; frontend reloads `/volcanoes` every 3 minutes |
 | Faults / fissures | Frontend fetches EGDI/HIKE WFS GeoJSON when the overlay is enabled and refreshes it every 3 minutes while visible |
 | ShakeMaps | Looked up on demand when an earthquake info card is opened |
 
 ## Reconciliation Algorithm
 
-Each MPGV event is matched against Skjalftalisa records using three thresholds:
+Each MPGV event is matched against Quakes API records using three thresholds:
 
 | Criterion | Threshold |
 |---|---|
@@ -54,7 +54,7 @@ Each MPGV event is matched against Skjalftalisa records using three thresholds:
 | Distance | < 10 km |
 | Magnitude difference | < 3.0 |
 
-When a unique match is found, the Skjalftalisa location and depth replace the MPGV values. The frontend and CSV export use the merged table and keep the public display threshold at **M >= 3.0**.
+When a unique match is found, the Quakes API location and depth replace the MPGV values. The frontend and CSV export use the merged table and keep the public display threshold at **M >= 3.0**.
 
 ## Features
 
@@ -99,7 +99,7 @@ iceland-quake-monitoring-leaflet/
 |-- backend/
 |   |-- app.py                  # Flask API, scheduler, SQLAlchemy models
 |   |-- scrape.py               # MPGV HTML scraper
-|   |-- skjalftalisa_client.py  # Skjalftalisa API client
+|   |-- skjalftalisa_client.py  # Quakes API client
 |   |-- reconcile.py            # Merge algorithm
 |   |-- volcano_scraper.py      # EPOS volcano ingestion
 |   |-- data/                   # SQLite database, gitignored

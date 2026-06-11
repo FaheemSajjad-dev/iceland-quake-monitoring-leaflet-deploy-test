@@ -16,7 +16,7 @@ DEFAULT_MIN_MAG = 3.0
 
 
 def _fmt_iso(dt):
-    """Format datetime as ISO 8601 UTC string for API query params."""
+    """Format datetime as ISO 8601 UTC string for the Quakes API."""
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     dt = dt.astimezone(timezone.utc).replace(microsecond=0)
@@ -54,28 +54,25 @@ def _safe_float(x):
 
 
 def _parse_iso_to_utc_str(t_val):
-    """Parse ISO 8601 timestamp (e.g. '2026-06-01T13:45:11.431726Z') to 'YYYY-MM-DD HH:MM:SS'."""
+    """Parse ISO 8601 timestamp to 'YYYY-MM-DD HH:MM:SS' in UTC."""
     if not isinstance(t_val, str):
         return None
     try:
-        t_val = t_val.replace("Z", "+00:00")
-        # strip fractional seconds while preserving timezone offset
-        if "." in t_val:
-            base, rest = t_val.split(".", 1)
-            for sep in ["+", "-"]:
-                if sep in rest:
-                    t_val = base + sep + rest.split(sep, 1)[1]
-                    break
-            else:
-                t_val = base + "+00:00"
-        dt = datetime.fromisoformat(t_val).astimezone(timezone.utc)
+        normalized = t_val.strip().replace("Z", "+00:00")
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return _fmt_utc(dt)
     except Exception:
         return None
 
 
-def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG):
-    """Fetch earthquakes from the Quakes API as GeoJSON."""
+def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG, fields=None):
+    """Fetch earthquakes from the IMO Quakes API as GeoJSON.
+
+    The function name is kept for compatibility with the rest of the backend;
+    the old Skjalftalisa endpoint was replaced by https://api.vedur.is/quakes/.
+    """
     if start_time_utc.tzinfo is None:
         start_time_utc = start_time_utc.replace(tzinfo=timezone.utc)
     if end_time_utc.tzinfo is None:
@@ -87,23 +84,30 @@ def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG):
 
     params = {
         "start_time": _fmt_iso(start_time_utc),
-        "end_time":   _fmt_iso(end_time_utc),
-        "size_min":   float(size_min),
-        "format":     "json",
+        "end_time": _fmt_iso(end_time_utc),
+        "size_min": float(size_min),
+        "format": "json",
     }
 
     r = _get_with_retry(API_URL, params=params)
-    features = r.json().get("features") or []
+    payload = r.json()
+    features = payload.get("features") if isinstance(payload, dict) else []
+    if not isinstance(features, list):
+        return []
 
     results = []
     for feat in features:
-        props  = feat.get("properties") or {}
-        coords = (feat.get("geometry") or {}).get("coordinates") or []
+        if not isinstance(feat, dict):
+            continue
+
+        props = feat.get("properties") or {}
+        geometry = feat.get("geometry") or {}
+        coords = geometry.get("coordinates") or []
 
         if len(coords) < 2:
             continue
 
-        lon = _safe_float(coords[0])   # GeoJSON is [lon, lat]
+        lon = _safe_float(coords[0])  # GeoJSON is [lon, lat]
         lat = _safe_float(coords[1])
         dep = _safe_float(props.get("depth"))
         mag = _safe_float(props.get("magnitude"))
@@ -113,11 +117,11 @@ def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG):
             continue
 
         results.append({
-            "event_id":  props.get("event_id"),
-            "time":      t_str,
-            "lat":       lat,
-            "long":      lon,
-            "depth":     dep,
+            "event_id": props.get("event_id"),
+            "time": t_str,
+            "lat": lat,
+            "long": lon,
+            "depth": dep,
             "magnitude": mag,
         })
 
@@ -125,18 +129,18 @@ def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG):
 
 
 def fetch_last_n_days(n_days=30, size_min=DEFAULT_MIN_MAG):
-    end   = datetime.now(timezone.utc).replace(microsecond=0)
+    end = datetime.now(timezone.utc).replace(microsecond=0)
     start = end - timedelta(days=n_days)
     return fetch_skjalftalisa(start, end, size_min=size_min)
 
 
 def store_skjalftalisa_rows(rows):
-    """Upsert rows by event_id."""
+    """Upsert Quakes API rows by event_id."""
     if not rows:
         return
 
     inserted = 0
-    updated  = 0
+    updated = 0
 
     with app.app_context():
         for r in rows:
@@ -148,38 +152,38 @@ def store_skjalftalisa_rows(rows):
             if rec:
                 changed = (
                     rec.date_time != r["time"] or
-                    rec.latitude  != r["lat"]  or
+                    rec.latitude != r["lat"] or
                     rec.longitude != r["long"] or
-                    rec.depth     != r.get("depth") or
+                    rec.depth != r.get("depth") or
                     rec.magnitude != r.get("magnitude")
                 )
                 if changed:
                     rec.date_time = r["time"]
-                    rec.latitude  = r["lat"]
+                    rec.latitude = r["lat"]
                     rec.longitude = r["long"]
-                    rec.depth     = r.get("depth")
+                    rec.depth = r.get("depth")
                     rec.magnitude = r.get("magnitude")
                     updated += 1
             else:
                 db.session.add(EarthquakeSRaw(
-                    event_id = ev_id,
-                    date_time= r["time"],
-                    latitude = r["lat"],
-                    longitude= r["long"],
-                    depth    = r.get("depth"),
-                    magnitude= r.get("magnitude"),
+                    event_id=ev_id,
+                    date_time=r["time"],
+                    latitude=r["lat"],
+                    longitude=r["long"],
+                    depth=r.get("depth"),
+                    magnitude=r.get("magnitude"),
                 ))
                 inserted += 1
 
         db.session.commit()
 
     if inserted > 0 or updated > 0:
-        print(f"Inserted {inserted} | Updated {updated} Skjálftalísa rows.")
+        print(f"Inserted {inserted} | Updated {updated} Quakes API rows.")
 
 
 def backfill_skjalftalisa_since_2020(size_min=2.0):
     start = datetime(2020, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
-    end   = datetime.now(timezone.utc).replace(microsecond=0)
+    end = datetime.now(timezone.utc).replace(microsecond=0)
 
     total = 0
     cur_start = start

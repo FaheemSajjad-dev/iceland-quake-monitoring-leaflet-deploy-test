@@ -127,7 +127,7 @@ class Volcano(db.Model):
 
 
 class EarthquakeSRaw(db.Model):
-    """Skjálftalísa raw table (s)."""
+    """SkjÃ¡lftalÃ­sa raw table (s)."""
     __tablename__ = "earthquake_s_raw"
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String, unique=True, nullable=False)  # IMO id
@@ -142,7 +142,7 @@ class EarthquakeSRaw(db.Model):
 
 
 class EarthquakeMerged(db.Model):
-    """Display table (merged v⊕s per matching rules)."""
+    """Display table (merged vâŠ•s per matching rules)."""
     __tablename__ = "earthquake_merged"
     id = db.Column(db.Integer, primary_key=True)
     date_time = db.Column(db.String, index=True, nullable=False)  # keep MPGV time
@@ -172,7 +172,7 @@ class ShakeMapLink(db.Model):
     sm_mag  = db.Column(db.Float)
     sm_depth= db.Column(db.Float)
 
-    dt_sec  = db.Column(db.Float)   # |Δt| seconds to chosen shakemap
+    dt_sec  = db.Column(db.Float)   # |Î”t| seconds to chosen shakemap
     dist_km = db.Column(db.Float)   # distance to chosen shakemap
     dm      = db.Column(db.Float)   # Mw_v - M_shakemap
 
@@ -196,7 +196,7 @@ _bootstrap_started = False
 
 # Simple in-memory cache for /earthquakes (invalidated after each scrape cycle)
 _eq_cache: dict = {"data": None, "ts": 0.0}
-_EQ_CACHE_TTL = 60  # seconds — frontend polls every 3 min, so 60s is fine
+_EQ_CACHE_TTL = 60  # seconds â€” frontend polls every 3 min, so 60s is fine
 
 # -----------------------------------------------------------------------------
 # Scheduled job
@@ -218,7 +218,7 @@ def _refresh_derived_data() -> None:
         rows = fetch_last_n_days(7, size_min=3.0)
         store_skjalftalisa_rows(rows)
     except Exception as e:
-        print(f"Skjalftalisa fetch failed: {e}")
+        print(f"Quakes API fetch failed: {e}")
 
     try:
         refresh_volcanoes(DB_PATH)
@@ -236,7 +236,7 @@ def scheduled_scrape() -> None:
     """
     Every 3 minutes:
       1) Scrape MPGV (updates Earthquake)
-      2) Fetch recent Skjálftalísa data (last 7 days, rolling)
+      2) Fetch recent Quakes API data (last 7 days, rolling)
       3) Reconcile (write EarthquakeMerged)
     """
     with app.app_context():
@@ -259,7 +259,7 @@ def scheduled_scrape() -> None:
             rows = fetch_last_n_days(7, size_min=3.0)
             store_skjalftalisa_rows(rows)
         except Exception as e:
-            print(f"Skjálftalísa fetch failed: {e}")
+            print(f"Quakes API fetch failed: {e}")
 
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         start = "2020-06-01 00:00:00"
@@ -483,7 +483,7 @@ def run_reconcile():
 
 @app.route("/health", methods=["GET"])
 def health():
-    """Row counts for each table — quick sanity check."""
+    """Row counts for each table â€” quick sanity check."""
     with app.app_context():
         return jsonify({
             "MPGV": Earthquake.query.count(),
@@ -494,7 +494,7 @@ def health():
 
 # --- Simple EPOS shakemap lookup for one event -------------------------------
 def _km_distance(lat1, lon1, lat2, lon2):
-    # Haversine distance (km) — local copy so this module has no import dependency on reconcile.py
+    # Haversine distance (km) â€” local copy so this module has no import dependency on reconcile.py
     R = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dlat = p2 - p1
