@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-The dev server opens at [http://localhost:5174](http://localhost:5174). It expects the Flask backend on port 5001.
+The dev server opens at `http://localhost:5174`. It expects the Flask backend on port 5001.
 
 ## Testing
 
@@ -43,11 +43,22 @@ src/
 | Gray | CARTO light basemap |
 | Heatmap | CARTO dark base with leaflet.heat density overlay |
 
+The **Map** layer depends on WebGL through MapLibre GL. Chrome, Safari, or Edge must allow WebGL/hardware graphics for that vector layer to initialize.
+
 ## Live Overlays
 
 - Earthquakes are reloaded from the backend every 3 minutes.
 - Volcano metadata is reloaded every 3 minutes and is refreshed by the backend scheduler.
 - Fault and fissure linework is fetched from EGDI/HIKE WFS when enabled and refreshes every 3 minutes while visible.
+
+## Current Map UI
+
+- Earthquake points use Leaflet `L.circleMarker` canvas rendering for smoother panning and zooming.
+- The base layer label is **Map**.
+- The right-side volcano panel shifts the About button and bottom-right Leaflet controls so the scale and fault legend stay visible.
+- The faults legend shows solid red faults and dotted red fissures.
+- The lat/lon grid uses Iceland-focused spacing, one-decimal degree labels, fixed latitude label anchoring, and unlabeled latitude midlines.
+- Earthquake and volcano info cards open at the upper-left map work area.
 
 ## Heatmap
 

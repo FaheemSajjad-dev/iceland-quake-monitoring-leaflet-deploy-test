@@ -1,169 +1,75 @@
 # Deployment Overview
 
-This document records how this project was deployed, how the live service behaves, and how to monitor it.
+This document records how this project is deployed, how the live service behaves, and how to monitor it.
 
-## Live deployment
+## Current Live Deployment
 
-- Platform: Render
-- Service type: single `Web Service` created from `render.yaml`
-- Live URL: `https://iceland-quake-monitoring-leaflet-deploy.onrender.com`
+- Platform: University server on Pluto
+- Live URL: `http://pluto.cs.hi.is/mpgv/`
+- SSH host: `pluto.cs.hi.is`
+- SSH user: `mfs7`
+- Server project path: `~/iceland-quake`
+- Backend port: `6000`
 - Source repo: `FaheemSajjad-dev/iceland-quake-monitoring-leaflet-deploy-test`
 
-## Deployment model
+The deploy project at `F:\iceland-quake-monitoring-leaflet-deploy-test` is the local source used for Pluto uploads.
 
-This deployment uses one Render service for both backend and frontend:
+## Pluto Deployment Model
 
-- Flask backend runs from `backend/app.py`
-- React frontend is built from `frontend/`
-- Flask serves the built frontend from `frontend/dist`
-- API and frontend are served from the same origin in production
+- Flask backend runs from `backend/app.py`.
+- React frontend is built from `frontend/`.
+- Flask serves the built frontend from `frontend/dist`.
+- API and frontend are served from the same origin under the Pluto site.
+- `deploy.sh` installs dependencies, builds the frontend, stops the existing Gunicorn process, and starts Gunicorn on port 6000.
+- `stop.sh` stops the running server using `server.pid`.
 
-This avoids CORS and split-host complexity for testing.
+## Standard Update Flow
 
-## Render configuration
+1. Apply and verify changes in the main F project.
+2. Copy the same relevant changes to the deploy F project.
+3. Mirror changed files to the G recovery folders.
+4. Run backend and frontend tests locally.
+5. Build both frontends locally.
+6. Commit and push both F repositories.
+7. Upload changed deploy files to Pluto.
+8. On Pluto:
 
-Render reads configuration from `render.yaml`.
+```bash
+cd ~/iceland-quake
+./deploy.sh
+```
 
-- Build command:
-  - `pip install -r backend/requirements-render.txt`
-  - `npm ci --prefix frontend`
-  - `npm run build --prefix frontend`
-- Start command:
-  - `gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 1`
-- Health check path:
-  - `/health`
+When root-level deploy files change, upload only the root files that changed. When frontend or backend files change, upload the matching frontend/backend files or directories while excluding `node_modules`.
 
-## How we deployed it
+## Pluto Runtime Files
 
-1. Prepared the repo for a single-service deployment.
-2. Added frontend static serving to the Flask app.
-3. Added `render.yaml` for Blueprint deployment.
-4. Pushed the project to a new GitHub repo.
-5. In Render, created a new Blueprint service from the GitHub repo.
-6. Let Render build and deploy the app from `main`.
+- `server.pid` stores the running Gunicorn PID.
+- `server.log` stores runtime logs.
+- `deploy.sh` restarts the app.
+- `stop.sh` stops the app.
 
-## Production behavior
-
-### Frontend and backend
-
-- The frontend is built during Render deploys.
-- Flask serves the built SPA and also serves the API.
-- Production frontend requests use the same origin.
-
-### Background services
-
-- APScheduler runs inside the deployed backend process.
-- The app periodically scrapes earthquake data and refreshes derived data.
-
-### Data bootstrap
-
-Because Render free does not provide persistent disk storage, the SQLite database can be reset after:
-
-- redeploys
-- restarts
-- free-tier service sleep/wake cycles
-
-To handle that, the backend includes bootstrap behavior:
-
-- If merged earthquake data is missing, the app rebuilds it.
-- If base MPGV earthquake data is missing, the app scrapes it again.
-- Volcano data is also refreshed when missing.
-
-This means the first request after a fresh deploy may be slower while data is repopulated.
-
-## Known free-tier limitations
-
-- Render free services spin down after inactivity.
-- The first request after sleep can be slow.
-- SQLite data is not durable on free web services.
-- Performance and availability are suitable for testing, not robust production hosting.
-
-## Analytics
-
-Cloudflare Web Analytics was added to the frontend.
-
-### How it is enabled
-
-- Frontend support is implemented in `frontend/src/main.jsx`
-- CSP allows the Cloudflare beacon in `frontend/index.html`
-- Render environment variable used:
-  - `VITE_CLOUDFLARE_ANALYTICS_TOKEN`
-
-Do not store the actual token in the repository.
-
-### What can be monitored
-
-In Cloudflare Web Analytics, monitor:
-
-- visits
-- page views
-- countries
-- browsers
-- page load time
-- Core Web Vitals
-  - LCP
-  - INP
-  - CLS
-
-## Performance
-
-At the time of setup, the deployed site showed:
-
-- page load time around `887 ms`
-- `LCP` rated `Good`
-- `INP` rated `Good`
-- `CLS` rated `Good`
-
-This indicates the testing deployment was performing well at that point in time. These numbers can vary depending on traffic, cold starts, and client network conditions.
-
-## Monitoring
-
-### Render
-
-Use Render for backend/service monitoring:
-
-- `Events` for deploy history
-- `Logs` for runtime errors
-- `Metrics` for request and resource trends
-- `/health` for quick service state checks
-
-### Cloudflare
-
-Use Cloudflare Web Analytics for visitor and page-performance metrics.
-
-## Troubleshooting
-
-### If the live site shows no earthquake data
+## Health Checks
 
 Check:
 
-- `https://iceland-quake-monitoring-leaflet-deploy.onrender.com/health`
-- `https://iceland-quake-monitoring-leaflet-deploy.onrender.com/earthquakes`
+- `http://pluto.cs.hi.is/mpgv/`
+- `http://pluto.cs.hi.is/mpgv/health` if routed by the server configuration
+- `~/iceland-quake/server.log` on Pluto
 
-If the database was reset, the first request may trigger data bootstrap.
+## Legacy Render Notes
 
-### If local works but deployed does not
-
-Check:
-
-- latest GitHub commit was deployed on Render
-- frontend bundle updated after deploy
-- Render service logs
-- browser cache
-
-### If analytics does not appear
-
-Check:
-
-- `VITE_CLOUDFLARE_ANALYTICS_TOKEN` is set in Render
-- latest commit was redeployed
-- Cloudflare Web Analytics site was created for the Render hostname
-
-## Related files
+This repository still contains Render configuration files for the earlier single-service Render deployment:
 
 - `render.yaml`
 - `RENDER_DEPLOY.md`
-- `backend/app.py`
 - `backend/requirements-render.txt`
-- `frontend/src/main.jsx`
-- `frontend/index.html`
+
+Those files are kept as deployment reference material, but Pluto is the current active deployment target.
+
+## Production Considerations
+
+- The app uses SQLite; consider PostgreSQL for true high-concurrency production use.
+- Review tile-provider licensing before formal public or institutional deployment.
+- Consider nginx/static caching for built assets, tiles, sprites, and fonts.
+- Consider rate limiting before wider public exposure.
+- MapLibre GL requires browser WebGL support for the vector Map layer.

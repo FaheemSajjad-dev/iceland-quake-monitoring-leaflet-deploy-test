@@ -1,17 +1,21 @@
-# Render Deploy
+# Render Deploy Reference
 
-This repo is configured for a single Render web service that serves both:
+This file documents the earlier Render setup. Pluto is currently the active deployment target for the live app.
+
+## Render Model
+
+The repo can be configured for a single Render web service that serves both:
 
 - the Flask API from `backend/app.py`
 - the built React frontend from `frontend/dist`
 
-## What Render uses
+## What Render Uses
 
 - Config file: `render.yaml`
 - Python deps: `backend/requirements-render.txt`
 - Start command: `gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 1`
 
-## Deploy steps
+## Render Deploy Steps
 
 1. Push this repo to GitHub.
 2. In Render, choose `New +` -> `Blueprint`.
@@ -26,10 +30,12 @@ This repo is configured for a single Render web service that serves both:
 - Render free web services do not provide persistent disk storage, so database contents can reset on redeploy/restart.
 - The scheduler stays enabled in deployment and runs inside the single Gunicorn worker.
 
-## Optional analytics
+## Current Active Deployment
 
-To enable Cloudflare Web Analytics, add this environment variable in Render:
+Use Pluto for the current live version:
 
-- `VITE_CLOUDFLARE_ANALYTICS_TOKEN`
-
-Use the token from your Cloudflare Web Analytics project, then redeploy.
+```bash
+ssh mfs7@pluto.cs.hi.is
+cd ~/iceland-quake
+./deploy.sh
+```

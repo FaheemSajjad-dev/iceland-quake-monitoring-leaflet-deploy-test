@@ -1,53 +1,53 @@
-The site is live at http://pluto.cs.hi.is/mpgv/.
-----------------------------------------------
-after every change locally and after scp to pluto
+Current live site: http://pluto.cs.hi.is/mpgv/
 
-ren 
+Current local/deploy workflow:
 
-bash ~/iceland-quake/stop.sh && bash ~/iceland-quake/deploy.sh
+1. Make and verify changes in F:\iceland-quake-monitoring-leaflet.
+2. Copy the same relevant changes to F:\iceland-quake-monitoring-leaflet-deploy-test.
+3. Mirror changed files to:
+   - G:\iceland-quake-monitoring-leaflet-recovered
+   - G:\iceland-quake-monitoring-leaflet-deploy-test-recovered
+4. Run tests/builds locally.
+5. Commit and push both F repositories to GitHub.
+6. Upload deploy-version changes to Pluto.
+7. On Pluto:
 
-----------------------------------------
-Then future deploys on the server are just bash deploy.sh
-------------------------------------------------
+   cd ~/iceland-quake
+   ./deploy.sh
 
-fix the front-end maps screenshots in the documentation. 
-Second, fix the flowcharts, diagrams, according to the new map methodology, 
-and fix the deployment methodology that I have used right now in the documentation.
+Current map/app state:
 
----------------
+- Base layer label is Map.
+- Earthquake markers use Leaflet L.circleMarker canvas rendering instead of DOM/SVG square markers.
+- Marker rendering memory and pan/zoom performance improved after moving away from many DOM marker nodes.
+- Volcano overlay opens a right-side panel.
+- About button, distance scale, and faults legend shift left when the right panel is open.
+- Faults overlay uses EGDI/HIKE WFS onshore Iceland records.
+- Fault legend uses solid red for faults and dotted red for fissures.
+- Lat/lon grid uses Iceland-focused spacing with one-decimal labels.
+- Main latitude labels are shown; extra latitude midlines are drawn unlabeled.
+- Longitude labels are anchored near the bottom with spacing to avoid overlap.
+- Earthquake and volcano info cards open near the upper-left map work area.
+- Magnitude scale focus ring has been suppressed.
 
-code/comments fix
+Known browser note:
 
--------------------------------------------------
-For true 1000 concurrent users you'd need:
+- The Map base layer uses MapLibre GL and requires WebGL.
+- If Chrome on a MacBook has WebGL disabled by hardware acceleration settings, browser policy, or graphics state, MapLibre can fail to initialize in that browser.
+- The temporary WebGL fallback/glacier-redraw patch was removed; the app currently keeps the normal MapLibre glacier rendering.
 
-Sudo â€” nginx caching for tiles/sprites/fonts (those never need to hit Python)
-PostgreSQL instead of SQLite
-Licensed public or institution-managed tile services for production map layers
--------------------------------------------------
-change other 3 maps too (maybe)
-----------------------------
-deployment of webapp on local server (done) and a proper host (talk to met office)
---------------------------------------
-after deployment stress test through students in department (to do)
----------------------------------------------
+Deployment notes:
 
-fix map for all kind of screens, tabs to laptops to screens to bigger screens, when opened in browser (with hdmi it's fine)
+- Pluto uses ~/iceland-quake as the active project folder.
+- deploy.sh installs dependencies, builds frontend assets, stops the old Gunicorn process, and starts the backend on port 6000.
+- Root-level deploy files such as deploy.sh, stop.sh, render.yaml, package files, and README files should be uploaded from the deploy F project when changed.
 
-------------------------------------------------------------)
-rate limiting (not applied yet) -------------------------- 
-                                                            |
-                                                            |
-                                                            |
-map layers discussion with MET office --------------------
+Production considerations still open:
 
-marker rendering performance (~297 MB, slow pan/zoom locally)
-  - currently ~1800 DOM markers (L.divIcon, one SVG per quake)
-  - changed earthquake markers from square SVG/divIcon markers to Leaflet L.circleMarker markers
-  - this was necessary because square markers relied on many separate DOM/SVG elements, which made pan/zoom rendering heavy and slowed the map locally
-  - L.circleMarker uses Leaflet's canvas rendering path, reducing marker rendering overhead and improving redraw speed
-  - trade-off: squares became circles, while marker colours and size scaling were kept the same
-  - observed memory improvement: browser tab usage dropped from about 297 MB to about 66-70 MB; hovering over the webapp tab now shows around 66 MB
-  - result: improved marker rendering quality, smoother pan/zoom behaviour, and faster overall map rendering
-
-.md files and documentation updated to reflect circular L.circleMarker (fixed 5 px radius) â€” square marker references removed from README, SECURITY, and LaTeX thesis documentation
+- Review tile-provider licensing before formal public or institutional deployment.
+- Discuss institution-managed tile services with the Meteorological Office if the app becomes a formal service.
+- For heavy public traffic, consider nginx/static caching for tiles, sprites, fonts, and built frontend assets.
+- For true high concurrency, consider PostgreSQL instead of SQLite.
+- Rate limiting is not currently applied.
+- Department/student stress testing remains a future validation step.
+- Additional screenshots and thesis diagrams should match the current Leaflet/MapLibre methodology.

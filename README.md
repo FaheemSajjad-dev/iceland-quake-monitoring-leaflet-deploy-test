@@ -1,12 +1,22 @@
 # Iceland Earthquake Monitoring - Leaflet Edition
 
-Near-real-time Iceland earthquake monitoring web application built as part of an MSc thesis at the University of Iceland (Haskoli Islands).
+Near-real-time Iceland earthquake monitoring web application built as part of an MSc thesis at the University of Iceland.
 
 ## Overview
 
 The app visualizes Icelandic earthquakes from June 2020 onward, focusing on events with **M >= 3.0**. A Flask backend continuously ingests and reconciles earthquake data, refreshes volcano metadata, and serves a merged catalogue to a React/Leaflet frontend.
 
 This is the Leaflet version of the original Google Maps project. It does not require a Google Maps API key.
+
+## Current Deployment
+
+- Local development frontend: `http://localhost:5174`
+- Local development backend: `http://localhost:5001`
+- Pluto deployment: `http://pluto.cs.hi.is/mpgv/`
+- Pluto project path: `~/iceland-quake`
+- Pluto deploy command from the server project root: `./deploy.sh`
+
+The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the source used for Pluto uploads.
 
 ## Stack
 
@@ -20,10 +30,10 @@ This is the Leaflet version of the original Google Maps project. It does not req
 
 ## Data Sources
 
-- **MPGV** - public earthquake listings scraped from [hraun.vedur.is/ja/Mpgv/](http://hraun.vedur.is/ja/Mpgv/)
-- **Skjalftalisa API** - detailed event metadata from the Icelandic Met Office ([api.vedur.is](https://api.vedur.is/?urls.primaryName=Skj%C3%A1lftal%C3%ADsa))
-- **EPOS API** - volcano catalogue and ShakeMap information from [api.vedur.is (EPOS)](https://api.vedur.is/?urls.primaryName=EPOS)
-- **EGDI/HIKE WFS** - Iceland fault and fissure linework filtered to onshore records from [EGDI metadata](https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833)
+- **MPGV** - public earthquake listings scraped from `hraun.vedur.is/ja/Mpgv/`
+- **Skjalftalisa API** - detailed event metadata from the Icelandic Met Office
+- **EPOS API** - volcano catalogue and ShakeMap information from the Icelandic Met Office
+- **EGDI/HIKE WFS** - Iceland fault and fissure linework filtered to onshore records
 
 ## Update Cadence
 
@@ -49,26 +59,32 @@ When a unique match is found, the Skjalftalisa location and depth replace the MP
 ## Features
 
 - Interactive earthquake markers with timeline and magnitude colour modes
+- Canvas-backed `L.circleMarker` earthquake rendering for smoother pan/zoom performance
 - Time window slider with day, week, month, and year filtering
 - Magnitude filter with default minimum **M 3.0**
 - Volcano overlay and right-side volcano list from EPOS metadata
-- Faults overlay from EGDI/HIKE WFS, filtered to Iceland onshore records (`country_cd === "IS"`, `observ_meth !== "sonar survey"`)
+- Faults overlay from EGDI/HIKE WFS, filtered to Iceland onshore records
 - Fault/fissure legend with solid red fault lines and dotted red fissure lines
 - ShakeMap lookup button for eligible earthquake info cards
 - CSV export of the merged earthquake catalogue
-- Lat/lon grid overlay with zoom-aware spacing
+- Lat/lon grid overlay using Iceland-focused graticule spacing
+- Main latitude labels plus unlabeled latitude midlines between main lines
+- Longitude labels anchored near the bottom with collision spacing
 - Default map-view button that returns to the Iceland opening view without reloading
 - Heatmap mode for density-first analysis
+- Earthquake and volcano info cards positioned near the upper-left map work area
 
 ## Map Layers
 
 | Layer | Provider | Notes |
 |---|---|---|
-| Map | OpenFreeMap vector style via MapLibre | Default map base with custom glacier handling and labels |
+| Map | OpenFreeMap vector style via MapLibre | Default map base with glacier polygons and labels |
 | Satellite | Esri World Imagery | Visual imagery context |
 | Terrain | Icelandic Meteorological Office raster tiles | `geo.vedur.is` terrain basemap |
 | Gray | CARTO light basemap | Quiet inspection layer |
 | Heatmap | CARTO dark base + `leaflet.heat` + label overlay | Earthquake density visualization |
+
+MapLibre GL requires browser WebGL support for the vector **Map** layer. If WebGL is disabled by browser settings, enterprise policy, or graphics acceleration settings, that layer can fail in that browser.
 
 ## Heatmap Layer
 
@@ -113,26 +129,28 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5174](http://localhost:5174). The frontend points to `http://localhost:5001` during local development.
+Open `http://localhost:5174`. The frontend points to `http://localhost:5001` during local development.
 
-## Production Deployment
+## Pluto Deployment
 
-1. Run the backend with a production WSGI server, for example:
+The Pluto server runs the app from `~/iceland-quake` and serves the public URL at `http://pluto.cs.hi.is/mpgv/`.
 
-   ```bash
-   gunicorn -b 0.0.0.0:5001 app:app --chdir backend
-   ```
+Typical update flow:
 
-2. Build the frontend static assets:
+1. Apply and verify changes in the main F project.
+2. Copy the same relevant changes to the deploy F project.
+3. Mirror the same files into the G recovery folders.
+4. Build and test locally.
+5. Commit and push both F Git repositories.
+6. Upload deploy F changes to Pluto.
+7. On Pluto, run:
 
-   ```bash
-   cd frontend
-   npm run build
-   ```
+```bash
+cd ~/iceland-quake
+./deploy.sh
+```
 
-3. Serve `frontend/dist/` with nginx, Apache, or another static file server. In production the frontend expects the API on the same origin, so configure a reverse proxy for `/earthquakes`, `/earthquakes_csv`, `/volcanoes`, `/shakemap*`, `/scrape-volcanoes`, `/reconcile`, and `/health` as appropriate.
-
-4. Review tile-provider licensing before public deployment.
+`deploy.sh` installs Python and Node dependencies, builds the frontend, stops the old Gunicorn process, and starts the backend on port 6000.
 
 ## Running Tests
 
@@ -165,7 +183,7 @@ npm test
 
 | Component | Technique |
 |---|---|
-| `EarthquakeMarkers` | Uses Leaflet layer groups and targeted marker updates |
+| Earthquake markers | Canvas-backed `L.circleMarker` rendering instead of many DOM/SVG marker nodes |
 | `TimeWindowSlider` | Stable wheel listener via `useRef`, memoized divider generation |
 | `MapComponent` tiles | `updateWhenZooming=false`, `updateWhenIdle=false`, `keepBuffer=4`, `detectRetina=false` |
 | `HeatmapLayer` | Rebuilt only on data changes and `zoomend`; panning does not redraw |
@@ -191,4 +209,4 @@ No Google Maps API key is used. If deployed formally at IMO or another instituti
 - Kristjan Jonasson
 - Esa Olavi Hyytia
 
-University of Iceland | (c) 2025-2026
+University of Iceland | 2025-2026
