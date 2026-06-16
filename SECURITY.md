@@ -30,14 +30,14 @@ CORS(app, origins=_ALLOWED_ORIGINS)
 
 When deploying, add the production domain or serve frontend and backend behind the same reverse proxy and remove cross-origin access.
 
-## 3. Localhost-Only Admin Endpoints - DONE
+## 3. Admin Endpoints - DONE
 
 | Endpoint | Method | What it does | Protection |
 |---|---|---|---|
-| `/reconcile` | POST | Reruns reconciliation | `request.remote_addr` must be `127.0.0.1` or `::1` |
-| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same localhost check |
+| `/reconcile` | POST | Reruns reconciliation | Requires `ADMIN_TOKEN` via `Authorization: Bearer ...` or `X-Admin-Token` when configured; falls back to local address only when no token is configured |
+| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same admin-token/local fallback policy |
 
-The scheduler handles normal ingestion automatically, so these are only for local/server-side maintenance.
+Set `ADMIN_TOKEN` in production so these maintenance endpoints are not publicly callable. The scheduler handles normal ingestion automatically, so these endpoints are only for server-side maintenance.
 
 ## 4. Error Message Leakage - DONE
 
@@ -45,17 +45,24 @@ Client-facing errors are generic. Full exceptions are logged server-side with `l
 
 Affected endpoints include `/scrape-volcanoes`, `/volcanoes`, and `/shakemap_lookup`.
 
-## 5. Content Security Policy - DONE
+## 5. Content Security Policy and Browser Headers - DONE
 
-`frontend/index.html` includes a CSP meta tag. It currently allows:
+`frontend/index.html` includes a CSP meta tag for static/dev rendering. The Flask backend also emits HTTP security headers, which are required for directives such as `frame-ancestors`:
+
+- `Content-Security-Policy`
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+
+The policy allows:
 
 - Scripts and styles from `'self'`, with inline allowances needed by the current Leaflet/React stack
 - Images from `'self'`, data/blob URLs, Esri, OpenFreeMap, CARTO, IMO tile domains, and EGDI/HIKE map services
-- Connections to the local Flask API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
+- Connections to the same-origin API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
 - Fonts from `'self'` and OpenFreeMap
-- Frames blocked with `frame-ancestors 'none'`
+- Frames blocked through HTTP `frame-ancestors 'none'` and `X-Frame-Options: DENY`
 
-When deploying, update `connect-src` for the production API origin and remove development origins if they are not needed.
+When deploying, update `connect-src` for any additional production API or tile origins and remove development origins if they are not needed.
 
 ## 6. Unused API Keys - DONE
 
@@ -78,15 +85,28 @@ npm audit --audit-level=low
 
 `frontend/package.json` includes an `overrides.esbuild` entry to keep Vite's esbuild dependency on a fixed version while staying compatible with the local Node 20 runtime. `frontend/vite.config.js` sets both production build and dev dependency optimization targets to `esnext`.
 
-## 9. Rate Limiting - TODO
+## 9. Rate Limiting - DONE
 
-There is no application-level rate limiting. Add rate limiting at nginx or another reverse proxy if the app is exposed publicly:
+The Flask backend uses Flask-Limiter with conservative per-client API limits. Defaults are environment-configurable:
 
-```nginx
-limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
+| Variable | Default |
+|---|---|
+| `RATE_LIMIT_DEFAULT` | `300 per minute` |
+| `RATE_LIMIT_EARTHQUAKES` | `120 per minute` |
+| `RATE_LIMIT_VOLCANOES` | `120 per minute` |
+| `RATE_LIMIT_SHAKEMAP` | `60 per minute` |
+| `RATE_LIMIT_CSV` | `10 per minute` |
+| `RATE_LIMIT_STORAGE` | `memory://` |
+
+`/health` is exempt for monitoring. `/reconcile` and `/scrape-volcanoes` remain localhost-only operational routes and are exempt from public API limits.
+
+`memory://` is acceptable for local development and simple single-process deployments. For production with multiple workers or servers, use shared storage such as Redis:
+
+```bash
+RATE_LIMIT_STORAGE=redis://redis-host:6379/0
 ```
 
-Flask-Limiter is another option if reverse-proxy limiting is unavailable.
+See `RATE_LIMITING.md` for the full policy. Prefer reverse-proxy or platform-level rate limits in addition to app-level limits for formal public deployment.
 
 ## 10. Database File Permissions - TODO DEPLOYMENT
 

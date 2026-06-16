@@ -26,6 +26,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 | Map tiles | OpenFreeMap map tiles, IMO terrain, Esri World Imagery, CARTO light/dark tiles |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
+| API protection | Flask-Limiter with environment-configurable per-client limits |
 | Tests | pytest backend tests, Vitest + Testing Library frontend tests |
 
 ## Data Sources
@@ -190,6 +191,13 @@ npm test
 | Reconcile max magnitude difference | 3.0 |
 | Database location | `backend/data/earthquakes.db` |
 | Frontend build target | Modern browsers, `esnext` Vite/esbuild output |
+| Default API rate limit | `300 per minute` per client |
+| Earthquake/volcano API limits | `120 per minute` per client |
+| ShakeMap API limit | `60 per minute` per client |
+| CSV export limit | `10 per minute` per client |
+| Rate limit storage | `RATE_LIMIT_STORAGE`, defaults to `memory://`; use shared storage such as Redis for multi-worker production |
+
+Rate limiting protects request frequency, not total user capacity. See `RATE_LIMITING.md` for the policy, defaults, and production notes.
 
 ## Performance Notes
 
