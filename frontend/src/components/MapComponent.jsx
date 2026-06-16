@@ -65,46 +65,46 @@ const getTwilightColorForDate = (isoString) => {
   return TIMELINE_YEAR_STOPS[idx];
 };
 
-// All tile layers now use Esri's ArcGIS REST CDN — the same infrastructure used
-// by the Icelandic Met Office's own Skjálftalísa app (esri-leaflet).
-// No API key required. Tile URL format: /MapServer/tile/{z}/{y}/{x}
+// Basemap definitions. The default vector map is handled by MaplibreVectorLayer.
 const TILE_LAYERS = {
   roadmap: null, // handled by MaplibreVectorLayer
   satellite: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
     maxZoom: 19,
     maxNativeZoom: 17,
   },
   terrain: {
     url: "https://geo.vedur.is/geoserver/www/imo_basemap_epsg3857/{z}/{x}/{y}.png",
-    attribution: "Icelandic Met Office | Natural Science Institute of Iceland | &copy; OpenStreetMap contributors",
     maxZoom: 19,
     maxNativeZoom: 14,
   },
   gray: {
     url: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-    attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
     maxZoom: 19,
     maxNativeZoom: 18,
     subdomains: "abcd",
   },
 };
 
-// Shared tile options applied to every basemap layer — key for zoom smoothness.
-// esri-leaflet's basemapLayer() extends L.TileLayer, so all standard options apply.
+// Shared tile options used to reduce flicker while panning and zooming.
 const TILE_PROPS = {
-  updateWhenZooming: false, // do not fetch new tiles during CSS zoom animation; scaled copies of existing tiles are shown instead — eliminates blank tile flicker
+  updateWhenZooming: false, // scaled existing tiles are shown during CSS zoom animation
   updateWhenIdle:    false, // fetch new tiles immediately after zoom/pan settles, not deferred (better on desktop)
-  keepBuffer:        4,     // pre-load 4 extra tile rows in every direction — greatly reduces blank edges when panning or zooming
-  detectRetina:      false, // do not request 2× tiles; avoids over-requesting on retina screens
+  keepBuffer:        4,     // preload extra tile rows to reduce blank edges during movement
+  detectRetina:      false, // avoids over-requesting on high-density screens
 };
 
 const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
-const OPENFREEMAP_ATTRIBUTION = "MapLibre | <a href='https://openfreemap.org'>OpenFreeMap</a> &copy; <a href='https://openmaptiles.org'>OpenMapTiles</a> Data from <a href='https://openstreetmap.org'>OpenStreetMap</a>";
+const COMPACT_ATTRIBUTIONS = {
+  roadmap: "<a href='https://openfreemap.org'>OpenFreeMap</a> | <a href='https://openmaptiles.org'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  satellite: "<a href='https://www.esri.com/'>Esri</a> | Maxar | Earthstar Geographics",
+  terrain: "<a href='https://www.vedur.is/'>IMO</a> | Natural Science Institute of Iceland | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+};
+const FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE, ISOR</a>";
 const ROADMAP_RASTER_FALLBACK = {
   url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-  attribution: "&copy; <a href='https://carto.com/attributions'>CARTO</a> &copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>",
   maxZoom: 19,
   maxNativeZoom: 18,
   subdomains: "abcd",
@@ -357,6 +357,47 @@ const removeMatchingAttributions = (map, matcher) => {
     });
 };
 
+const removeVerboseProviderAttributions = (map) => {
+  removeMatchingAttributions(map, (attribution) => {
+    const text = attribution.toLowerCase();
+    return (
+      text.includes("openfreemap") ||
+      text.includes("openmaptiles") ||
+      text.includes("openstreetmap") ||
+      text.includes("carto") ||
+      text.includes("esri") ||
+      text.includes("maxar") ||
+      text.includes("earthstar") ||
+      text.includes("icelandic meteorological") ||
+      text.includes("natural science institute") ||
+      text.includes("faults/fissures") ||
+      text.includes("egdi") ||
+      text.includes("isor")
+    );
+  });
+};
+
+const CompactAttribution = ({ mapType, showFaults }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const control = map.attributionControl;
+    if (!control) return undefined;
+
+    removeVerboseProviderAttributions(map);
+    const parts = [COMPACT_ATTRIBUTIONS[mapType] ?? COMPACT_ATTRIBUTIONS.roadmap];
+    if (showFaults) parts.push(FAULTS_ATTRIBUTION);
+    const compact = parts.join(" | ");
+    control.addAttribution(compact);
+
+    return () => {
+      removeAttribution(map, compact);
+    };
+  }, [map, mapType, showFaults]);
+
+  return null;
+};
+
 const removeManagedGlContainers = (map, layerId) => {
   if (!layerId) return;
   const container = map.getContainer?.();
@@ -432,7 +473,7 @@ const removeMaplibreLayer = (map, gl, layerId) => {
 
 const addRasterRoadmapFallback = (map, onReady) => {
   const layer = L.tileLayer(ROADMAP_RASTER_FALLBACK.url, {
-    attribution: ROADMAP_RASTER_FALLBACK.attribution,
+    attribution: "",
     maxZoom: ROADMAP_RASTER_FALLBACK.maxZoom,
     maxNativeZoom: ROADMAP_RASTER_FALLBACK.maxNativeZoom,
     subdomains: ROADMAP_RASTER_FALLBACK.subdomains,
@@ -484,7 +525,7 @@ const MaplibreVectorLayer = ({ onReady }) => {
   useEffect(() => {
     let dead = false;
 
-    const useRasterFallback = () => {
+    const activateRasterFallback = () => {
       if (dead) return;
       cleanupRef.current();
       cleanupRef.current = addRasterRoadmapFallback(map, onReady);
@@ -497,7 +538,7 @@ const MaplibreVectorLayer = ({ onReady }) => {
         const gl = createMaplibreLayer(map, {
           layerId,
           style: patchStyle(raw),
-          attribution: OPENFREEMAP_ATTRIBUTION,
+          attribution: "",
           fadeDuration: 0,
           collectResourceTiming: false,
           trackResize: false,
@@ -507,14 +548,14 @@ const MaplibreVectorLayer = ({ onReady }) => {
         });
 
         if (!gl) {
-          useRasterFallback();
+          activateRasterFallback();
           return;
         }
 
         const teardown = setupGlLayer(gl, map, { layerId, zIndex: "200", onReady, withFullscreen: true });
         cleanupRef.current = () => { teardown(); removeMaplibreLayer(map, gl, layerId); };
       })
-      .catch(() => useRasterFallback());
+      .catch(() => activateRasterFallback());
 
     return () => { dead = true; cleanupRef.current(); cleanupRef.current = () => {}; };
   }, [map, onReady]);
@@ -541,7 +582,7 @@ const MaplibreLabelOverlay = ({ paneName, paneZIndex, labelTheme = "light" }) =>
           pane: paneName,
           layerId,
           style: patchStyle(raw, true, labelTheme),
-          attribution: OPENFREEMAP_ATTRIBUTION,
+          attribution: "",
           fadeDuration: 0,
           collectResourceTiming: false,
           trackResize: false,
@@ -582,7 +623,7 @@ const HeatmapTileLayers = ({ onReady }) => {
     const baseLayer = L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
       {
-        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        attribution: "",
         maxZoom: 19,
         maxNativeZoom: 18,
         subdomains: "abcd",
@@ -624,7 +665,7 @@ const TileLayerManager = ({ mapType, onReady }) => {
         <TileLayer
           key={mapType}
           url={layer.url}
-          attribution={layer.attribution}
+          attribution=""
           maxZoom={layer.maxZoom}
           maxNativeZoom={layer.maxNativeZoom}
           subdomains={layer.subdomains ?? "abc"}
@@ -646,7 +687,7 @@ const TileLayerManager = ({ mapType, onReady }) => {
     <TileLayer
       key={mapType}
       url={layer.url}
-      attribution={layer.attribution}
+      attribution=""
       maxZoom={layer.maxZoom}
       maxNativeZoom={layer.maxNativeZoom}
       eventHandlers={{ load: onReady }}
@@ -876,7 +917,7 @@ const RightClickHandler = () => {
   return null;
 };
 
-const GridOverlay = ({ show, isDarkMode, mapType }) => {
+const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => {
   const map = useMap();
   const gridRef = useRef([]);
   const darkLike = isDarkMode || mapType === "satellite" || mapType === "heatmap";
@@ -908,6 +949,8 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
     const subColor   = darkLike ? "#bbb5aa" : "#888888";
     const lblColor   = darkLike ? "#ffffff" : "#333333";
+    const labelSize = emphasizeLabels ? "11px" : "10px";
+    const labelWeight = emphasizeLabels ? "700" : "400";
 
     const latExt = (north - south) * 0.1;
     const lngExt = (east - west) * 0.1;
@@ -960,7 +1003,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
       const labelPoint = labelLatLngFromPoint(LAT_LABEL_X, labelY);
       addLabel(labelPoint.lat, labelPoint.lng,
         `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-        lblColor, "10px", "400", [0, 13]);
+        lblColor, labelSize, labelWeight, [0, 13]);
     }
     for (let lng = startLng; lng <= endLng; lng += lngGridSpacing) {
       addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
@@ -972,7 +1015,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
       const labelPoint = labelLatLngFromPoint(labelX, LNG_LABEL_Y);
       addLabel(labelPoint.lat, labelPoint.lng,
         `${lng.toFixed(labelDecimals)}\u00b0${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
-        lblColor, "10px", "400", [20, 13]);
+        lblColor, labelSize, labelWeight, [20, 13]);
     }
     const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
     const eLat = Math.ceil(extN / subLatGridSpacing) * subLatGridSpacing;
@@ -990,7 +1033,7 @@ const GridOverlay = ({ show, isDarkMode, mapType }) => {
         addLine([[extS, lng], [extN, lng]], subColor, 0.5, 0.5);
       }
     }
-  }, [map, show, darkLike]);
+  }, [map, show, darkLike, emphasizeLabels]);
 
   useEffect(() => {
     createGrid();
@@ -1027,6 +1070,27 @@ const getQuakeMarkerStyle = (color, isSelected, zoom) => ({
   color: "#ffffff",
   weight: isSelected ? 2 : 0,
   opacity: 1,
+});
+
+const hasCoarsePointer = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
+const getMarkerHitRadius = (zoom) => {
+  const visualRadius = getMarkerRadius(zoom, false);
+  const minimumHitRadius = hasCoarsePointer() ? 16 : 12;
+  return Math.max(minimumHitRadius, visualRadius + 6);
+};
+
+const getQuakeHitTargetStyle = (zoom) => ({
+  radius: getMarkerHitRadius(zoom),
+  fillColor: "#000000",
+  fillOpacity: 0.001,
+  stroke: false,
+  opacity: 0,
+  bubblingMouseEvents: false,
+  className: "earthquake-hit-target",
 });
 
 const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMarkerClick, visible }) => {
@@ -1081,14 +1145,18 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
         quake.Longitude === sel.Longitude;
 
       const { color } = markerIcons[index] || {};
+      const hitMarker = L.circleMarker([lat, lng], getQuakeHitTargetStyle(zoom))
+        .on("click", (e) => { L.DomEvent.stopPropagation(e); onMarkerClick(quake); })
+        .addTo(lg);
+
       const marker = L.circleMarker([lat, lng], {
         ...getQuakeMarkerStyle(color, isSelected, zoom),
+        interactive: false,
       })
-        .on("click", (e) => { L.DomEvent.stopPropagation(e); onMarkerClick(quake); })
         .addTo(lg);
       if (isSelected) marker.bringToFront();
 
-      markersMapRef.current.set(quakeKey(quake), { marker, quake, index });
+      markersMapRef.current.set(quakeKey(quake), { marker, hitMarker, quake, index });
     });
   }, [map, earthquakes, markerIcons, onMarkerClick]);
 
@@ -1097,13 +1165,14 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     const handleZoom = () => {
       const zoom = map.getZoom();
       const sel = selectedEqRef.current;
-      markersMapRef.current.forEach(({ marker, quake }) => {
+      markersMapRef.current.forEach(({ marker, hitMarker, quake }) => {
         const isSelected =
           sel &&
           quake["Date-time"] === sel["Date-time"] &&
           quake.Latitude === sel.Latitude &&
           quake.Longitude === sel.Longitude;
         marker.setRadius(getMarkerRadius(zoom, isSelected));
+        hitMarker.setRadius(getMarkerHitRadius(zoom));
       });
     };
     map.on("zoomend", handleZoom);
@@ -1127,7 +1196,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
 
     updateMarker(prev, false);
     updateMarker(selectedEarthquake, true);
-  }, [selectedEarthquake]);
+  }, [map, selectedEarthquake]);
 
   return null;
 };
@@ -1345,9 +1414,10 @@ const MapComponent = ({
         <ZoomAnimGuard />
         <RightClickHandler />
         <AttributionControl position="bottomright" prefix={false} />
+        <CompactAttribution mapType={mapType} showFaults={showFaults} />
         <ScaleControl position="bottomright" />
         <GlacierLabelsOverlay visible={mapReady && (mapType === "roadmap" || mapType === "satellite")} />
-        <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} />
+        <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} emphasizeLabels={showFaults} />
         <FaultsOverlay show={showFaults} />
         <MapClickHandler onClick={handleMapClick} />
 

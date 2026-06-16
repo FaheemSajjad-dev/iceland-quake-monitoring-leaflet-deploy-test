@@ -63,9 +63,22 @@ The Leaflet version does not use Google Maps and does not require a Google Maps 
 
 ## 7. Third-Party Tile and Data Services - REVIEW BEFORE PRODUCTION
 
-The app currently uses OpenFreeMap, Esri, CARTO, IMO, EPOS, Skjalftalisa, MPGV, and EGDI/HIKE services. Confirm licensing and rate limits before public or institutional deployment. For formal deployment, prefer institution-managed tile infrastructure or provider accounts where required.
+The app currently uses OpenFreeMap, Esri, CARTO, IMO, EPOS, the Quakes API, MPGV, and EGDI/HIKE services. Confirm licensing and rate limits before public or institutional deployment. For formal deployment, prefer institution-managed tile infrastructure or provider accounts where required.
 
-## 8. Rate Limiting - TODO
+EGDI/HIKE fault and fissure linework is treated as reference data: the frontend fetches it on first use and keeps an in-memory cache for later overlay toggles. Earthquake and volcano data remain the live-refreshing datasets.
+
+## 8. Frontend Dependency Audit - DONE
+
+The local frontend dependency tree is expected to pass:
+
+```bash
+cd frontend
+npm audit --audit-level=low
+```
+
+`frontend/package.json` includes an `overrides.esbuild` entry to keep Vite's esbuild dependency on a fixed version while staying compatible with the local Node 20 runtime. `frontend/vite.config.js` sets both production build and dev dependency optimization targets to `esnext`.
+
+## 9. Rate Limiting - TODO
 
 There is no application-level rate limiting. Add rate limiting at nginx or another reverse proxy if the app is exposed publicly:
 
@@ -75,7 +88,7 @@ limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
 
 Flask-Limiter is another option if reverse-proxy limiting is unavailable.
 
-## 9. Database File Permissions - TODO DEPLOYMENT
+## 10. Database File Permissions - TODO DEPLOYMENT
 
 Tighten SQLite permissions on the server:
 
@@ -84,15 +97,19 @@ chmod 700 backend/data/
 chmod 600 backend/data/earthquakes.db
 ```
 
-## 10. HTTPS - TODO DEPLOYMENT
+## 11. HTTPS - TODO DEPLOYMENT
 
 Terminate TLS at the reverse proxy using Let's Encrypt or an institutional certificate. Flask does not need to serve TLS directly.
 
-## 11. Frontend API URL Detection - DONE
+## 12. Frontend API URL Detection - DONE
 
 `frontend/src/api.js` points to `http://localhost:5001` only for `localhost` and `127.0.0.1`. In production it uses same-origin requests based on `BASE_URL`.
 
-## 12. Secret Key - TODO IF AUTH IS ADDED
+## 13. Map Attribution - DONE
+
+The map uses a compact bottom-right attribution control. It lists the active basemap providers and appends EGDI/HIKE, ISOR when the faults overlay is visible. Full provider and licensing review is still required before formal public or institutional deployment.
+
+## 14. Secret Key - TODO IF AUTH IS ADDED
 
 The app currently does not use Flask sessions or CSRF. If authentication is added later, configure a real secret key:
 

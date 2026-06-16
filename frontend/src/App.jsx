@@ -155,7 +155,6 @@ const App = () => {
                 </div>
 
                 <LeftPanel
-                    mapType={mapType}
                     onMapTypeChange={handleMapTypeChange}
                     showVolcanoes={showVolcanoes}
                     toggleVolcanoes={toggleVolcanoes}

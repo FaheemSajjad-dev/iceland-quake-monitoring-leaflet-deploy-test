@@ -7,7 +7,6 @@ import VolcanoIcon from './VolcanoIcon';
 import './LeftPanel.css';
 
 const LeftPanel = ({
-  mapType,
   onMapTypeChange,
   showVolcanoes,
   toggleVolcanoes,

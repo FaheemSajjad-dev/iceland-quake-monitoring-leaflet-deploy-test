@@ -1,17 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import './MagnitudeScale.css';
 
 const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, colorOwner, isHeatmap }) => {
 
   const [filterValue, setFilterValue] = useState(minMagnitude);
   const debounceRef = useRef(null);
-  const clampMagnitude = (value) => Math.min(Math.max(value, minMagnitude), maxMagnitude);
+  const clampMagnitude = useCallback(
+    (value) => Math.min(Math.max(value, minMagnitude), maxMagnitude),
+    [minMagnitude, maxMagnitude]
+  );
   const roundMagnitude = (value) => Math.round(value * 10) / 10;
 
   // Clamp filterValue if maxMagnitude shrinks (e.g. time window change), so indicator stays on-screen
   useEffect(() => {
     setFilterValue(prev => clampMagnitude(prev));
-  }, [minMagnitude, maxMagnitude]);
+  }, [clampMagnitude, minMagnitude, maxMagnitude]);
 
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

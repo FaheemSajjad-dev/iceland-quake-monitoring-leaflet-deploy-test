@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import './TimeWindowSlider.css';
 
 const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = false, isHeatmap = false }) => {
-  const startDate = new Date(2020, 5, 1);
-  const currentDate = new Date();
+  const startDate = useMemo(() => new Date(2020, 5, 1), []);
+  const currentDate = useMemo(() => new Date(), []);
 
   const totalDays = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
   const totalMonths =
@@ -23,7 +23,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   const dragStartXRef = useRef(0);
   const dragStartOffsetRef = useRef(0);
 
-  const calculateVisibleRange = () => {
+  const calculateVisibleRange = useCallback(() => {
     if (isDayViewMode) {
       const minDays = 3;
       const maxDays = 7;
@@ -100,7 +100,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
         lastVisibleMonthIndex: firstVisibleMonthIndex + visibleMonths - 1,
       };
     }
-  };
+  }, [currentDate, isDayViewMode, isWeekMode, isYearMode, startDate, totalDays, totalMonths, viewOffset, zoomLevel]);
 
   const formatDateRangeDisplay = () => {
 		const range = calculateVisibleRange();
@@ -123,7 +123,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 	};
 
 
-  const updateParentWithCurrentRange = () => {
+  const updateParentWithCurrentRange = useCallback(() => {
     const range = calculateVisibleRange();
     if (range.isDayView || range.isWeekMode) {
       onFilterChange(
@@ -149,18 +149,18 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
         range.lastVisibleDate.getMonth() + 1
       );
     }
-  };
+  }, [calculateVisibleRange, currentDate, onFilterChange, startDate]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       updateParentWithCurrentRange();
     }, 200);
     return () => clearTimeout(handler);
-  }, [viewOffset, zoomLevel]);
+  }, [updateParentWithCurrentRange, viewOffset, zoomLevel]);
 
   useEffect(() => {
     updateParentWithCurrentRange();
-  }, []);
+  }, [updateParentWithCurrentRange]);
 
   const handleMouseDown = (e) => {
     if (!trackRef.current) return;
@@ -320,7 +320,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   };
 
 
-	const generateDividers = () => {
+	const generateDividers = useCallback(() => {
 		const dividers = [];
 		const labels = [];
 		const range = calculateVisibleRange();
@@ -509,11 +509,11 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 		}
 
 		return { dividers, labels };
-	};
+	}, [calculateVisibleRange, currentDate, startDate]);
 
 
 
-  const { dividers, labels } = useMemo(() => generateDividers(), [viewOffset, zoomLevel]);
+  const { dividers, labels } = useMemo(() => generateDividers(), [generateDividers]);
 
   return (
     <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>

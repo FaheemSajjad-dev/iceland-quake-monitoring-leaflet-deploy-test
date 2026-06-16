@@ -32,19 +32,76 @@
 /* Map Type Selector (rendered inside LeftPanel) */
 .map-type-selector {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 100%;
   z-index: 1002; /* above TimeWindowSlider (1000) and all panel sections */
 }
 
 .map-type-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
   background: white;
   border: 1px solid #ccc;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  min-width: 100px;
-  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+}
+
+.map-type-icon {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.map-type-icon::before,
+.map-type-icon::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  width: 12px;
+  height: 8px;
+  border: 1.5px solid #667085;
+  border-radius: 2px;
+  background: rgba(102, 112, 133, 0.08);
+  transform: skewY(-20deg);
+}
+
+.map-type-icon::before {
+  top: 2px;
+}
+
+.map-type-icon::after {
+  top: 6px;
+}
+
+.map-type-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-type-chevron {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-right: 1.5px solid #667085;
+  border-bottom: 1.5px solid #667085;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.map-type-main.open .map-type-chevron {
+  transform: translateY(2px) rotate(225deg);
 }
 
 .map-type-dropdown {
@@ -261,12 +318,12 @@
 
 /* ── Responsive: map controls scale on larger screens ── */
 @media (min-width: 1500px) {
-  .map-type-main { font-size: 15px; padding: 9px 18px; min-width: 110px; }
+  .map-type-main { font-size: 12px; padding: 5px 10px; min-height: 34px; }
   .map-type-option { font-size: 15px; padding: 9px 18px; }
   .color-mode-switch button { font-size: 12px; padding: 3px 8px; }
 }
 @media (min-width: 2100px) {
-  .map-type-main { font-size: 18px; padding: 11px 22px; min-width: 130px; }
+  .map-type-main { font-size: 12px; padding: 5px 10px; min-height: 34px; }
   .map-type-option { font-size: 18px; padding: 11px 22px; }
   .color-mode-switch button { font-size: 14px; padding: 4px 10px; }
 }
@@ -287,12 +344,12 @@
     0 1px 3px rgba(255, 255, 255, 0.85),
     0 -1px 3px rgba(255, 255, 255, 0.75);
 }
-/* Grid label markers must not intercept mouse events — lets clicks/cursor pass through to earthquake canvas markers below */
+/* Grid labels must not intercept map clicks or earthquake marker hit targets. */
 .grid-label-icon {
   pointer-events: none !important;
 }
 
-/* Shown while the base tile layer is loading — fades out once mapReady is true */
+/* Shown while the base tile layer is loading; fades out once mapReady is true. */
 .map-loading-overlay {
   position: absolute;
   inset: 0;
@@ -464,7 +521,7 @@
 }
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
-  margin-bottom: -36px;
-  margin-right: 14px;
+  margin-bottom: 72px;
+  margin-right: 10px;
   transition: margin-right 0.25s ease;
 }

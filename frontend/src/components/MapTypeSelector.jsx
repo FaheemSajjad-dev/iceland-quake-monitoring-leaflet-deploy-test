@@ -29,8 +29,14 @@ const MapTypeSelector = ({ onMapTypeChange }) => {
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
         >
-            <button className="map-type-main">
-                {getDisplayName(selectedType)}
+            <button
+                className={`map-type-main ${isOpen ? 'open' : ''}`}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+            >
+                <span className="map-type-icon" aria-hidden="true"></span>
+                <span className="map-type-label">{getDisplayName(selectedType)}</span>
+                <span className="map-type-chevron" aria-hidden="true"></span>
             </button>
             {isOpen && (
                 <div className="map-type-dropdown">
@@ -72,3 +78,5 @@ const MapTypeSelector = ({ onMapTypeChange }) => {
 };
 
 export default MapTypeSelector;
+
+

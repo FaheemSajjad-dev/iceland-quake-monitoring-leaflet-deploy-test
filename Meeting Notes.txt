@@ -18,17 +18,21 @@ Current local/deploy workflow:
 Current map/app state:
 
 - Base layer label is Map.
-- Earthquake markers use Leaflet L.circleMarker canvas rendering instead of DOM/SVG square markers.
-- Marker rendering memory and pan/zoom performance improved after moving away from many DOM marker nodes.
+- Earthquake markers use SVG Leaflet L.circleMarker rendering.
+- Separate invisible hit targets make earthquake markers easier to click or tap without increasing the visible marker size.
 - Volcano overlay opens a right-side panel.
 - About button, distance scale, and faults legend shift left when the right panel is open.
 - Faults overlay uses EGDI/HIKE WFS onshore Iceland records.
+- Faults are fetched on first use and cached in memory for later toggles.
 - Fault legend uses solid red for faults and dotted red for fissures.
 - Lat/lon grid uses Iceland-focused spacing with one-decimal labels.
+- Lat/lon labels are slightly bolder while the faults overlay is visible.
 - Main latitude labels are shown; extra latitude midlines are drawn unlabeled.
 - Longitude labels are anchored near the bottom with spacing to avoid overlap.
 - Earthquake and volcano info cards open near the upper-left map work area.
 - Magnitude scale focus ring has been suppressed.
+- Bottom-right map attribution is compact and shows only the active basemap providers, plus EGDI/HIKE when faults are visible.
+- Frontend audit, lint, build, and unit test checks are expected to pass before changes are copied to deploy-test.
 
 Known browser note:
 

@@ -24,6 +24,15 @@ The dev server opens at `http://localhost:5174`. It expects the Flask backend on
 npm test
 ```
 
+Recommended local quality gate:
+
+```bash
+npm audit --audit-level=low
+npm run lint
+npm run build
+npm test
+```
+
 ## Structure
 
 ```text
@@ -49,15 +58,17 @@ The **Map** layer depends on WebGL through MapLibre GL. Chrome, Safari, or Edge 
 
 - Earthquakes are reloaded from the backend every 3 minutes.
 - Volcano metadata is reloaded every 3 minutes and is refreshed by the backend scheduler.
-- Fault and fissure linework is fetched from EGDI/HIKE WFS when enabled and refreshes every 3 minutes while visible.
+- Fault and fissure linework is fetched from EGDI/HIKE WFS on first use and cached for later toggles.
 
 ## Current Map UI
 
-- Earthquake points use Leaflet `L.circleMarker` canvas rendering for smoother panning and zooming.
+- Earthquake points use SVG Leaflet `L.circleMarker` rendering with separate invisible hit targets for easier selection.
 - The base layer label is **Map**.
 - The right-side volcano panel shifts the About button and bottom-right Leaflet controls so the scale and fault legend stay visible.
 - The faults legend shows solid red faults and dotted red fissures.
 - The lat/lon grid uses Iceland-focused spacing, one-decimal degree labels, fixed latitude label anchoring, and unlabeled latitude midlines.
+- Lat/lon labels become slightly stronger while the faults overlay is visible.
+- The bottom-right attribution is compact and reflects the active basemap plus EGDI/HIKE when faults are visible.
 - Earthquake and volcano info cards open at the upper-left map work area.
 
 ## Heatmap

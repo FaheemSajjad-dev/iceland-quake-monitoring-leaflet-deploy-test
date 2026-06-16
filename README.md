@@ -41,7 +41,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 |---|---|
 | Earthquakes | Backend scheduler runs every 3 minutes: scrape MPGV, fetch recent Quakes API rows, reconcile merged catalogue |
 | Volcanoes | Backend scheduler refreshes EPOS volcano metadata every 3 minutes; frontend reloads `/volcanoes` every 3 minutes |
-| Faults / fissures | Frontend fetches EGDI/HIKE WFS GeoJSON when the overlay is enabled and refreshes it every 3 minutes while visible |
+| Faults / fissures | Frontend fetches filtered EGDI/HIKE WFS GeoJSON on first use and caches it for later toggles |
 | ShakeMaps | Looked up on demand when an earthquake info card is opened |
 
 ## Reconciliation Algorithm
@@ -59,12 +59,13 @@ When a unique match is found, the Quakes API location and depth replace the MPGV
 ## Features
 
 - Interactive earthquake markers with timeline and magnitude colour modes
-- Canvas-backed `L.circleMarker` earthquake rendering for smoother pan/zoom performance
+- SVG `L.circleMarker` earthquake rendering with larger invisible click/tap hit targets
 - Time window slider with day, week, month, and year filtering
 - Magnitude filter with default minimum **M 3.0**
 - Volcano overlay and right-side volcano list from EPOS metadata
 - Faults overlay from EGDI/HIKE WFS, filtered to Iceland onshore records
 - Fault/fissure legend with solid red fault lines and dotted red fissure lines
+- Compact bottom-right attribution for the active basemap, plus EGDI/HIKE attribution when faults are visible
 - ShakeMap lookup button for eligible earthquake info cards
 - CSV export of the merged earthquake catalogue
 - Lat/lon grid overlay using Iceland-focused graticule spacing
@@ -168,6 +169,16 @@ cd frontend
 npm test
 ```
 
+Recommended frontend quality gate:
+
+```bash
+cd frontend
+npm audit --audit-level=low
+npm run lint
+npm run build
+npm test
+```
+
 ## Configuration
 
 | Setting | Value |
@@ -178,16 +189,18 @@ npm test
 | Reconcile max time difference | 2 seconds |
 | Reconcile max magnitude difference | 3.0 |
 | Database location | `backend/data/earthquakes.db` |
+| Frontend build target | Modern browsers, `esnext` Vite/esbuild output |
 
 ## Performance Notes
 
 | Component | Technique |
 |---|---|
-| Earthquake markers | Canvas-backed `L.circleMarker` rendering instead of many DOM/SVG marker nodes |
+| Earthquake markers | SVG `L.circleMarker` rendering with separate invisible hit targets for easier selection |
 | `TimeWindowSlider` | Stable wheel listener via `useRef`, memoized divider generation |
 | `MapComponent` tiles | `updateWhenZooming=false`, `updateWhenIdle=false`, `keepBuffer=4`, `detectRetina=false` |
 | `HeatmapLayer` | Rebuilt only on data changes and `zoomend`; panning does not redraw |
-| `FaultsOverlay` | Fetches filtered WFS GeoJSON only when enabled, then refreshes on a timer |
+| `FaultsOverlay` | Fetches filtered WFS GeoJSON on first use, then reuses the in-memory cache |
+| Attribution | Uses one compact bottom-right attribution line instead of stacked provider strings |
 
 ## Map Tile Licensing
 
