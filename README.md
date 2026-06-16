@@ -57,6 +57,8 @@ Each MPGV event is matched against Quakes API records using three thresholds:
 
 When a unique match is found, the Quakes API location and depth replace the MPGV values. The frontend and CSV export use the merged table and keep the public display threshold at **M >= 3.0**.
 
+Each Quakes API event is used at most once in the merged catalogue. If multiple MPGV rows compete for the same Quakes event, the best candidate by time difference, distance, and magnitude difference is matched; the other MPGV rows remain `v_only`. This prevents one physical Quakes event from being represented as multiple matched rows.
+
 ## Features
 
 - Interactive earthquake markers with timeline and magnitude colour modes

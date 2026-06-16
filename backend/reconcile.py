@@ -1,6 +1,7 @@
 # Merges MPGV and Skjálftalísa events into EarthquakeMerged.
 # Match criteria: |Δt| ≤ 2s, dist < DIST_LIMIT_KM, |ΔMw| < DM_LIMIT.
-# Exactly one match → 'matched' (S location/depth, V time/Mw); 0 or 2+ → 'v_only'.
+# Exactly one one-to-one match -> 'matched' (S location/depth, V time/Mw);
+# no match, ambiguous V candidates, or losing duplicate-S candidates -> 'v_only'.
 from datetime import datetime, timedelta, timezone
 from math import radians, sin, cos, asin, sqrt
 
@@ -46,9 +47,7 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
         ).delete()
         db.session.commit()
 
-        inserted = 0
-        n_matched = 0
-        n_v_only = 0
+        v_candidates = {}
         for v in v_rows:
             vt = v.date_time
             base = datetime.strptime(vt, "%Y-%m-%d %H:%M:%S")
@@ -64,9 +63,30 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                     if dm >= DM_LIMIT:
                         continue
                     dt_abs = abs((datetime.strptime(vt, "%Y-%m-%d %H:%M:%S") - datetime.strptime(s.date_time, "%Y-%m-%d %H:%M:%S")).total_seconds())
-                    candidates.append((dist, dt_abs, dm, s))
+                    score = (dt_abs, dist, dm, v.id or 0)
+                    candidates.append((score, dist, dt_abs, dm, s))
 
-            if len(candidates) == 0:
+            v_candidates[v.id] = candidates
+
+        selected_by_s = {}
+        for v in v_rows:
+            for score, dist, dt_abs, dm, s in v_candidates.get(v.id, []):
+                current = selected_by_s.get(s.event_id)
+                if current is None or score < current[0]:
+                    selected_by_s[s.event_id] = (score, v.id, dist, dt_abs, dm, s)
+
+        assigned = {}
+        for s_event_id, (score, v_id, dist, dt_abs, dm, s) in selected_by_s.items():
+            if len(v_candidates.get(v_id, [])) == 1:
+                assigned[v_id] = (dist, dt_abs, dm, s)
+
+        inserted = 0
+        n_matched = 0
+        n_v_only = 0
+        for v in v_rows:
+            match = assigned.get(v.id)
+
+            if match is None:
                 m = EarthquakeMerged(
                     date_time=v.date_time,
                     latitude=v.latitude,
@@ -83,8 +103,8 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                 inserted += 1
                 n_v_only += 1
 
-            elif len(candidates) == 1:
-                dist, dt_abs, dm, s_best = candidates[0]
+            else:
+                dist, dt_abs, dm, s_best = match
                 # DEPTH_POLICY options: 'v' = MPGV, 's' = Skjálftalísa, 'avg_if_close' = average when |V-S| < threshold
                 if DEPTH_POLICY == 's':
                     depth_value = s_best.depth
@@ -115,24 +135,6 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                 db.session.add(m)
                 inserted += 1
                 n_matched += 1
-
-            else:
-                # ≥2 candidates — ambiguous, fall back to v_only
-                m = EarthquakeMerged(
-                    date_time=v.date_time,
-                    latitude=v.latitude,
-                    longitude=v.longitude,
-                    depth=v.depth,
-                    mw_mean=v.mw_mean,
-                    status="v_only",
-                    s_event_id=None,
-                    match_dt_sec=None,
-                    match_dist_km=None,
-                    match_dm=None
-                )
-                db.session.add(m)
-                inserted += 1
-                n_v_only += 1
 
         db.session.commit()
         print(f"Total: {inserted}")

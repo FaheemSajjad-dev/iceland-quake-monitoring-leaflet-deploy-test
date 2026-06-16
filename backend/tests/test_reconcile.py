@@ -140,6 +140,26 @@ def test_ambiguous_two_s_candidates_gives_v_only(db_session):
 
 
 # ---------------------------------------------------------------------------
+# 7b. Two V rows competing for one S candidate -> one best match, one v_only
+# ---------------------------------------------------------------------------
+def test_one_skjalftalisa_event_is_used_once(db_session):
+    add_v(dt="2023-06-15 12:00:00", lat=64.0, lon=-22.0, mw=3.5)
+    add_v(dt="2023-06-15 12:00:01", lat=64.004, lon=-22.004, mw=3.5)
+    add_s("s006c", dt="2023-06-15 12:00:01", lat=64.004, lon=-22.004, mag=3.5)
+
+    run_merge()
+    rows = sorted(merged_rows(), key=lambda r: r.date_time)
+
+    assert len(rows) == 2
+    assert rows[0].status == "v_only"
+    assert rows[0].s_event_id is None
+    assert rows[1].status == "matched"
+    assert rows[1].s_event_id == "s006c"
+    assert rows[1].match_dt_sec == pytest.approx(0.0, abs=0.01)
+    assert len([r for r in rows if r.s_event_id == "s006c"]) == 1
+
+
+# ---------------------------------------------------------------------------
 # 8. Depth policy 'v' → merged depth comes from V
 # ---------------------------------------------------------------------------
 def test_depth_policy_v_uses_mpgv_depth(db_session):
