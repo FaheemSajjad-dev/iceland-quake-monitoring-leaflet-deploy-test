@@ -21,6 +21,7 @@ The deploy project at `F:\iceland-quake-monitoring-leaflet-deploy-test` is the l
 - Flask serves the built frontend from `frontend/dist`.
 - API and frontend are served from the same origin under the Pluto site.
 - `deploy.sh` installs dependencies, builds the frontend, stops the existing Gunicorn process, and starts Gunicorn on port 6000.
+- `deploy.sh` defaults to the Pluto public base path `/mpgv/` and accepts `--port` and `--base-url` for other hosting paths.
 - `stop.sh` stops the running server using `server.pid`.
 
 ## Standard Update Flow
@@ -39,6 +40,14 @@ cd ~/iceland-quake
 ./deploy.sh
 ```
 
+Equivalent explicit Pluto command:
+
+```bash
+./deploy.sh --port 6000 --base-url /mpgv/
+```
+
+Use `--base-url /` only when serving the app from a domain root. If a full public URL is supplied, such as `https://example.org/mpgv/`, the script normalizes it to the frontend base path.
+
 When root-level deploy files change, upload only the root files that changed. When frontend or backend files change, upload the matching frontend/backend files or directories while excluding `node_modules`.
 
 ## Pluto Runtime Files
@@ -47,6 +56,8 @@ When root-level deploy files change, upload only the root files that changed. Wh
 - `server.log` stores runtime logs.
 - `deploy.sh` restarts the app.
 - `stop.sh` stops the app.
+- `backend/venv` is created on the server and should not be copied between machines.
+- `frontend/node_modules` and `frontend/dist` are generated on the server by `deploy.sh` and should not be copied as source artifacts.
 
 ## Health Checks
 

@@ -152,7 +152,17 @@ cd ~/iceland-quake
 ./deploy.sh
 ```
 
-`deploy.sh` installs Python and Node dependencies, builds the frontend, stops the old Gunicorn process, and starts the backend on port 6000.
+`deploy.sh` installs Python and Node dependencies, builds the frontend, stops the old Gunicorn process, and starts the backend on port 6000. The script defaults to the Pluto public base path `/mpgv/`.
+
+Useful deployment options:
+
+```bash
+./deploy.sh --help
+./deploy.sh --port 6000 --base-url /mpgv/
+./deploy.sh --base-url /
+```
+
+Use `--base-url /mpgv/` for the current Pluto route. Use `--base-url /` only when the app is served from a domain root. The script also accepts a full public URL, for example `https://example.org/mpgv/`, and extracts the path used by the frontend build.
 
 ## Running Tests
 
