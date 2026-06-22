@@ -281,7 +281,7 @@
 /* Heatmap density legend — sits just above the Leaflet scale control (bottom-right) */
 .heatmap-legend {
   position: absolute;
-  bottom: 82px;
+  bottom: 104px;
   right: 20px;
   z-index: 1000;
   background: rgba(18, 18, 28, 0.85);
