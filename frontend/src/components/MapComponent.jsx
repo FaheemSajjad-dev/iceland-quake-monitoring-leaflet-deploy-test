@@ -1090,8 +1090,8 @@ const getMarkerHitRadius = (zoom) => {
 
 const getQuakeHitTargetStyle = (zoom) => ({
   radius: getMarkerHitRadius(zoom),
-  fillColor: "#000000",
-  fillOpacity: 0.001,
+  fillColor: "transparent",
+  fillOpacity: 0,
   stroke: false,
   opacity: 0,
   bubblingMouseEvents: false,

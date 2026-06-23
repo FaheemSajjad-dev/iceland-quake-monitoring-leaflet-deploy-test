@@ -29,6 +29,14 @@
   pointer-events: none !important;
 }
 
+.earthquake-hit-target {
+  fill: transparent !important;
+  fill-opacity: 0 !important;
+  stroke: transparent !important;
+  stroke-opacity: 0 !important;
+  pointer-events: all;
+}
+
 /* Map Type Selector (rendered inside LeftPanel) */
 .map-type-selector {
   position: relative;
