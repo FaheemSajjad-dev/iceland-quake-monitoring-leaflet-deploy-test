@@ -917,6 +917,15 @@ const RightClickHandler = () => {
   return null;
 };
 
+const getLngGridSpacing = (zoom) => {
+  if (zoom <= 5) return 4.0;
+  if (zoom <= 6) return 2.0;
+  if (zoom <= 7) return 1.0;
+  if (zoom <= 8) return 0.5;
+  if (zoom <= 10) return 0.25;
+  return 0.1;
+};
+
 const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => {
   const map = useMap();
   const gridRef = useRef([]);
@@ -934,12 +943,8 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     const east = bounds.getEast();
     const west = bounds.getWest();
 
-    let lngGridSpacing, subLngGridSpacing = null;
-    if (zoom < 5)       { lngGridSpacing = 4; }
-    else if (zoom < 7)  { lngGridSpacing = 2; }
-    else if (zoom < 8)  { lngGridSpacing = 1;   subLngGridSpacing = 0.5; }
-    else if (zoom < 9)  { lngGridSpacing = 0.5; subLngGridSpacing = 0.25; }
-    else                { lngGridSpacing = 0.2; subLngGridSpacing = 0.1; }
+    const lngGridSpacing = getLngGridSpacing(zoom);
+    const subLngGridSpacing = lngGridSpacing / 2;
 
     const labelDecimals = 1;
     const latGridSpacing = lngGridSpacing / 2;
@@ -1204,22 +1209,31 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
 // Color ramp: transparent → dark blue → blue → teal → amber → orange → deep red
 // Equal-weight stops eliminate the wide yellow band; reads cleanly on a dark basemap.
 const HEAT_GRADIENT = {
-  0.00: 'rgba(0,0,0,0)',
-  0.15: '#253494',   // dark indigo-blue (sparse — first visible)
-  0.30: '#2c7fb8',   // medium blue
-  0.50: '#41b6c4',   // teal
-  0.65: '#fdae61',   // amber
-  0.80: '#f46d43',   // orange
-  1.00: '#d73027',   // deep red (peak density)
+  0.00: 'transparent',
+  0.15: '#1e1b4b',   // dark indigo-blue (sparse — first visible)
+  0.30: '#2563eb',   // medium blue
+  0.50: '#14b8a6',   // teal
+  0.65: '#f59e0b',   // amber
+  0.80: '#f97316',   // orange
+  1.00: '#dc2626',   // deep red (peak density)
 };
 
-const heatRadius = (z) => {
-  if (z <= 5)  return 15;
-  if (z <= 6)  return 22;
-  if (z <= 7)  return 30;
-  if (z <= 8)  return 38;
-  if (z <= 9)  return 48;
-  return 58;
+const getHeatOptions = (zoom) => {
+  if (zoom <= 6) return { radius: 34, blur: 26, minOpacity: 0.08 };
+  if (zoom <= 8) return { radius: 22, blur: 16, minOpacity: 0.05 };
+  return { radius: 10, blur: 8, minOpacity: 0.02 };
+};
+
+const getHeatZoomBand = (zoom) => {
+  if (zoom <= 6) return "regional";
+  if (zoom <= 8) return "medium";
+  return "local";
+};
+
+const getHeatWeight = (magnitude) => {
+  if (magnitude >= 5.0) return 0.45;
+  if (magnitude >= 4.0) return 0.30;
+  return 0.20;
 };
 
 const HeatmapLayer = ({ earthquakes }) => {
@@ -1239,26 +1253,23 @@ const HeatmapLayer = ({ earthquakes }) => {
     if (earthquakes.length === 0) return;
 
     const zoom = map.getZoom();
-    const r    = heatRadius(zoom);
 
     const points = earthquakes.map(q => {
       const lat = parseFloat(q.Latitude);
       const lng = parseFloat(q.Longitude);
       const mag = parseFloat(q.Mw_mean);
       if (isNaN(lat) || isNaN(lng) || isNaN(mag)) return null;
-      // Density-first weighting: small magnitude bonus so notable events add slight extra
-      // prominence without letting a handful of M5+ events dominate the whole picture.
-      // Mw <4 → 1.0  |  Mw 4–5 → 1.15  |  Mw 5+ → 1.3
-      const wt = mag >= 5.0 ? 1.3 : mag >= 4.0 ? 1.15 : 1.0;
+      // Density-first weighting: isolated quakes stay subtle, while nearby
+      // events accumulate into clear clusters.
+      const wt = getHeatWeight(mag);
       return [lat, lng, wt];
     }).filter(Boolean);
 
     heatRef.current = L.heatLayer(points, {
-      radius:     r,
-      blur:       Math.round(r * 0.5),  // 50% of radius — tighter than before, less muddy
-      max:        1.3,                  // matches new max weight so full gradient is used
-      minOpacity: 0.25,                 // lower floor → sparse scatter stays subtle
-      gradient:   HEAT_GRADIENT,
+      ...getHeatOptions(zoom),
+      maxZoom: 6,
+      max: 2.5,
+      gradient: HEAT_GRADIENT,
     }).addTo(map);
 
     // The heat canvas is treated as an image by the browser, so right-click
@@ -1278,10 +1289,18 @@ const HeatmapLayer = ({ earthquakes }) => {
     };
   }, [map, rebuild]);
 
-  // Re-draw on zoom to apply correct radius — panning does not need a redraw
+  // Re-draw only when crossing heat bands; panning and within-band zooms do
+  // not need option changes and should not amplify the heatmap.
   useEffect(() => {
-    map.on("zoomend", rebuild);
-    return () => { map.off("zoomend", rebuild); };
+    let currentBand = getHeatZoomBand(map.getZoom());
+    const rebuildOnBandChange = () => {
+      const nextBand = getHeatZoomBand(map.getZoom());
+      if (nextBand === currentBand) return;
+      currentBand = nextBand;
+      rebuild();
+    };
+    map.on("zoomend", rebuildOnBandChange);
+    return () => { map.off("zoomend", rebuildOnBandChange); };
   }, [map, rebuild]);
 
   return null;
