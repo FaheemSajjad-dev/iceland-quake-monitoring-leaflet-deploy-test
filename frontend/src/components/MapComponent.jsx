@@ -739,6 +739,19 @@ const MapReadyHandler = () => {
   return null;
 };
 
+const MapUiResizeHandler = () => {
+  const map = useMap();
+  useEffect(() => {
+    const handleResize = () => {
+      map.invalidateSize();
+      setTimeout(() => map.invalidateSize(), 280);
+    };
+    window.addEventListener('quake-map-ui-resize', handleResize);
+    return () => window.removeEventListener('quake-map-ui-resize', handleResize);
+  }, [map]);
+  return null;
+};
+
 // Prevents scroll-wheel events from accumulating while a zoom animation is
 // still playing. Without this, fast scrolling queues extra zoom steps during
 // the ~250 ms CSS animation, causing multi-zoom and direction-inversion bugs.
@@ -1220,8 +1233,8 @@ const HEAT_GRADIENT = {
 
 const getHeatOptions = (zoom) => {
   if (zoom <= 6) return { radius: 34, blur: 26, minOpacity: 0.08 };
-  if (zoom <= 8) return { radius: 22, blur: 16, minOpacity: 0.05 };
-  return { radius: 10, blur: 8, minOpacity: 0.02 };
+  if (zoom <= 8) return { radius: 24, blur: 18, minOpacity: 0.05 };
+  return { radius: 16, blur: 12, minOpacity: 0.03 };
 };
 
 const getHeatZoomBand = (zoom) => {
@@ -1332,6 +1345,7 @@ const MapComponent = ({
   selectedVolcano,
   onSelectVolcano,
   resetViewTrigger = 0,
+  rightPanelOpen = false,
 }) => {
   const t = useT();
   const [selectedEarthquake, setSelectedEarthquake] = useState(null);
@@ -1403,7 +1417,7 @@ const MapComponent = ({
   );
 
   return (
-    <div className="map-container" style={{ position: "relative" }}>
+    <div className={`map-container${rightPanelOpen ? " right-panel-open" : ""}`} style={{ position: "relative" }}>
       {!mapReady && (
         <div className="map-loading-overlay">
           <span>{t('loading_map')}</span>
@@ -1430,6 +1444,7 @@ const MapComponent = ({
         <FitIcelandOnReady />
         <MapViewResetter trigger={resetViewTrigger} />
         <MapReadyHandler />
+        <MapUiResizeHandler />
         <ZoomAnimGuard />
         <RightClickHandler />
         <AttributionControl position="bottomright" prefix={false} />

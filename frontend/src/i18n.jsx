@@ -11,6 +11,7 @@ const T = {
     // LeftPanel controls
     show_controls: "Show controls",
     hide_controls: "Hide controls",
+    filters: "Filters",
     marker_colour: "Marker colour",
     timeline: "Timeline",
     magnitude: "Magnitude",
@@ -73,6 +74,7 @@ const T = {
     // LeftPanel controls
     show_controls: "Sýna stýringar",
     hide_controls: "Fela stýringar",
+    filters: "Siur",
     marker_colour: "Litur merkja",
     timeline: "Tímalína",
     magnitude: "Stærð",

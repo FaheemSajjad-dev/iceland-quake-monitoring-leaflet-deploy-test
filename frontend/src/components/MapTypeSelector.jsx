@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
 
-const MapTypeSelector = ({ onMapTypeChange }) => {
+const MapTypeSelector = ({ onMapTypeChange, selectedType = 'roadmap', className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedType, setSelectedType] = useState('roadmap');
     const t = useT();
 
     const handleTypeChange = (type) => {
-        setSelectedType(type);
         onMapTypeChange(type);
         setIsOpen(false);
     };
@@ -25,7 +23,7 @@ const MapTypeSelector = ({ onMapTypeChange }) => {
 
     return (
         <div
-            className="map-type-selector"
+            className={`map-type-selector${className ? ` ${className}` : ''}`}
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
         >
@@ -33,6 +31,7 @@ const MapTypeSelector = ({ onMapTypeChange }) => {
                 className={`map-type-main ${isOpen ? 'open' : ''}`}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
+                onClick={() => setIsOpen(v => !v)}
             >
                 <span className="map-type-icon" aria-hidden="true"></span>
                 <span className="map-type-label">{getDisplayName(selectedType)}</span>

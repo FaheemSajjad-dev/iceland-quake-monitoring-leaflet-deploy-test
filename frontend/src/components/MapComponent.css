@@ -290,7 +290,7 @@
 .heatmap-legend {
   position: absolute;
   bottom: 104px;
-  right: 20px;
+  right: 14px;
   z-index: 1000;
   background: rgba(18, 18, 28, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -298,6 +298,11 @@
   padding: 8px 10px 6px;
   min-width: 150px;
   backdrop-filter: blur(4px);
+  transition: right 0.25s ease;
+}
+
+.map-container.right-panel-open .heatmap-legend {
+  right: calc(14px + var(--right-panel-shift));
 }
 
 .heatmap-legend-title {
@@ -529,7 +534,101 @@
 }
 
 .leaflet-bottom.leaflet-right .faults-legend-control {
-  margin-bottom: 72px;
-  margin-right: 10px;
+  margin-bottom: 30px;
+  margin-right: 14px;
   transition: margin-right 0.25s ease;
+}
+
+.map-type-selector--mobile-floating {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .map-type-selector--mobile-floating {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 1120;
+    display: block;
+    width: min(42vw, 178px);
+    min-width: 136px;
+  }
+
+  .map-type-selector--mobile-floating .map-type-main,
+  .map-type-selector--mobile-floating .map-type-option {
+    min-height: 44px;
+  }
+
+  .map-type-selector--mobile-floating .map-type-dropdown {
+    left: auto;
+    right: 0;
+  }
+
+  .info-card {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    top: auto;
+    width: auto;
+    max-width: none;
+    max-height: min(44vh, 340px);
+    z-index: 1110;
+    border-radius: 10px 10px 8px 8px;
+    overflow-y: auto;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.24);
+  }
+
+  .info-card--earthquake,
+  .info-card--volcano {
+    border-left: 0;
+    border-top: 4px solid;
+  }
+
+  .info-card--earthquake { border-top-color: #4a6fa5; }
+  .info-card--volcano { border-top-color: #e64a19; }
+
+  .info-card__header {
+    min-height: 44px;
+    padding: 8px 10px 7px 12px;
+    box-sizing: border-box;
+  }
+
+  .info-card__close,
+  .info-card__action {
+    min-height: 44px;
+  }
+
+  .info-card__close {
+    min-width: 44px;
+    padding: 0;
+    font-size: 16px;
+  }
+
+  .info-card__magnitude {
+    font-size: 24px;
+  }
+
+  .heatmap-legend {
+    right: 12px;
+    bottom: 74px;
+  }
+
+  .map-container.right-panel-open .heatmap-legend {
+    right: 12px;
+  }
+
+  .map-container.right-panel-open .leaflet-bottom.leaflet-right {
+    right: 0;
+  }
+
+  .leaflet-bottom.leaflet-right .leaflet-control-scale,
+  .leaflet-bottom.leaflet-right .faults-legend-control {
+    margin-bottom: 14px;
+    margin-right: 4px;
+  }
+
+  .leaflet-control-attribution {
+    display: none;
+  }
 }

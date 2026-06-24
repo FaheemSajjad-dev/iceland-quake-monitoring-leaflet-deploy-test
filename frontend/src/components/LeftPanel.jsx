@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MapTypeSelector from './MapTypeSelector';
 import TimeWindowSlider from './TimeWindowSlider';
 import MagnitudeScale from './MagnitudeScale';
@@ -8,6 +8,7 @@ import './LeftPanel.css';
 
 const LeftPanel = ({
   onMapTypeChange,
+  mapType,
   showVolcanoes,
   toggleVolcanoes,
   showGrid,
@@ -24,16 +25,52 @@ const LeftPanel = ({
   onResetView,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  ));
   const { lang, toggleLang } = useLang();
   const t = useT();
 
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const handleChange = () => {
+      setIsMobile(media.matches);
+      if (!media.matches) setMobileDrawerOpen(false);
+    };
+    handleChange();
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('quake-map-ui-resize'));
+    }, 280);
+    return () => clearTimeout(id);
+  }, [mobileDrawerOpen, collapsed]);
+
   return (
-    <div className={`left-panel${collapsed ? ' left-panel--collapsed' : ''}`}>
+    <div className={`left-panel${collapsed ? ' left-panel--collapsed' : ''}${mobileDrawerOpen ? ' left-panel--mobile-open' : ''}`}>
+      <button
+        className="left-panel__filters-button"
+        onClick={() => setMobileDrawerOpen(true)}
+        aria-expanded={mobileDrawerOpen}
+      >
+        {t('filters')}
+      </button>
+      <button
+        className="left-panel__scrim"
+        onClick={() => setMobileDrawerOpen(false)}
+        aria-label={t('hide_controls')}
+        tabIndex={mobileDrawerOpen ? 0 : -1}
+      />
       {/* White sidebar body */}
+      <aside className="left-panel__mobile-shell" aria-hidden={isMobile && !mobileDrawerOpen}>
       <div className="left-panel__drawer">
         <div className="left-panel__body">
           <div className="left-panel__section">
-            <MapTypeSelector onMapTypeChange={onMapTypeChange} />
+            <MapTypeSelector onMapTypeChange={onMapTypeChange} selectedType={mapType} />
           </div>
 
           {!isHeatmap && (
@@ -106,7 +143,7 @@ const LeftPanel = ({
           <TimeWindowSlider
             onFilterChange={onFilterChange}
             colorOwner={colorOwner}
-            vertical
+            vertical={!isMobile}
             isHeatmap={isHeatmap}
           />
           <MagnitudeScale
@@ -115,14 +152,19 @@ const LeftPanel = ({
             onMagnitudeFilterChange={onMagnitudeFilterChange}
             colorOwner={colorOwner}
             isHeatmap={isHeatmap}
+            vertical={!isMobile}
           />
         </div>
       </div>
+      </aside>
 
       {/* Collapse / expand tab */}
       <button
         className="left-panel__toggle"
-        onClick={() => setCollapsed(v => !v)}
+        onClick={() => {
+          if (isMobile) setMobileDrawerOpen(v => !v);
+          else setCollapsed(v => !v);
+        }}
         title={collapsed ? t('show_controls') : t('hide_controls')}
       >
         {collapsed ? '▶' : '◀'}

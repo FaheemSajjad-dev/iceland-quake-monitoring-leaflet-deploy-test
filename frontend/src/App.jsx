@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import MapComponent from "./components/MapComponent";
 import LeftPanel from "./components/LeftPanel";
+import MapTypeSelector from "./components/MapTypeSelector";
 import RightPanel from "./components/RightPanel";
 import About from "./components/About";
 import { fetchEarthquakeData, fetchVolcanoData } from "./api";
@@ -156,6 +157,7 @@ const App = () => {
 
                 <LeftPanel
                     onMapTypeChange={handleMapTypeChange}
+                    mapType={mapType}
                     showVolcanoes={showVolcanoes}
                     toggleVolcanoes={toggleVolcanoes}
                     showGrid={showGrid}
@@ -170,6 +172,12 @@ const App = () => {
                     maxMagnitude={maxMagnitude}
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}
+                />
+
+                <MapTypeSelector
+                    onMapTypeChange={handleMapTypeChange}
+                    selectedType={mapType}
+                    className="map-type-selector--mobile-floating"
                 />
 
                 <RightPanel
@@ -192,6 +200,7 @@ const App = () => {
                     selectedVolcano={selectedVolcano}
                     onSelectVolcano={setSelectedVolcano}
                     resetViewTrigger={resetViewTrigger}
+                    rightPanelOpen={showVolcanoes}
                 />
 
             </div>

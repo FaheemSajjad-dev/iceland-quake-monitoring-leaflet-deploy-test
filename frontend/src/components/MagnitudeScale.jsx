@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import './MagnitudeScale.css';
 
-const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, colorOwner, isHeatmap }) => {
+const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, colorOwner, isHeatmap, vertical = true }) => {
 
   const [filterValue, setFilterValue] = useState(minMagnitude);
   const debounceRef = useRef(null);
@@ -22,15 +22,15 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
 
   const handleSliderChange = (e) => {
     const value = parseFloat(e.target.value);
-    const invertedValue = clampMagnitude(maxMagnitude - (value - minMagnitude));
-    setFilterValue(invertedValue);
+    const nextValue = vertical ? clampMagnitude(maxMagnitude - (value - minMagnitude)) : clampMagnitude(value);
+    setFilterValue(nextValue);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      if (onMagnitudeFilterChange) onMagnitudeFilterChange(roundMagnitude(invertedValue));
+      if (onMagnitudeFilterChange) onMagnitudeFilterChange(roundMagnitude(nextValue));
     }, 150);
   };
 
-  const sliderDisplayValue = maxMagnitude - (filterValue - minMagnitude);
+  const sliderDisplayValue = vertical ? maxMagnitude - (filterValue - minMagnitude) : filterValue;
 
   const getFilterBoxPosition = () => {
     const range = maxMagnitude - minMagnitude;
@@ -38,14 +38,14 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
     const valueRatio = (filterValue - minMagnitude) / range;
     const thumbRadius = 8;   // half of 16px thumb
     const trackLength = 200; // slider width in px
-    const px = thumbRadius + (1 - valueRatio) * (trackLength - 2 * thumbRadius);
+    const px = thumbRadius + (vertical ? 1 - valueRatio : valueRatio) * (trackLength - 2 * thumbRadius);
     return (px / trackLength) * 100;
   };
 
   const barClass = colorOwner === 'magnitude' ? 'scale-bar-colored' : 'scale-bar-gray';
 
   return (
-    <div className={`magnitude-scale vertical${isHeatmap ? ' heatmap-mode' : ''}`}>
+    <div className={`magnitude-scale ${vertical ? 'vertical' : 'horizontal'}${isHeatmap ? ' heatmap-mode' : ''}`}>
       <span className="scale-letter-label">M</span>
       <span className="max-value">{maxMagnitude.toFixed(1)}</span>
 
@@ -67,7 +67,7 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
               top: "50%",
               width: "200px",
               height: "10px",
-              transform: "translate(-48.5%, -50%) rotate(90deg)",
+              transform: vertical ? "translate(-48.5%, -50%) rotate(90deg)" : "translate(-50%, -50%)",
               margin: 0,
               padding: 0
             }}
@@ -78,9 +78,9 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
           className="current-filter"
           style={{
             position: "absolute",
-            left: "95%",
-            top: `${getFilterBoxPosition()}%`,
-            transform: "translateX(-50%) translateY(-55%)"
+            left: vertical ? "95%" : `${getFilterBoxPosition()}%`,
+            top: vertical ? `${getFilterBoxPosition()}%` : "26px",
+            transform: vertical ? "translateX(-50%) translateY(-55%)" : "translateX(-50%)"
           }}
         >
           <span style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 }}>
