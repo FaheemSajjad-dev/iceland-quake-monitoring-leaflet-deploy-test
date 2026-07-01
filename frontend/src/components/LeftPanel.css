@@ -146,20 +146,21 @@
 
 /* ── Height breakpoints: panel shrinks → update --slider-top ── */
 @media (max-height: 800px) {
-  .left-panel__range-controls { --range-slider-top: 224px; flex-basis: 315px; }
+  .left-panel__range-controls { --range-slider-top: 164px; flex-basis: 255px; }
   .left-panel__body { gap: 12px; padding: 12px 14px; }
 }
 @media (max-height: 700px) {
-  .left-panel__range-controls { --range-slider-top: 216px; flex-basis: 300px; }
+  .left-panel__range-controls { --range-slider-top: 175px; flex-basis: 235px; }
   .left-panel__body { gap: 8px; padding: 10px 12px; }
   .left-panel__section { gap: 5px; }
   .left-panel__label { font-size: 9px; letter-spacing: 0.4px; }
   .left-panel__body .volcano-toggle { padding: 3px 8px; }
   .toggle-label { font-size: 11px; }
+  .left-panel .time-window-slider-container.vertical { width: 340px; left: -64px; }
 }
 @media (max-height: 620px) {
   /* slider height = 26+42+10 = 78 → half = 39 */
-  .left-panel__range-controls { --range-slider-top: 192px; --slider-half-h: 39px; flex-basis: 250px; }
+  .left-panel__range-controls { --range-slider-top: 128px; --slider-half-h: 39px; flex-basis: 205px; }
   .left-panel__body { gap: 6px; padding: 8px 10px; }
   .left-panel__section { gap: 3px; }
   .left-panel__label { display: none; }
