@@ -122,7 +122,7 @@
 .left-panel .time-window-slider-container.vertical {
   top: var(--range-slider-top);
   left: -84px;
-  transform: translateX(-60px) rotate(-90deg);
+  transform: translateX(-70px) rotate(-90deg);
 }
 
 .left-panel .time-window-slider-container.vertical .zoom-indicator {
@@ -134,7 +134,7 @@
   right: auto;
   left: 0;
   top: calc(var(--range-slider-top) + var(--slider-half-h));
-  transform: translateX(120px) translateY(-50%);
+  transform: translateX(100px) translateY(-50%);
   pointer-events: all;
 }
 .left-panel .time-window-slider-container.vertical.heatmap-mode {
