@@ -140,21 +140,23 @@ const LeftPanel = ({
             </div>
           </div>
 
-          <TimeWindowSlider
-            onFilterChange={onFilterChange}
-            colorOwner={colorOwner}
-            mapType={mapType}
-            vertical={!isMobile}
-            isHeatmap={isHeatmap}
-          />
-          <MagnitudeScale
-            minMagnitude={minMagnitude}
-            maxMagnitude={maxMagnitude}
-            onMagnitudeFilterChange={onMagnitudeFilterChange}
-            colorOwner={colorOwner}
-            isHeatmap={isHeatmap}
-            vertical={!isMobile}
-          />
+          <div className="left-panel__range-controls">
+            <TimeWindowSlider
+              onFilterChange={onFilterChange}
+              colorOwner={colorOwner}
+              mapType={mapType}
+              vertical={!isMobile}
+              isHeatmap={isHeatmap}
+            />
+            <MagnitudeScale
+              minMagnitude={minMagnitude}
+              maxMagnitude={maxMagnitude}
+              onMagnitudeFilterChange={onMagnitudeFilterChange}
+              colorOwner={colorOwner}
+              isHeatmap={isHeatmap}
+              vertical={!isMobile}
+            />
+          </div>
         </div>
       </div>
       </aside>
