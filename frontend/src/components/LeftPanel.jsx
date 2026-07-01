@@ -119,21 +119,6 @@ const LeftPanel = ({
               </div>
             )}
             <div className="left-panel__action-row">
-              <button className="reset-view-btn" onClick={() => window.location.reload()} title={t('reload_page')}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-              </button>
-              <button className="reset-view-btn default-location-btn" onClick={onResetView} title={t('default_location')}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 2v4"/>
-                  <path d="M12 18v4"/>
-                  <path d="M2 12h4"/>
-                  <path d="M18 12h4"/>
-                </svg>
-              </button>
               <button className="lang-toggle-btn" onClick={toggleLang} title="Toggle language">
                 {lang === 'en' ? 'IS' : 'EN'}
               </button>
@@ -160,6 +145,24 @@ const LeftPanel = ({
         </div>
       </div>
       </aside>
+
+      <div className="left-panel__map-actions">
+        <button className="left-panel__map-action-btn" onClick={() => window.location.reload()} title={t('reload_page')} aria-label={t('reload_page')}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+        </button>
+        <button className="left-panel__map-action-btn default-location-btn" onClick={onResetView} title={t('default_location')} aria-label={t('default_location')}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v4"/>
+            <path d="M12 18v4"/>
+            <path d="M2 12h4"/>
+            <path d="M18 12h4"/>
+          </svg>
+        </button>
+      </div>
 
       {/* Collapse / expand tab */}
       <button
