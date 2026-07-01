@@ -344,44 +344,5 @@
   transform-origin: center center;
 }
 
-/* ── Responsive: vertical slider grows with screen size ──
-   Derivation: CSS_width = width + 2*24px padding; CSS_height = 26 + slider_height + 10
-   left = 20 - CSS_width/2 + CSS_height/2   (visual left = 20px)
-   top  = 50vh - 31 - CSS_height/2          (visual centre at 50vh-31)
-   heatmap_top = 50vh - 10 - CSS_height/2   (visual centre at 50vh-10, color toggle hidden) */
-
-@media (min-width: 1500px) {
-  /* CSS_width=508, CSS_height=96: left=20-254+48=-186, top=50vh-31-48=50vh-79 */
-  .time-window-slider-container.vertical {
-    width: 460px;
-    left: -231px;
-    top: calc(50vh - 79px);
-  }
-  .time-window-slider-container.vertical.heatmap-mode { top: calc(50vh - 58px); }
-  .time-window-slider-container.vertical .timeline-slider { height: 60px; }
-  .time-window-slider-container.vertical .timeline-track { height: 26px; }
-  .time-window-slider-container.vertical .year-label,
-  .time-window-slider-container.vertical .day-label,
-  .time-window-slider-container.vertical .month-label { font-size: 12px; }
-  .time-window-slider-container.vertical .selected-date { font-size: 13px; }
-  /* track centre: 26 + 60 - 10 - 13 = 63 */
-  .time-window-slider-container.vertical .vertical-letter-label { top: 57px; }
-}
-
-@media (min-width: 2100px) {
-  /* CSS_width=608, CSS_height=108: left=20-304+54=-230, top=50vh-31-54=50vh-85 */
-  .time-window-slider-container.vertical {
-    width: 560px;
-    left: -286px;
-    top: calc(50vh - 85px);
-  }
-  .time-window-slider-container.vertical.heatmap-mode { top: calc(50vh - 64px); }
-  .time-window-slider-container.vertical .timeline-slider { height: 72px; }
-  .time-window-slider-container.vertical .timeline-track { height: 30px; }
-  .time-window-slider-container.vertical .year-label,
-  .time-window-slider-container.vertical .day-label,
-  .time-window-slider-container.vertical .month-label { font-size: 14px; }
-  .time-window-slider-container.vertical .selected-date { font-size: 15px; }
-  /* track centre: 26 + 72 - 10 - 15 = 73 */
-  .time-window-slider-container.vertical .vertical-letter-label { top: 67px; }
-}
+/* Desktop vertical sizing is intentionally fixed so this control stays anchored
+   to the left panel instead of drifting on TV-sized or ultra-wide displays. */

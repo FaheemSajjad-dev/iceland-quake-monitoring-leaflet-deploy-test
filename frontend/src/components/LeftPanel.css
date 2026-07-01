@@ -135,20 +135,6 @@
   top: calc(433px + var(--slider-half-h));
 }
 
-/* ── Width breakpoints: update --slider-top, both components follow automatically ── */
-@media (min-width: 1500px) {
-  /* slider height = 26+60+10 = 96 → half = 48 */
-  .left-panel { --slider-top: 538px; --slider-half-h: 48px; }
-  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 473px; }
-  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(473px + 48px); }
-}
-@media (min-width: 2100px) {
-  /* slider height = 26+72+10 = 108 → half = 54 */
-  .left-panel { --slider-top: 588px; --slider-half-h: 54px; }
-  .left-panel .time-window-slider-container.vertical.heatmap-mode { top: 523px; }
-  .left-panel .magnitude-scale.vertical.heatmap-mode { top: calc(523px + 54px); }
-}
-
 /* ── Height breakpoints: panel shrinks → update --slider-top ── */
 @media (max-height: 800px) {
   .left-panel { --slider-top: 482px; }

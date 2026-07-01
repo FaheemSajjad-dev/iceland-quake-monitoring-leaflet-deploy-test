@@ -175,23 +175,8 @@
   color: #333;
 }
 
-/* ── Responsive: magnitude scale grows with screen size ── */
-@media (min-width: 1500px) {
-  .magnitude-scale.vertical { width: 50px; }
-  .scale-container { height: 260px; }
-  .scale-bar-vertical { height: 260px; }
-  .magnitude-slider { width: 260px !important; }
-  .magnitude-scale.vertical .min-value,
-  .magnitude-scale.vertical .max-value { font-size: 14px; }
-}
-@media (min-width: 2100px) {
-  .magnitude-scale.vertical { width: 60px; }
-  .scale-container { height: 320px; }
-  .scale-bar-vertical { height: 320px; }
-  .magnitude-slider { width: 320px !important; }
-  .magnitude-scale.vertical .min-value,
-  .magnitude-scale.vertical .max-value { font-size: 16px; }
-}
+/* Desktop vertical sizing is intentionally fixed so the scale remains visually
+   attached to the left panel on large monitors and TV-sized displays. */
 
 /* --- Dynamic color modes for the vertical bar --- */
 .scale-bar-vertical.scale-bar-gray {
