@@ -143,6 +143,7 @@ const LeftPanel = ({
           <TimeWindowSlider
             onFilterChange={onFilterChange}
             colorOwner={colorOwner}
+            mapType={mapType}
             vertical={!isMobile}
             isHeatmap={isHeatmap}
           />

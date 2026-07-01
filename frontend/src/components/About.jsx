@@ -13,10 +13,10 @@ const DATA_CADENCE = {
     ["ShakeMaps", "IMO EPOS ShakeMaps are checked on demand when an earthquake is selected, avoiding heavy bulk requests on every refresh."],
   ],
   is: [
-    ["Jardskjalftar", "MPGV og IMO Quakes API eru athugud i bakenda a 3 minutna fresti og samraemd i sameinadan grunn."],
-    ["Eldfjoll", "IMO EPOS eldfjallagogn eru uppfaerd i bakenda og endurhladin i kortinu a 3 minutna fresti."],
-    ["Misgengi", "EGDI/HIKE WFS linur fyrir misgengi og sprungur eru hladnar vid fyrstu notkun og geymdar fyrir sidari birtingu."],
-    ["ShakeMaps", "IMO EPOS ShakeMaps eru athugud eftir thorfum thegar jardskjalfti er valinn, til ad forda thungum fjoldafyrirspurnum."],
+    ["Jarðskjálftar", "MPGV og IMO Quakes API eru athuguð í bakenda á 3 mínútna fresti og samræmd í sameinaðan grunn."],
+    ["Eldfjöll", "IMO EPOS eldfjallagögn eru uppfærð í bakenda og endurhlaðið í kortið á 3 mínútna fresti."],
+    ["Misgengi", "EGDI/HIKE WFS línum fyrir misgengi og sprungur er hlaðið við fyrstu notkun og þær geymdar fyrir síðari birtingu."],
+    ["ShakeMaps", "IMO EPOS ShakeMaps eru athuguð eftir þörfum þegar jarðskjálfti er valinn, til að forðast þungar fjöldafyrirspurnir."],
   ],
 };
 
@@ -25,17 +25,17 @@ const MAP_LAYERS = {
     ["Map", "OpenFreeMap vector basemap with Iceland glacier labels."],
     ["Satellite", "Esri World Imagery for visual terrain context."],
     ["Terrain", "Icelandic Meteorological Office raster terrain tiles."],
-    ["Gray", "CARTO light basemap for quiet inspection."],
+    ["Gray", "CARTO light basemap for simple inspection."],
     ["Heatmap", "Density-first earthquake heatmap with label overlay."],
     ["Attribution", "Compact bottom-right map credits show the active basemap providers and EGDI/HIKE when faults are visible."],
   ],
   is: [
-    ["Map", "OpenFreeMap vektorkort med islenskum joklaheitum."],
-    ["Gervihnottur", "Esri World Imagery fyrir myndraent landslagssamhengi."],
-    ["Landslag", "Raster landslagsflisar fra Vedurstofu Islands."],
-    ["Gratt", "Ljost CARTO grunnkort fyrir rolega skodun."],
-    ["Hitakort", "Thettleikakort jardskjalfta med merkjayfirlagslagi."],
-    ["Heimildir", "Stutt heimildalina nedst til haegri synir virka grunnkortsveitur og EGDI/HIKE thegar misgengi eru synileg."],
+    ["Kort", "OpenFreeMap vektorkort með íslenskum jöklaheitum."],
+    ["Gervihnöttur", "Esri World Imagery fyrir myndrænt landslagssamhengi."],
+    ["Landslag", "Raster landslagsflísar frá Veðurstofu Íslands."],
+    ["Grátt", "Ljóst CARTO grunnkort fyrir einfalda skoðun."],
+    ["Hitakort", "Þéttleikakort jarðskjálfta."],
+    ["Heimildir", "Stutt heimildalína neðst til hægri sýnir virkar grunnkortsveitur og EGDI/HIKE þegar misgengi eru sýnileg."],
   ],
 };
 
@@ -47,10 +47,10 @@ const SOURCES = {
     ["EGDI/HIKE", "Fault and fissure WFS linework from maps.europe-geology.eu, filtered to Iceland onshore records."],
   ],
   is: [
-    ["MPGV", "Sogulegar og naer rauntima skraningar M >= 3.0 jardskjalfta fra hraun.vedur.is/ja/Mpgv/."],
-    ["IMO Quakes API", "Nyleg atburdagogn fra api.vedur.is/quakes/events sem baeta stadsetningu, dypt og audkenni."],
-    ["EPOS", "Eldfjallaskra og ShakeMap upplysingar fra api.vedur.is/epos."],
-    ["EGDI/HIKE", "WFS linugogn fra maps.europe-geology.eu fyrir misgengi og sprungur, siud i islenskar landfaerslur."],
+    ["MPGV", "Sögulegar og rauntímaskráningar M >= 3.0 jarðskjálfta frá hraun.vedur.is/ja/Mpgv/."],
+    ["IMO Quakes API", "Nýleg atburðagögn frá api.vedur.is/quakes/events sem bæta staðsetningu, dýpt og auðkenni."],
+    ["EPOS", "Eldfjallaskrá og ShakeMap upplýsingar frá api.vedur.is/epos."],
+    ["EGDI/HIKE", "WFS-gögn frá maps.europe-geology.eu fyrir misgengi og sprungur."],
   ],
 };
 
@@ -73,15 +73,15 @@ const Copy = ({ lang }) => lang === "en" ? (
 ) : (
   <>
     <p>
-      Thetta forrit er hluti af meistaraverkefni vid Haskola Islands. Thad
-      fylgist med islenskum jardskjalftum fra juni 2020, med aherslu a atburdi
-      med <strong>M {">="} 3.0</strong>, og synir tha a gagnvirku Leaflet-korti.
+      Þetta forrit er hluti af meistaraverkefni við Háskóla Íslands. Það
+      fylgist með íslenskum jarðskjálftum frá júní 2020, með áherslu á atburði
+      með <strong>M {">="} 3.0</strong>, og sýnir þá á gagnvirku Leaflet-korti.
     </p>
     <p>
-      Bakendinn heldur utan um sameinadan jardskjalftagrunn med thvi ad lesa
-      MPGV-skra, saekja nyleg Skjalftalisa-gogn og samraema atburdi eftir tima,
-      stadsetningu og staerd. Framendinn baetir vid eldfjallagogn, ShakeMap
-      tenglum, hnitaneti og EGDI/HIKE linum fyrir misgengi og sprungur.
+      Bakendinn heldur utan um sameinaðan jarðskjálftagrunn með því að lesa
+      MPGV-skrá, sækja nýleg Skjálftalista-gögn og samræma atburði eftir tíma,
+      staðsetningu og stærð. Framendinn bætir við eldfjallagögnum, ShakeMap
+      tenglum, hnitaneti og EGDI/HIKE línum fyrir misgengi og sprungur.
     </p>
   </>
 );
@@ -126,7 +126,7 @@ const About = ({ onClose }) => {
       <div className="about-content card" onMouseDown={(e) => e.stopPropagation()}>
         <header className="about-header">
           <div>
-            <p className="about-kicker">{lang === "en" ? "Research map" : "Rannsoknarkort"}</p>
+            <p className="about-kicker">{lang === "en" ? "Research map" : "Rannsóknarkort"}</p>
             <h2 id="about-title" className="about-title">{t("about_title")}</h2>
           </div>
           <button ref={closeBtnRef} className="close-button" aria-label={t("about_close")} onClick={onClose}>x</button>
@@ -139,17 +139,17 @@ const About = ({ onClose }) => {
           </section>
 
           <section className="about-section">
-            <h3>{lang === "en" ? "Data Sources" : "Gagnauppsprettur"}</h3>
+            <h3>{lang === "en" ? "Data Sources" : "Uppruni gagna"}</h3>
             <InfoGrid items={SOURCES[lang]} />
           </section>
 
           <section className="about-section">
-            <h3>{lang === "en" ? "Update Cadence" : "Uppfaerslutidni"}</h3>
+            <h3>{lang === "en" ? "Update Cadence" : "Uppfærslutíðni"}</h3>
             <InfoGrid items={DATA_CADENCE[lang]} />
           </section>
 
           <section className="about-section">
-            <h3>{lang === "en" ? "Map Layers" : "Kortalog"}</h3>
+            <h3>{lang === "en" ? "Map Layers" : "Kortalög"}</h3>
             <InfoGrid items={MAP_LAYERS[lang]} />
           </section>
 
@@ -174,11 +174,11 @@ const About = ({ onClose }) => {
                 <a className="contact-email" href="mailto:mfs7@hi.is">mfs7@hi.is</a>
               </li>
               <li>
-                <span className="contact-name">Kristjan Jonasson</span>
+                <span className="contact-name">Kristján Jónasson</span>
                 <a className="contact-email" href="mailto:jonasson@hi.is">jonasson@hi.is</a>
               </li>
               <li>
-                <span className="contact-name">Esa Olavi Hyytia</span>
+                <span className="contact-name">Esa Olavi Hyytiä</span>
                 <a className="contact-email" href="mailto:esa@hi.is">esa@hi.is</a>
               </li>
             </ul>

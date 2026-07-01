@@ -76,7 +76,7 @@ const T = {
     hide_controls: "Fela stýringar",
     filters: "Siur",
     marker_colour: "Litur merkja",
-    timeline: "Tímalína",
+    timeline: "Tímabil",
     magnitude: "Stærð",
     overlays: "Yfirlag",
     volcanoes: "Eldfjöll",
@@ -85,7 +85,7 @@ const T = {
     reload_page: "Endurhlaða",
     default_location: "Sjálfgefin kortasýn",
     // Map types
-    map_map: "Map",
+    map_map: "Kort",
     map_satellite: "Gervihnöttur",
     map_terrain: "Landslag",
     map_gray: "Grátt",

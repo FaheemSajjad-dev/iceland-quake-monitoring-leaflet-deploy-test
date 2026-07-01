@@ -122,6 +122,8 @@ const App = () => {
         if (type === "heatmap") {
             setColorOwner('timeline');
             setShowFaults(false);
+        } else if (type === "satellite") {
+            setColorOwner('timeline');
         }
     }, []);
 

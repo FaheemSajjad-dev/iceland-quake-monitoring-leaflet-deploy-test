@@ -52,17 +52,26 @@ const TIMELINE_YEAR_STOPS = [
   "#5ec4de", // 2025
   "#78d8e8", // 2026 — bright teal (most recent)
 ];
+const SATELLITE_TIMELINE_YEAR_STOPS = [
+  "#3b063f",
+  "#5d0a62",
+  "#7f117f",
+  "#a31997",
+  "#c026a8",
+  "#dc3fba",
+  "#ff8adb",
+];
 const TIMELINE_BASE_YEAR = 2020;
 
-const getTwilightColorForDate = (isoString) => {
-  if (!isoString) return TIMELINE_YEAR_STOPS[3];
+const getTimelineColorForDate = (isoString, palette = TIMELINE_YEAR_STOPS) => {
+  if (!isoString) return palette[3];
   const d = parseBackendUtcDate(isoString);
-  if (!d) return TIMELINE_YEAR_STOPS[3];
+  if (!d) return palette[3];
   const idx = Math.max(0, Math.min(
-    TIMELINE_YEAR_STOPS.length - 1,
+    palette.length - 1,
     d.getUTCFullYear() - TIMELINE_BASE_YEAR
   ));
-  return TIMELINE_YEAR_STOPS[idx];
+  return palette[idx];
 };
 
 // Basemap definitions. The default vector map is handled by MaplibreVectorLayer.
@@ -930,13 +939,25 @@ const RightClickHandler = () => {
   return null;
 };
 
-const getLngGridSpacing = (zoom) => {
-  if (zoom <= 5) return 4.0;
-  if (zoom <= 6) return 2.0;
-  if (zoom <= 7) return 1.0;
-  if (zoom <= 8) return 0.5;
-  if (zoom <= 10) return 0.25;
-  return 0.1;
+const GRID_ZOOM_LEVELS = [
+  { maxZoom: 5, lngSpacing: 4, labelDecimals: 0 },
+  { maxZoom: 6, lngSpacing: 2, labelDecimals: 0 },
+  { maxZoom: 7, lngSpacing: 1, labelDecimals: 0 },
+  { maxZoom: 8, lngSpacing: 0.5, labelDecimals: 1 },
+  { maxZoom: 9, lngSpacing: 0.25, labelDecimals: 2 },
+  { maxZoom: 10, lngSpacing: 0.1, labelDecimals: 2 },
+  { maxZoom: 11, lngSpacing: 0.05, labelDecimals: 2 },
+  { maxZoom: 12, lngSpacing: 0.025, labelDecimals: 3 },
+  { maxZoom: 13, lngSpacing: 0.01, labelDecimals: 3 },
+  { maxZoom: Infinity, lngSpacing: 0.005, labelDecimals: 4 },
+];
+
+const getGridConfig = (zoom) => {
+  const config = GRID_ZOOM_LEVELS.find(({ maxZoom }) => zoom <= maxZoom);
+  return {
+    lngGridSpacing: config.lngSpacing,
+    labelDecimals: config.labelDecimals,
+  };
 };
 
 const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => {
@@ -956,12 +977,12 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     const east = bounds.getEast();
     const west = bounds.getWest();
 
-    const lngGridSpacing = getLngGridSpacing(zoom);
+    const { lngGridSpacing, labelDecimals } = getGridConfig(zoom);
     const subLngGridSpacing = lngGridSpacing / 2;
 
-    const labelDecimals = 1;
     const latGridSpacing = lngGridSpacing / 2;
     const subLatGridSpacing = latGridSpacing / 2;
+    const normalizeGridValue = (value, step) => Number((Math.round(value / step) * step).toFixed(6));
     const isOnStep = (value, step) => Math.abs(value / step - Math.round(value / step)) < 0.001;
 
     const mainColor  = darkLike ? "#ddd8cc" : "#666666";
@@ -1012,7 +1033,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
 
     const labelLatLngFromPoint = (x, y) => map.containerPointToLatLng([x, y]);
 
-    for (let lat = startLat; lat <= endLat; lat += latGridSpacing) {
+    for (let lat = startLat; lat <= endLat; lat = normalizeGridValue(lat + latGridSpacing, latGridSpacing)) {
       if (lat < -85 || lat > 85) continue;
       addLine([[lat, extW], [lat, extE]], mainColor, 0.5, 0.5);
 
@@ -1023,7 +1044,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
         `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
         lblColor, labelSize, labelWeight, [0, 13]);
     }
-    for (let lng = startLng; lng <= endLng; lng += lngGridSpacing) {
+    for (let lng = startLng; lng <= endLng; lng = normalizeGridValue(lng + lngGridSpacing, lngGridSpacing)) {
       addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
 
       const labelX = map.latLngToContainerPoint([center.lat, lng]).x;
@@ -1037,7 +1058,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     }
     const sLat = Math.floor(extS / subLatGridSpacing) * subLatGridSpacing;
     const eLat = Math.ceil(extN / subLatGridSpacing) * subLatGridSpacing;
-    for (let lat = sLat; lat <= eLat; lat += subLatGridSpacing) {
+    for (let lat = sLat; lat <= eLat; lat = normalizeGridValue(lat + subLatGridSpacing, subLatGridSpacing)) {
       if (lat < -85 || lat > 85) continue;
       if (isOnStep(lat, latGridSpacing)) continue;
       addLine([[lat, extW], [lat, extE]], subColor, 0.5, 0.5);
@@ -1046,7 +1067,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     if (subLngGridSpacing !== null) {
       const sLng = Math.floor(extW / subLngGridSpacing) * subLngGridSpacing;
       const eLng = Math.ceil(extE / subLngGridSpacing) * subLngGridSpacing;
-      for (let lng = sLng; lng <= eLng; lng += subLngGridSpacing) {
+      for (let lng = sLng; lng <= eLng; lng = normalizeGridValue(lng + subLngGridSpacing, subLngGridSpacing)) {
         if (isOnStep(lng, lngGridSpacing)) continue;
         addLine([[extS, lng], [extN, lng]], subColor, 0.5, 0.5);
       }
@@ -1407,13 +1428,14 @@ const MapComponent = ({
   const markerIcons = useMemo(() =>
     earthquakes.map((quake) => {
       const magnitude = parseFloat(quake.Mw_mean);
+      const timelinePalette = mapType === "satellite" ? SATELLITE_TIMELINE_YEAR_STOPS : TIMELINE_YEAR_STOPS;
       const color =
         colorOwner === "timeline"
-          ? getTwilightColorForDate(quake["Date-time"])
+          ? getTimelineColorForDate(quake["Date-time"], timelinePalette)
           : getMarkerColor(magnitude, maxMagnitude);
       return { px: MARKER_PX, color };
     }),
-    [earthquakes, colorOwner, maxMagnitude]
+    [earthquakes, colorOwner, mapType, maxMagnitude]
   );
 
   return (

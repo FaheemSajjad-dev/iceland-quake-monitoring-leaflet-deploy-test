@@ -1,7 +1,29 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useLang } from '../i18n';
 import './TimeWindowSlider.css';
 
-const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = false, isHeatmap = false }) => {
+const IS_MONTH_SHORT = ['jan', 'feb', 'mar', 'apr', 'maí', 'jún', 'júl', 'ágú', 'sep', 'okt', 'nóv', 'des'];
+const ZOOM_TEXT = {
+  en: {
+    day: 'Day view',
+    week: 'Week view',
+    year: 'Year view',
+    month: 'Month view',
+    hint: 'scroll to zoom time window, drag to shift',
+  },
+  is: {
+    day: 'Dagsyfirlit',
+    week: 'Vikuyfirlit',
+    year: 'Ársyfirlit',
+    month: 'Mánaðaryfirlit',
+    hint: 'skrunaðu til að þysja tímabil, dragðu til að færa',
+  },
+};
+
+const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = 'roadmap', vertical = false, isHeatmap = false }) => {
+  const langContext = useLang();
+  const lang = langContext?.lang ?? 'en';
+  const zoomText = ZOOM_TEXT[lang] ?? ZOOM_TEXT.en;
   const startDate = useMemo(() => new Date(2020, 5, 1), []);
   const currentDate = useMemo(() => new Date(), []);
 
@@ -105,16 +127,16 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
   const formatDateRangeDisplay = () => {
 		const range = calculateVisibleRange();
 		const { firstVisibleDate, lastVisibleDate } = range;
+    const formatMonth = (date) =>
+      lang === 'is'
+        ? IS_MONTH_SHORT[date.getMonth()]
+        : date.toLocaleString("default", { month: "short" });
 
 		const fmtDay = (date) =>
-			`${date.getDate()} ${date.toLocaleString("default", {
-				month: "short",
-			})} ${date.getFullYear()}`;
+			`${date.getDate()} ${formatMonth(date)} ${date.getFullYear()}`;
 
 		const fmtMonth = (date) =>
-			`${date.toLocaleString("default", {
-				month: "short",
-			})} ${date.getFullYear()}`;
+			`${formatMonth(date)} ${date.getFullYear()}`;
 
 		const useDayPrecision = range.isDayView || range.isWeekMode;
 		const f = useDayPrecision ? fmtDay : fmtMonth;
@@ -520,7 +542,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
       {vertical && <span className="vertical-letter-label">T</span>}
       <div className="timeline-slider" ref={sliderRef}>
         <div
-          className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : 'colored'}`}
+          className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : isHeatmap ? 'heatmap-neutral' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
           ref={trackRef}
           style={{ cursor: "grab" }}
           onMouseDown={handleMouseDown}
@@ -539,8 +561,8 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', vertical = 
 
       <div className="selected-date">{formatDateRangeDisplay()}</div>
       <div className="zoom-indicator">
-        {isDayViewMode ? " Day view " : isWeekMode ? " Week view " : isYearMode ? " Year view " : " Month view "}
-        ( scroll to zoom {zoomLevel < 0.5 ? "time window, drag to shift" : "time window, drag to shift "} )
+        {isDayViewMode ? zoomText.day : isWeekMode ? zoomText.week : isYearMode ? zoomText.year : zoomText.month}
+        {` (${zoomText.hint})`}
       </div>
     </div>
   );
