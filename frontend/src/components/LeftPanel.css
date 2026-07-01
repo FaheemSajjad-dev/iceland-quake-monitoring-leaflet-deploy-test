@@ -144,6 +144,12 @@
   top: calc(var(--range-slider-top) + var(--slider-half-h));
 }
 
+@media (min-height: 801px) {
+  .left-panel .magnitude-scale.vertical {
+    transform: translateX(108px) translateY(-50%);
+  }
+}
+
 /* ── Height breakpoints: panel shrinks → update --slider-top ── */
 @media (max-height: 800px) {
   .left-panel__range-controls { --range-slider-top: 164px; flex-basis: 255px; }
