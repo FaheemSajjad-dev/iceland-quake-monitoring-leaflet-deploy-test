@@ -113,6 +113,14 @@ describe('TimeWindowSlider – onFilterChange', () => {
 // ---------------------------------------------------------------------------
 
 describe('TimeWindowSlider – month mode labels', () => {
+  it('zooms in from the vertical control buttons', () => {
+    renderSlider({ vertical: true });
+
+    fireEvent.click(screen.getByRole('button', { name: /zoom timeline in/i }));
+
+    expect(screen.getByText(/Month view/i)).toBeInTheDocument();
+  });
+
   it('switches to month view when zoom-in button is pressed', () => {
     renderSlider();
     // The component zooms through wheel events, so use the same path here.

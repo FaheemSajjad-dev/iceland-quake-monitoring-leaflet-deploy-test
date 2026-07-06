@@ -225,29 +225,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
   };
 
   // Zoom handler – smooth, no big jumps, anchored to cursor in month mode
-  const handleWheel = (e) => {
-    e.preventDefault();
-
-    if (!trackRef.current) {
-      const raw = e.deltaY;
-      const clamped = Math.max(-60, Math.min(60, raw));
-      const k = zoomLevel < 0.1 ? 0.004 : 0.006;
-      const scale = Math.exp(clamped * k);
-      const newZoomLevel = Math.max(0.005, Math.min(1.0, zoomLevel * scale));
-      setZoomLevel(newZoomLevel);
-      if (newZoomLevel >= 1.0) {
-        setViewOffset(1.0);
-      }
-      return;
-    }
-
-    const rect = trackRef.current.getBoundingClientRect();
-    // In vertical mode the slider is rotated -90deg; top = newer, bottom = older
-    const cursorRatio = vertical
-      ? 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / (rect.height || 1)))
-      : Math.max(0, Math.min(1, (e.clientX - rect.left) / (rect.width || 1)));
-
-    const raw = e.deltaY;
+  const applyZoom = (raw, cursorRatio = 0.5) => {
     const clamped = Math.max(-60, Math.min(60, raw));
     const k = zoomLevel < 0.1 ? 0.004 : 0.006;
     const scale = Math.exp(clamped * k);
@@ -301,6 +279,23 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
     setViewOffset(newOffset);
   };
 
+  const handleWheel = (e) => {
+    e.preventDefault();
+
+    if (!trackRef.current) {
+      applyZoom(e.deltaY);
+      return;
+    }
+
+    const rect = trackRef.current.getBoundingClientRect();
+    // In vertical mode the slider is rotated -90deg; top = newer, bottom = older
+    const cursorRatio = vertical
+      ? 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / (rect.height || 1)))
+      : Math.max(0, Math.min(1, (e.clientX - rect.left) / (rect.width || 1)));
+
+    applyZoom(e.deltaY, cursorRatio);
+  };
+
   // Stable wheel listener registered once. handleWheelRef.current is updated every render
   // so the wrapper always calls the latest closure without re-registering the listener.
   const handleWheelRef = useRef(null);
@@ -333,12 +328,15 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
     const deltaRatio = (vertical ? delta : -delta) / trackWidth * sensitivityFactor;
     const newOffset = Math.max(0, Math.min(1, dragStartOffsetRef.current + deltaRatio));
     setViewOffset(newOffset);
-    e.preventDefault(); // stop page scroll while dragging slider
   };
 
   const handleTouchEnd = () => {
     isDraggingRef.current = false;
     if (trackRef.current) trackRef.current.classList.remove("dragging");
+  };
+
+  const handleZoomButtonClick = (direction) => {
+    applyZoom(direction === "in" ? -60 : 60);
   };
 
 
@@ -540,6 +538,26 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
   return (
     <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
       {vertical && <span className="vertical-letter-label">T</span>}
+      {vertical && (
+        <div className="timeline-zoom-buttons" aria-label="Timeline zoom controls">
+          <button
+            type="button"
+            className="timeline-zoom-button"
+            onClick={() => handleZoomButtonClick("in")}
+            aria-label="Zoom timeline in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="timeline-zoom-button"
+            onClick={() => handleZoomButtonClick("out")}
+            aria-label="Zoom timeline out"
+          >
+            -
+          </button>
+        </div>
+      )}
       <div className="timeline-slider" ref={sliderRef}>
         <div
           className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : isHeatmap ? 'heatmap-neutral' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
