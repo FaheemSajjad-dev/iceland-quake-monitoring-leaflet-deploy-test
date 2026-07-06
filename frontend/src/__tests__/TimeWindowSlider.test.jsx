@@ -115,8 +115,7 @@ describe('TimeWindowSlider – onFilterChange', () => {
 describe('TimeWindowSlider – month mode labels', () => {
   it('switches to month view when zoom-in button is pressed', () => {
     renderSlider();
-    // The zoom-in button is only rendered on mobile (isMobile = false in tests),
-    // so we trigger a wheel event to zoom in instead.
+    // The component zooms through wheel events, so use the same path here.
     const track = document.querySelector('.timeline-track');
     if (!track) return; // guard if DOM differs
 
