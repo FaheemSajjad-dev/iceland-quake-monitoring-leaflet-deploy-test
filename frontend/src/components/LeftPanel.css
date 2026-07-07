@@ -134,7 +134,7 @@
   right: auto;
   left: 0;
   top: calc(var(--range-slider-top) + var(--slider-half-h));
-  transform: translateX(108px) translateY(-50%);
+  transform: translateX(102px) translateY(-50%);
   pointer-events: all;
 }
 .left-panel .time-window-slider-container.vertical.heatmap-mode {
@@ -146,7 +146,7 @@
 
 @media (min-height: 801px) {
   .left-panel .magnitude-scale.vertical {
-    transform: translateX(116px) translateY(-50%);
+    transform: translateX(110px) translateY(-50%);
   }
 }
 
@@ -401,7 +401,7 @@
   }
 
   .left-panel .magnitude-scale.vertical {
-    transform: translateX(94px) translateY(-50%) scale(0.86);
+    transform: translateX(88px) translateY(-50%) scale(0.86);
     transform-origin: center;
   }
 

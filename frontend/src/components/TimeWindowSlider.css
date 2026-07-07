@@ -4,7 +4,7 @@
   background: var(--floating-card-bg, #ffffff);
   border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
   border-radius: var(--floating-card-radius, 8px);
-  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
+  box-shadow: var(--floating-card-shadow, 0 2px 8px rgba(10, 40, 80, 0.10));
   width: 44%;
   max-width: 440px;
   height: fit-content;
@@ -362,16 +362,16 @@
     pointer-events: all;
     overflow: hidden;
     background: var(--floating-card-bg, #ffffff);
-    border: 1px solid rgba(10, 40, 80, 0.16);
+    border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
     border-radius: var(--floating-card-radius, 8px);
-    box-shadow: 0 2px 7px rgba(10, 40, 80, 0.12);
+    box-shadow: var(--floating-card-shadow, 0 2px 8px rgba(10, 40, 80, 0.10));
   }
 
   .time-window-slider-container.vertical .timeline-zoom-button {
-    width: 22px;
+    width: 20px;
     height: 22px;
     border: 0;
-    border-right: 1px solid rgba(10, 40, 80, 0.14);
+    border-right: 1px solid rgba(10, 40, 80, 0.12);
     border-radius: 0;
     background: #ffffff;
     color: #1a3a5c;
