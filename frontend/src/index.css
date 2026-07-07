@@ -15,7 +15,7 @@
   --floating-card-bg: #ffffff;
   --floating-card-border: 1px solid rgba(10, 40, 80, 0.14);
   --floating-card-radius: 8px;
-  --floating-card-shadow: 0 2px 8px rgba(10, 40, 80, 0.10);
+  --floating-card-shadow: 0 1px 6px rgba(10, 40, 80, 0.09);
 }
 
 a {

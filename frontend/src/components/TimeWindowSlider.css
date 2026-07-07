@@ -4,7 +4,7 @@
   background: var(--floating-card-bg, #ffffff);
   border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
   border-radius: var(--floating-card-radius, 8px);
-  box-shadow: var(--floating-card-shadow, 0 2px 8px rgba(10, 40, 80, 0.10));
+  box-shadow: var(--floating-card-shadow, 0 1px 6px rgba(10, 40, 80, 0.09));
   width: 44%;
   max-width: 440px;
   height: fit-content;
@@ -352,7 +352,7 @@
 @media (max-width: 767px) {
   .time-window-slider-container.vertical .timeline-zoom-buttons {
     position: absolute;
-    right: -40px;
+    right: -36px;
     top: 42px;
     z-index: 3;
     display: flex;
@@ -364,7 +364,7 @@
     background: var(--floating-card-bg, #ffffff);
     border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
     border-radius: var(--floating-card-radius, 8px);
-    box-shadow: var(--floating-card-shadow, 0 2px 8px rgba(10, 40, 80, 0.10));
+    box-shadow: var(--floating-card-shadow, 0 1px 6px rgba(10, 40, 80, 0.09));
   }
 
   .time-window-slider-container.vertical .timeline-zoom-button {

@@ -17,7 +17,7 @@
   background: var(--floating-card-bg, #ffffff);
   border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
   border-radius: var(--floating-card-radius, 8px);
-  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
+  box-shadow: var(--floating-card-shadow, 0 1px 6px rgba(10, 40, 80, 0.09));
 }
 
 .scale-container {
