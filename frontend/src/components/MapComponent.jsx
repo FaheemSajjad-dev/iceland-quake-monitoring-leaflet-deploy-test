@@ -1399,6 +1399,7 @@ const MapComponent = ({
   onSelectVolcano,
   resetViewTrigger = 0,
   rightPanelOpen = false,
+  mobileLeftPanelOpen = false,
 }) => {
   const t = useT();
   const [selectedEarthquake, setSelectedEarthquake] = useState(null);
@@ -1471,7 +1472,10 @@ const MapComponent = ({
   );
 
   return (
-    <div className={`map-container${rightPanelOpen ? " right-panel-open" : ""}`} style={{ position: "relative" }}>
+    <div
+      className={`map-container${rightPanelOpen ? " right-panel-open" : ""}${mobileLeftPanelOpen ? " mobile-left-panel-open" : ""}`}
+      style={{ position: "relative" }}
+    >
       {!mapReady && (
         <div className="map-loading-overlay">
           <span>{t('loading_map')}</span>

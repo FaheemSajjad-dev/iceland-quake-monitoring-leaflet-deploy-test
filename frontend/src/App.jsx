@@ -40,6 +40,21 @@ const App = () => {
     const [selectedVolcano, setSelectedVolcano] = useState(null);
     const [resetViewTrigger, setResetViewTrigger] = useState(0);
     const resetView = useCallback(() => setResetViewTrigger(v => v + 1), []);
+    const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() =>
+        typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+    );
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+    );
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+        const query = window.matchMedia("(max-width: 767px)");
+        const update = () => setIsMobile(query.matches);
+        update();
+        query.addEventListener?.("change", update);
+        return () => query.removeEventListener?.("change", update);
+    }, []);
 
     useEffect(() => {
         if (!selectedVolcano) return;
@@ -137,10 +152,11 @@ const App = () => {
 
     const handleMagnitudeFilterChange = useCallback(v => setMagnitudeFilter(v), []);
     const emptyVolcanoes = useMemo(() => [], []);
+    const rightPanelOpen = showVolcanoes && !isMobile;
 
     return (
         <div className="app-container">
-            <div className={`map-container${showVolcanoes ? " right-panel-open" : ""}`}>
+            <div className={`map-container${rightPanelOpen ? " right-panel-open" : ""}`}>
                 <div className="about-button-container">
                     <button className="nav-button" onClick={() => setShowAbout(true)}>
                         {t('about')}
@@ -174,15 +190,19 @@ const App = () => {
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}
                     onShowAbout={() => setShowAbout(true)}
+                    collapsed={leftPanelCollapsed}
+                    onCollapsedChange={setLeftPanelCollapsed}
                 />
 
-                <RightPanel
-                    volcanoes={volcanoData}
-                    selectedVolcano={selectedVolcano}
-                    onSelectVolcano={setSelectedVolcano}
-                    showVolcanoes={showVolcanoes}
-                    onToggleVolcanoes={toggleVolcanoes}
-                />
+                {!isMobile && (
+                    <RightPanel
+                        volcanoes={volcanoData}
+                        selectedVolcano={selectedVolcano}
+                        onSelectVolcano={setSelectedVolcano}
+                        showVolcanoes={showVolcanoes}
+                        onToggleVolcanoes={toggleVolcanoes}
+                    />
+                )}
 
                 <MapComponent
                     earthquakes={filteredData}
@@ -196,7 +216,8 @@ const App = () => {
                     selectedVolcano={selectedVolcano}
                     onSelectVolcano={setSelectedVolcano}
                     resetViewTrigger={resetViewTrigger}
-                    rightPanelOpen={showVolcanoes}
+                    rightPanelOpen={rightPanelOpen}
+                    mobileLeftPanelOpen={isMobile && !leftPanelCollapsed}
                 />
 
             </div>

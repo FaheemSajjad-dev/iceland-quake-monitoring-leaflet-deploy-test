@@ -579,11 +579,18 @@
   }
 
   .info-card {
-    left: 48px;
-    top: 64px;
-    width: 178px;
-    max-width: calc(100vw - 96px);
+    left: 8px;
+    top: auto;
+    bottom: 118px;
+    width: 132px;
+    max-width: 132px;
+    max-height: 42vh;
     border-radius: 7px;
+    overflow-y: auto;
+  }
+
+  .map-container.mobile-left-panel-open .info-card {
+    z-index: 1003;
   }
 
   .info-card__header {
@@ -599,17 +606,27 @@
   }
 
   .info-card__magnitude {
-    font-size: 22px;
+    font-size: 18px;
     margin-bottom: 6px;
   }
 
   .info-card__row {
+    display: block;
     gap: 6px;
     font-size: 10px;
   }
 
   .info-card__row span:first-child {
+    display: block;
     font-size: 8px;
+    margin-bottom: 1px;
+    white-space: normal;
+  }
+
+  .info-card__row span:last-child {
+    display: block;
+    text-align: left;
+    word-break: break-word;
   }
 
   .info-card__desc,

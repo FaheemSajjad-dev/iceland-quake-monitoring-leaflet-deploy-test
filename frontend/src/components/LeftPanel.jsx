@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import MapTypeSelector from './MapTypeSelector';
 import TimeWindowSlider from './TimeWindowSlider';
 import MagnitudeScale from './MagnitudeScale';
@@ -24,10 +24,9 @@ const LeftPanel = ({
   onMagnitudeFilterChange,
   onResetView,
   onShowAbout,
+  collapsed,
+  onCollapsedChange,
 }) => {
-  const [collapsed, setCollapsed] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-  );
   const { lang, toggleLang } = useLang();
   const t = useT();
 
@@ -147,7 +146,7 @@ const LeftPanel = ({
       {/* Collapse / expand tab */}
       <button
         className="left-panel__toggle"
-        onClick={() => setCollapsed(v => !v)}
+        onClick={() => onCollapsedChange(v => !v)}
         title={collapsed ? t('show_controls') : t('hide_controls')}
       >
         {collapsed ? '▶' : '◀'}
