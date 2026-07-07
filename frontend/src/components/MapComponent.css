@@ -579,13 +579,13 @@
   }
 
   .info-card {
-    left: 8px;
+    left: 10px;
     top: auto;
     bottom: 118px;
-    width: 132px;
-    max-width: 132px;
-    max-height: 42vh;
-    border-radius: 7px;
+    width: 118px;
+    max-width: 118px;
+    max-height: 34vh;
+    border-radius: 6px;
     overflow-y: auto;
   }
 
@@ -594,32 +594,32 @@
   }
 
   .info-card__header {
-    padding: 7px 8px 6px 9px;
+    padding: 5px 6px 4px 7px;
   }
 
   .info-card__title {
-    font-size: 11px;
+    font-size: 9px;
   }
 
   .info-card__body {
-    padding: 8px 9px 9px;
+    padding: 6px 7px 7px;
   }
 
   .info-card__magnitude {
-    font-size: 18px;
-    margin-bottom: 6px;
+    font-size: 15px;
+    margin-bottom: 4px;
   }
 
   .info-card__row {
     display: block;
-    gap: 6px;
-    font-size: 10px;
+    font-size: 8.5px;
+    line-height: 1.2;
   }
 
   .info-card__row span:first-child {
     display: block;
-    font-size: 8px;
-    margin-bottom: 1px;
+    font-size: 7px;
+    margin-bottom: 0;
     white-space: normal;
   }
 
@@ -631,7 +631,18 @@
 
   .info-card__desc,
   .info-card__action {
-    font-size: 10px;
+    font-size: 8.5px;
+  }
+
+  .info-card__desc {
+    margin-bottom: 5px;
+    line-height: 1.25;
+  }
+
+  .info-card__action {
+    margin-top: 6px;
+    padding: 4px 0;
+    border-radius: 4px;
   }
 
   .heatmap-legend {
