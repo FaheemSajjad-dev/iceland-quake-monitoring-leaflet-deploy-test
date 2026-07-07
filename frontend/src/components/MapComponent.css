@@ -592,7 +592,7 @@
     position: fixed;
     left: 46px;
     top: auto;
-    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     width: 118px;
     max-width: 118px;
     max-height: 34svh;
