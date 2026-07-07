@@ -579,7 +579,7 @@
   }
 
   .info-card {
-    left: 10px;
+    left: 46px;
     top: auto;
     bottom: 118px;
     width: 118px;
@@ -590,6 +590,7 @@
   }
 
   .map-container.mobile-left-panel-open .info-card {
+    left: 10px;
     z-index: 1003;
   }
 
