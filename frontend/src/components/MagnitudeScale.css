@@ -14,9 +14,10 @@
   height: auto;
   width: 40px;
   align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  background: var(--floating-card-bg, #ffffff);
+  border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
+  border-radius: var(--floating-card-radius, 8px);
+  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
 }
 
 .scale-container {
@@ -188,7 +189,6 @@
     width: 34px;
     padding: 11px 6px;
     gap: 8px;
-    border-radius: 8px;
   }
 
   .scale-container {

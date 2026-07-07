@@ -151,9 +151,10 @@
   top: 60px;
   width: 220px;
   max-width: calc(100vw - 300px - 200px);
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  background: var(--floating-card-bg, #ffffff);
+  border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
+  border-radius: var(--floating-card-radius, 8px);
+  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
   z-index: 1000;
   overflow: hidden;
   font-family: system-ui, sans-serif;
@@ -292,12 +293,12 @@
   bottom: 104px;
   right: 14px;
   z-index: 1000;
-  background: rgba(18, 18, 28, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 6px;
+  background: var(--floating-card-bg, #ffffff);
+  border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
+  border-radius: var(--floating-card-radius, 8px);
   padding: 8px 10px 6px;
   min-width: 150px;
-  backdrop-filter: blur(4px);
+  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
   transition: right 0.25s ease;
 }
 
@@ -306,7 +307,7 @@
 }
 
 .heatmap-legend-title {
-  color: #d0d0d0;
+  color: #566272;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -325,7 +326,7 @@
 .heatmap-legend-labels {
   display: flex;
   justify-content: space-between;
-  color: #999;
+  color: #566272;
   font-size: 10px;
 }
 
@@ -421,15 +422,14 @@
 
 /* ── Tectonic zone map legend ── */
 .tectonic-legend {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(0,0,0,0.15);
-  border-radius: 6px;
+  background: var(--floating-card-bg, #ffffff);
+  border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
+  border-radius: var(--floating-card-radius, 8px);
   padding: 7px 10px 8px;
   font-size: 11px;
   color: #333;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+  box-shadow: var(--floating-card-shadow, 0 3px 12px rgba(10, 40, 80, 0.12));
   min-width: 140px;
-  backdrop-filter: blur(3px);
 }
 .tectonic-legend__title {
   font-size: 10px;
@@ -596,7 +596,6 @@
     width: 118px;
     max-width: 118px;
     max-height: 34svh;
-    border-radius: 6px;
     overflow-y: auto;
     z-index: 1200;
   }

@@ -11,6 +11,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --floating-card-bg: #ffffff;
+  --floating-card-border: 1px solid rgba(10, 40, 80, 0.14);
+  --floating-card-radius: 8px;
+  --floating-card-shadow: 0 3px 12px rgba(10, 40, 80, 0.12);
 }
 
 a {
