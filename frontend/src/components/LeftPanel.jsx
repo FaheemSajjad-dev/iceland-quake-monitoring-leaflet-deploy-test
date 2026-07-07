@@ -23,6 +23,7 @@ const LeftPanel = ({
   maxMagnitude,
   onMagnitudeFilterChange,
   onResetView,
+  onShowAbout,
 }) => {
   const [collapsed, setCollapsed] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -123,6 +124,13 @@ const LeftPanel = ({
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
             <path d="M3 3v5h5"/>
+          </svg>
+        </button>
+        <button className="left-panel__map-action-btn mobile-about-action" onClick={onShowAbout} title={t('about')} aria-label={t('about')}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.5C4 4.7 4.7 4 5.5 4H10c1.1 0 2 .9 2 2v14c0-1.1-.9-2-2-2H5.5C4.7 18 4 17.3 4 16.5v-11Z" />
+            <path d="M20 5.5C20 4.7 19.3 4 18.5 4H14c-1.1 0-2 .9-2 2v14c0-1.1.9-2 2-2h4.5c.8 0 1.5-.7 1.5-1.5v-11Z" />
+            <path d="M12 6v14" />
           </svg>
         </button>
         <button className="left-panel__map-action-btn default-location-btn" onClick={onResetView} title={t('default_location')} aria-label={t('default_location')}>

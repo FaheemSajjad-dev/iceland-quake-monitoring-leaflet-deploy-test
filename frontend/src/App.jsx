@@ -173,6 +173,7 @@ const App = () => {
                     maxMagnitude={maxMagnitude}
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}
+                    onShowAbout={() => setShowAbout(true)}
                 />
 
                 <RightPanel
