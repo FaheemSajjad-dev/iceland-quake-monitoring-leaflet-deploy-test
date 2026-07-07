@@ -189,3 +189,57 @@ input:checked + .slider:before {
 .map-container.right-panel-open .about-button-container {
   right: calc(14px + var(--right-panel-shift));
 }
+
+@media (max-width: 767px) {
+  .map-container.right-panel-open {
+    --right-panel-shift: 154px;
+  }
+
+  .controls {
+    top: 2px;
+    transform: translateX(-50%);
+    gap: 4px;
+    padding: 7px 10px;
+  }
+
+  .controls h1 {
+    font-size: 15px;
+    max-width: 58vw;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .about-button-container {
+    top: 10px;
+    right: 10px;
+  }
+
+  .map-container.right-panel-open .about-button-container {
+    right: calc(10px + var(--right-panel-shift));
+  }
+
+  .nav-button {
+    min-width: 68px;
+    padding: 5px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .switch {
+    width: 34px;
+    height: 19px;
+  }
+
+  .slider:before {
+    width: 13px;
+    height: 13px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(15px);
+  }
+
+  .volcano-label {
+    font-size: 8px;
+  }
+}

@@ -539,3 +539,125 @@
   transition: margin-right 0.25s ease;
 }
 
+@media (max-width: 767px) {
+  :root {
+    --mag-clearance: 84px;
+  }
+
+  .map-container.right-panel-open .leaflet-bottom.leaflet-right {
+    right: 154px;
+  }
+
+  .map-container.right-panel-open .heatmap-legend {
+    right: calc(10px + var(--right-panel-shift));
+  }
+
+  .map-type-main {
+    min-height: 28px;
+    gap: 5px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+  }
+
+  .map-type-icon {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+  }
+
+  .map-type-icon::before,
+  .map-type-icon::after {
+    left: 1px;
+    width: 10px;
+    height: 6px;
+  }
+
+  .map-type-option {
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+
+  .info-card {
+    left: 48px;
+    top: 64px;
+    width: 178px;
+    max-width: calc(100vw - 96px);
+    border-radius: 7px;
+  }
+
+  .info-card__header {
+    padding: 7px 8px 6px 9px;
+  }
+
+  .info-card__title {
+    font-size: 11px;
+  }
+
+  .info-card__body {
+    padding: 8px 9px 9px;
+  }
+
+  .info-card__magnitude {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .info-card__row {
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .info-card__row span:first-child {
+    font-size: 8px;
+  }
+
+  .info-card__desc,
+  .info-card__action {
+    font-size: 10px;
+  }
+
+  .heatmap-legend {
+    right: 10px;
+    bottom: 84px;
+    min-width: 116px;
+    padding: 6px 8px 5px;
+  }
+
+  .heatmap-legend-title {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+
+  .heatmap-legend-bar {
+    height: 8px;
+  }
+
+  .heatmap-legend-labels {
+    font-size: 8px;
+  }
+
+  .leaflet-control-attribution {
+    max-width: calc(100vw - 96px);
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .leaflet-bottom.leaflet-right .leaflet-control-scale {
+    margin-bottom: 20px;
+    margin-right: 8px;
+    transform: scale(0.84);
+    transform-origin: bottom right;
+  }
+
+  .leaflet-bottom.leaflet-right .faults-legend-control {
+    margin-bottom: 22px;
+    margin-right: 8px;
+    transform: scale(0.86);
+    transform-origin: bottom right;
+  }
+}
+

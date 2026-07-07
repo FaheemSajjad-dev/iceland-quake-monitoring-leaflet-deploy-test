@@ -111,6 +111,13 @@ const COMPACT_ATTRIBUTIONS = {
   gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
 };
+const MOBILE_ATTRIBUTIONS = {
+  roadmap: "<a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  satellite: "<a href='https://www.esri.com/'>Esri</a>",
+  terrain: "<a href='https://www.vedur.is/'>IMO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+  gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+  heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+};
 const FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE, ISOR</a>";
 const ROADMAP_RASTER_FALLBACK = {
   url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
@@ -366,8 +373,9 @@ const removeMatchingAttributions = (map, matcher) => {
     });
 };
 
-const removeVerboseProviderAttributions = (map) => {
+const removeVerboseProviderAttributions = (map, keep = new Set()) => {
   removeMatchingAttributions(map, (attribution) => {
+    if (keep.has(attribution)) return false;
     const text = attribution.toLowerCase();
     return (
       text.includes("openfreemap") ||
@@ -386,23 +394,47 @@ const removeVerboseProviderAttributions = (map) => {
   });
 };
 
+const useMobileAttribution = () => {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
+  return isMobile;
+};
+
 const CompactAttribution = ({ mapType, showFaults }) => {
   const map = useMap();
+  const isMobile = useMobileAttribution();
 
   useEffect(() => {
     const control = map.attributionControl;
     if (!control) return undefined;
 
     removeVerboseProviderAttributions(map);
-    const parts = [COMPACT_ATTRIBUTIONS[mapType] ?? COMPACT_ATTRIBUTIONS.roadmap];
+    const attributions = isMobile ? MOBILE_ATTRIBUTIONS : COMPACT_ATTRIBUTIONS;
+    const parts = [attributions[mapType] ?? attributions.roadmap];
     if (showFaults) parts.push(FAULTS_ATTRIBUTION);
     const compact = parts.join(" | ");
     control.addAttribution(compact);
+    const keep = new Set([compact]);
+    const cleanupTimers = [100, 500, 1200].map((delay) =>
+      window.setTimeout(() => removeVerboseProviderAttributions(map, keep), delay)
+    );
 
     return () => {
+      cleanupTimers.forEach(window.clearTimeout);
       removeAttribution(map, compact);
     };
-  }, [map, mapType, showFaults]);
+  }, [map, mapType, showFaults, isMobile]);
 
   return null;
 };

@@ -24,7 +24,9 @@ const LeftPanel = ({
   onMagnitudeFilterChange,
   onResetView,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
   const { lang, toggleLang } = useLang();
   const t = useT();
 
