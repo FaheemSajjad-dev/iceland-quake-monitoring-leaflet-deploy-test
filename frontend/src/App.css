@@ -191,6 +191,24 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 767px) {
+  html,
+  body,
+  #root,
+  .app-container,
+  .map-container {
+    height: 100svh;
+  }
+
+  @supports (height: 100dvh) {
+    html,
+    body,
+    #root,
+    .app-container,
+    .map-container {
+      height: 100dvh;
+    }
+  }
+
   .map-container.right-panel-open {
     --right-panel-shift: 154px;
   }
