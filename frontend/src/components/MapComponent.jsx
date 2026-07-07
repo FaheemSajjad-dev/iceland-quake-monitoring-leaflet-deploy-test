@@ -1057,10 +1057,13 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
 
     const mapSize = map.getSize();
     const center = map.getCenter();
-    const LAT_LABEL_X = 245;
+    const isMobileGrid = mapSize.x <= 767;
+    const LAT_LABEL_X = isMobileGrid ? mapSize.x - 52 : 245;
     const LAT_LABEL_Y_OFFSET = -6;
     const LNG_LABEL_Y = mapSize.y - 34;
     const MIN_LNG_LABEL_GAP = 72;
+    const LNG_LABEL_MIN_X = isMobileGrid ? 18 : 210;
+    const LNG_LABEL_MAX_X = mapSize.x - 40;
     let lastLngLabelX = -Infinity;
 
     const labelLatLngFromPoint = (x, y) => map.containerPointToLatLng([x, y]);
@@ -1080,7 +1083,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
       addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
 
       const labelX = map.latLngToContainerPoint([center.lat, lng]).x;
-      if (labelX < 210 || labelX > mapSize.x - 40) continue;
+      if (labelX < LNG_LABEL_MIN_X || labelX > LNG_LABEL_MAX_X) continue;
       if (labelX - lastLngLabelX < MIN_LNG_LABEL_GAP) continue;
       lastLngLabelX = labelX;
       const labelPoint = labelLatLngFromPoint(labelX, LNG_LABEL_Y);
