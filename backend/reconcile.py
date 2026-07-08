@@ -1,5 +1,5 @@
-# Merges MPGV and Skjálftalísa events into EarthquakeMerged.
-# Match criteria: |Δt| ≤ 2s, dist < DIST_LIMIT_KM, |ΔMw| < DM_LIMIT.
+# Merges MPGV rows with IMO Quakes API rows into EarthquakeMerged.
+# Match criteria: abs(dt) <= 2s, dist < DIST_LIMIT_KM, abs(dMw) < DM_LIMIT.
 # Exactly one one-to-one match -> 'matched' (S location/depth, V time/Mw);
 # no match, ambiguous V candidates, or losing duplicate-S candidates -> 'v_only'.
 from datetime import datetime, timedelta, timezone
@@ -10,7 +10,7 @@ from app import app, db, Earthquake, EarthquakeMerged, EarthquakeSRaw
 DIST_LIMIT_KM = 10.0
 DM_LIMIT = 3.0
 
-DEPTH_POLICY = 's'         # use Skjálftalísa depth when matched
+DEPTH_POLICY = 's'         # use Quakes API depth when matched
 DEPTH_AVG_THR_KM = 5.0     # if using 'avg_if_close', average when |V-S| < 5 km
 
 def haversine_km(lat1, lon1, lat2, lon2):
@@ -40,7 +40,7 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
             Earthquake.mw_mean >= min_mag
         ).all()
 
-        # 3) Clear merged rows in this window (idempotent reruns)
+        # Clear merged rows in this window so reruns are idempotent.
         EarthquakeMerged.query.filter(
             EarthquakeMerged.date_time >= start_utc,
             EarthquakeMerged.date_time <= end_utc
@@ -105,7 +105,8 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
 
             else:
                 dist, dt_abs, dm, s_best = match
-                # DEPTH_POLICY options: 'v' = MPGV, 's' = Skjálftalísa, 'avg_if_close' = average when |V-S| < threshold
+                # DEPTH_POLICY options: 'v' = MPGV, 's' = Quakes API,
+                # 'avg_if_close' = average when source depths are close.
                 if DEPTH_POLICY == 's':
                     depth_value = s_best.depth
                 elif DEPTH_POLICY == 'avg_if_close':

@@ -20,6 +20,21 @@ const ZOOM_TEXT = {
   },
 };
 
+const getDragSensitivity = ({ isDayViewMode, isWeekMode, isTouch = false }) => {
+  if (!isTouch) return (isDayViewMode || isWeekMode) ? 0.1 : 2.0;
+  if (isDayViewMode) return 0.03;
+  if (isWeekMode) return 0.045;
+  return 0.55;
+};
+
+const getZoomButtonDelta = ({ direction, isDayViewMode, isWeekMode, isYearMode }) => {
+  const base =
+    isDayViewMode ? 18 :
+    isWeekMode ? 24 :
+    isYearMode ? 60 : 36;
+  return direction === "in" ? -base : base;
+};
+
 const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = 'roadmap', vertical = false, isHeatmap = false }) => {
   const langContext = useLang();
   const lang = langContext?.lang ?? 'en';
@@ -207,7 +222,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
     // Horizontal: drag right → earlier dates, so negate delta.
     // Vertical (rotated -90deg): drag down is visually leftward along the timeline,
     // so use positive delta to keep drag-down = earlier dates (natural direction).
-    let sensitivityFactor = (isDayViewMode || isWeekMode) ? 0.1 : 2.0;
+    const sensitivityFactor = getDragSensitivity({ isDayViewMode, isWeekMode });
     const deltaRatio = (vertical ? delta : -delta) / trackWidth * sensitivityFactor;
     const newOffset = Math.max(0, Math.min(1, dragStartOffsetRef.current + deltaRatio));
 
@@ -324,7 +339,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
     const trackWidth = trackRef.current.offsetWidth;
     const delta = (vertical ? t.clientY : t.clientX) - dragStartXRef.current;
 
-    const sensitivityFactor = (isDayViewMode || isWeekMode) ? 0.1 : 2.0;
+    const sensitivityFactor = getDragSensitivity({ isDayViewMode, isWeekMode, isTouch: true });
     const deltaRatio = (vertical ? delta : -delta) / trackWidth * sensitivityFactor;
     const newOffset = Math.max(0, Math.min(1, dragStartOffsetRef.current + deltaRatio));
     setViewOffset(newOffset);
@@ -336,7 +351,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
   };
 
   const handleZoomButtonClick = (direction) => {
-    applyZoom(direction === "in" ? -60 : 60);
+    applyZoom(getZoomButtonDelta({ direction, isDayViewMode, isWeekMode, isYearMode }));
   };
 
 

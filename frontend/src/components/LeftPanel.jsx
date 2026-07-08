@@ -39,7 +39,6 @@ const LeftPanel = ({
 
   return (
     <div className={`left-panel${collapsed ? ' left-panel--collapsed' : ''}`}>
-      {/* White sidebar body */}
       <div className="left-panel__drawer">
         <div className="left-panel__body">
           <div className="left-panel__section">
@@ -143,7 +142,6 @@ const LeftPanel = ({
         </button>
       </div>
 
-      {/* Collapse / expand tab */}
       <button
         className="left-panel__toggle"
         onClick={() => onCollapsedChange(v => !v)}

@@ -32,13 +32,16 @@ Current map/app state:
 - Earthquake and volcano info cards open near the upper-left map work area.
 - Magnitude scale focus ring has been suppressed.
 - Bottom-right map attribution is compact and shows only the active basemap providers, plus EGDI/HIKE when faults are visible.
+- Default Map layer uses MapLibre GL over OpenFreeMap; if MapLibre/WebGL initialization fails, the app falls back to a CARTO light raster basemap.
+- Heatmap weights are density-first: M 3-4 = 0.20, M 4-5 = 0.30, M 5+ = 0.45.
+- Flask-Limiter rate limiting is applied to public read/export endpoints with environment-configurable limits.
 - Frontend audit, lint, build, and unit test checks are expected to pass before changes are copied to deploy-test.
 
 Known browser note:
 
 - The Map base layer uses MapLibre GL and requires WebGL.
 - If Chrome on a MacBook has WebGL disabled by hardware acceleration settings, browser policy, or graphics state, MapLibre can fail to initialize in that browser.
-- The temporary WebGL fallback/glacier-redraw patch was removed; the app currently keeps the normal MapLibre glacier rendering.
+- If MapLibre cannot initialize, the app falls back to a CARTO raster basemap while keeping Leaflet overlays usable.
 
 Deployment notes:
 
@@ -52,6 +55,6 @@ Production considerations still open:
 - Discuss institution-managed tile services with the Meteorological Office if the app becomes a formal service.
 - For heavy public traffic, consider nginx/static caching for tiles, sprites, fonts, and built frontend assets.
 - For true high concurrency, consider PostgreSQL instead of SQLite.
-- Rate limiting is not currently applied.
+- For heavier public traffic, configure shared Flask-Limiter storage such as Redis and add reverse-proxy/platform limits.
 - Department/student stress testing remains a future validation step.
 - Additional screenshots and thesis diagrams should match the current Leaflet/MapLibre methodology.

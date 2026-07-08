@@ -18,8 +18,9 @@ Measure how the application behaves under concurrent public use, including map i
 - Earthquakes and volcanoes refresh every 3 minutes.
 - Fault and fissure linework is fetched on first use, filtered to Iceland/onshore records, and cached in memory for later toggles.
 - Earthquake markers use SVG Leaflet circle markers with separate invisible hit targets for easier selection.
-- Heatmap rendering is rebuilt on data changes and zoom changes.
+- Heatmap rendering is density-first, uses weights of 0.20/0.30/0.45 by magnitude band, and rebuilds only on data changes or heatmap zoom-band changes.
 - The bottom-right attribution is compact and changes with the active basemap and faults overlay.
+- Flask-Limiter applies per-client limits to public API/export endpoints; expect HTTP 429 when deliberate load tests exceed configured limits.
 
 ## Local Verification Before Load Testing
 

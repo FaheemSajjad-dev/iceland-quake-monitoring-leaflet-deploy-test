@@ -72,6 +72,7 @@ def fetch_skjalftalisa(start_time_utc, end_time_utc, size_min=DEFAULT_MIN_MAG, f
 
     The function name is kept for compatibility with the rest of the backend;
     the old Skjalftalisa endpoint was replaced by https://api.vedur.is/quakes/.
+    The module name is kept for compatibility with existing imports.
     """
     if start_time_utc.tzinfo is None:
         start_time_utc = start_time_utc.replace(tzinfo=timezone.utc)

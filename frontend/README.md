@@ -52,7 +52,7 @@ src/
 | Gray | CARTO light basemap |
 | Heatmap | CARTO dark base with leaflet.heat density overlay |
 
-The **Map** layer depends on WebGL through MapLibre GL. Chrome, Safari, or Edge must allow WebGL/hardware graphics for that vector layer to initialize.
+The **Map** layer depends on WebGL through MapLibre GL. Chrome, Safari, or Edge must allow WebGL/hardware graphics for that vector layer to initialize. If MapLibre initialization fails, the app falls back to a CARTO light raster basemap.
 
 ## Live Overlays
 
@@ -75,5 +75,5 @@ The **Map** layer depends on WebGL through MapLibre GL. Chrome, Safari, or Edge 
 
 - Gradient: transparent to dark blue, steel blue, teal, amber, orange, and red.
 - Zoom-responsive radius keeps seismic belts visible across zoom levels.
-- Magnitude weights: M 4-5 -> 1.15x, M 5+ -> 1.3x. Density remains the main signal.
+- Magnitude weights: M 3-4 -> 0.20, M 4-5 -> 0.30, M 5+ -> 0.45. Density remains the main signal.
 - `leaflet.heat` requires `window.L` before import, so it is loaded dynamically after `window.L = L`.

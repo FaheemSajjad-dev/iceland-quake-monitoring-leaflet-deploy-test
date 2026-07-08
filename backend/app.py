@@ -35,9 +35,9 @@ from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# Optional: gzip responses if Flask-Compress is installed
+# Enable gzip if the optional Flask-Compress package is installed.
 try:
-    from flask_compress import Compress  # pip install Flask-Compress
+    from flask_compress import Compress
 except Exception:  # noqa: BLE001
     Compress = None
 
@@ -47,11 +47,11 @@ FRONTEND_DIST_DIR = (Path(CURRENT_FILE_PATH).parent / "frontend" / "dist").resol
 FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
 
 # -----------------------------------------------------------------------------
-# App & DB setup
+# App and DB setup
 # -----------------------------------------------------------------------------
 app = Flask(__name__)
 
-# Restrict CORS to known frontend dev origins. Production is same-origin on Render.
+# Restrict CORS to known frontend dev origins. Production is same-origin on Render/Pluto.
 _ALLOWED_ORIGINS = [
     f"http://localhost:{FRONTEND_PORT}",
     f"http://127.0.0.1:{FRONTEND_PORT}",
@@ -128,14 +128,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"check_same_thread":
 
 db = SQLAlchemy(app)
 
-# Enable faster, safer writes with SQLite WAL mode (when app starts)
+# Improve SQLite write behavior for the scheduler/API mix.
 with app.app_context():
     try:
         db.session.execute(db.text("PRAGMA journal_mode=WAL;"))
         db.session.execute(db.text("PRAGMA synchronous=NORMAL;"))
         db.session.commit()
     except Exception:
-        # non-fatal if PRAGMAs aren't supported in some env
         db.session.rollback()
 
 # -----------------------------------------------------------------------------
@@ -155,6 +154,7 @@ class Earthquake(db.Model):
 
 
 class Volcano(db.Model):
+    """EPOS Iceland volcano metadata."""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.Text)
@@ -169,7 +169,7 @@ class Volcano(db.Model):
 
 
 class EarthquakeSRaw(db.Model):
-    """SkjÃ¡lftalÃ­sa raw table (s)."""
+    """Raw IMO Quakes API table (s)."""
     __tablename__ = "earthquake_s_raw"
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String, unique=True, nullable=False)  # IMO id
@@ -184,7 +184,7 @@ class EarthquakeSRaw(db.Model):
 
 
 class EarthquakeMerged(db.Model):
-    """Display table (merged vâŠ•s per matching rules)."""
+    """Display table built by matching MPGV rows with Quakes API rows."""
     __tablename__ = "earthquake_merged"
     id = db.Column(db.Integer, primary_key=True)
     date_time = db.Column(db.String, index=True, nullable=False)  # keep MPGV time
@@ -193,7 +193,7 @@ class EarthquakeMerged(db.Model):
     depth = db.Column(db.Float)                                    # from S when matched, else V
     mw_mean = db.Column(db.Float, nullable=False)                  # from V
 
-    # provenance / diagnostics
+    # Match provenance for auditing and CSV/API diagnostics.
     status = db.Column(db.String, nullable=False)   # 'matched' | 'v_only'
     v_src_key = db.Column(db.String)                # optional for diagnostics
     s_event_id = db.Column(db.String)
@@ -201,7 +201,6 @@ class EarthquakeMerged(db.Model):
     match_dist_km = db.Column(db.Float)
     match_dm = db.Column(db.Float)
 
-# --- ShakeMap link cache table ---------------------------------------------
 class ShakeMapLink(db.Model):
     __tablename__ = "shakemap_links"
     dt = db.Column(db.String, primary_key=True)  # matches EarthquakeMerged.date_time
@@ -214,7 +213,7 @@ class ShakeMapLink(db.Model):
     sm_mag  = db.Column(db.Float)
     sm_depth= db.Column(db.Float)
 
-    dt_sec  = db.Column(db.Float)   # |Î”t| seconds to chosen shakemap
+    dt_sec  = db.Column(db.Float)   # time difference in seconds to chosen ShakeMap
     dist_km = db.Column(db.Float)   # distance to chosen shakemap
     dm      = db.Column(db.Float)   # Mw_v - M_shakemap
 
@@ -227,6 +226,13 @@ class ShakeMapLink(db.Model):
 def create_tables() -> None:
     with app.app_context():
         db.create_all()
+        # Schema migration: add columns that were added after initial table creation.
+        # db.create_all() does not ALTER existing tables, so we handle it here.
+        with db.engine.connect() as conn:
+            existing = {row[1] for row in conn.execute(db.text("PRAGMA table_info(volcano)"))}
+            if "last_eruption" not in existing:
+                conn.execute(db.text("ALTER TABLE volcano ADD COLUMN last_eruption TEXT"))
+                conn.commit()
 
 create_tables()
 
@@ -236,9 +242,9 @@ _scheduler_started = False
 _bootstrap_lock = threading.Lock()
 _bootstrap_started = False
 
-# Simple in-memory cache for /earthquakes (invalidated after each scrape cycle)
+# Cache the default /earthquakes response between frontend polling intervals.
 _eq_cache: dict = {"data": None, "ts": 0.0}
-_EQ_CACHE_TTL = 60  # seconds â€” frontend polls every 3 min, so 60s is fine
+_EQ_CACHE_TTL = 60
 
 # -----------------------------------------------------------------------------
 # Scheduled job
@@ -282,7 +288,7 @@ def scheduled_scrape() -> None:
       3) Reconcile (write EarthquakeMerged)
     """
     with app.app_context():
-        # avoid circular imports
+        # Imports stay inside the job so app.py can define models before helpers load.
         sys.path.append(CURRENT_FILE_PATH)
         import importlib
         import scrape as _scrape; importlib.reload(_scrape)
@@ -312,7 +318,6 @@ def scheduled_scrape() -> None:
         except Exception as e:
             print(f"EPOS volcano refresh failed: {e}")
 
-        # Invalidate response cache so next request gets fresh reconciled data
         _eq_cache["data"] = None
 
 
@@ -336,6 +341,7 @@ def bootstrap_missing_data() -> None:
             _scrape.scrape_all_earthquake_data()
 
         _refresh_derived_data()
+
 
 def start_background_services() -> None:
     global _scheduler, _scheduler_started
@@ -533,18 +539,18 @@ def run_reconcile():
 @app.route("/health", methods=["GET"])
 @limiter.exempt
 def health():
-    """Row counts for each table â€” quick sanity check."""
+    """Row counts for each table; useful for quick deployment sanity checks."""
     with app.app_context():
         return jsonify({
             "MPGV": Earthquake.query.count(),
-            "Skjalftalisa": EarthquakeSRaw.query.count(),
+            "QuakesAPI": EarthquakeSRaw.query.count(),
             "Merged": EarthquakeMerged.query.count(),
         })
 
 
 # --- Simple EPOS shakemap lookup for one event -------------------------------
 def _km_distance(lat1, lon1, lat2, lon2):
-    # Haversine distance (km) â€” local copy so this module has no import dependency on reconcile.py
+    # Local copy keeps ShakeMap lookup independent from reconcile.py imports.
     R = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dlat = p2 - p1

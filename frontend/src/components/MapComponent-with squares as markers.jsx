@@ -397,17 +397,17 @@ const HeatmapLayer = ({ earthquakes }) => {
       const lng = parseFloat(q.Longitude);
       const mag = parseFloat(q.Mw_mean);
       if (isNaN(lat) || isNaN(lng) || isNaN(mag)) return null;
-      // Density-first weighting: small magnitude bonus so notable events add slight extra
-      // prominence without letting a handful of M5+ events dominate the whole picture.
-      // Mw <4 → 1.0  |  Mw 4–5 → 1.15  |  Mw 5+ → 1.3
-      const wt = mag >= 5.0 ? 1.3 : mag >= 4.0 ? 1.15 : 1.0;
+      // Density-first weighting: isolated quakes stay subtle, while nearby
+      // events accumulate into clear clusters.
+      // Mw <4 -> 0.20  |  Mw 4-5 -> 0.30  |  Mw 5+ -> 0.45
+      const wt = mag >= 5.0 ? 0.45 : mag >= 4.0 ? 0.30 : 0.20;
       return [lat, lng, wt];
     }).filter(Boolean);
 
     heatRef.current = L.heatLayer(points, {
       radius:     r,
       blur:       Math.round(r * 0.5),  // 50% of radius — tighter than before, less muddy
-      max:        1.3,                  // matches new max weight so full gradient is used
+      max:        2.5,
       minOpacity: 0.25,                 // lower floor → sparse scatter stays subtle
       gradient:   HEAT_GRADIENT,
     }).addTo(map);

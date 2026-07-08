@@ -28,7 +28,7 @@ def add_v(dt="2023-06-15 12:00:00", lat=64.0, lon=-22.0, depth=5.0, mw=3.5):
     return v
 
 def add_s(event_id, dt="2023-06-15 12:00:01", lat=64.005, lon=-22.005, depth=6.0, mag=3.4):
-    """Insert one Skjálftalísa (S) event and return it."""
+    """Insert one Quakes API (S) event and return it."""
     s = EarthquakeSRaw(event_id=event_id, date_time=dt, latitude=lat,
                        longitude=lon, depth=depth, magnitude=mag)
     db.session.add(s)
@@ -142,7 +142,7 @@ def test_ambiguous_two_s_candidates_gives_v_only(db_session):
 # ---------------------------------------------------------------------------
 # 7b. Two V rows competing for one S candidate -> one best match, one v_only
 # ---------------------------------------------------------------------------
-def test_one_skjalftalisa_event_is_used_once(db_session):
+def test_one_quakes_api_event_is_used_once(db_session):
     add_v(dt="2023-06-15 12:00:00", lat=64.0, lon=-22.0, mw=3.5)
     add_v(dt="2023-06-15 12:00:01", lat=64.004, lon=-22.004, mw=3.5)
     add_s("s006c", dt="2023-06-15 12:00:01", lat=64.004, lon=-22.004, mag=3.5)
@@ -178,7 +178,7 @@ def test_depth_policy_v_uses_mpgv_depth(db_session):
 # ---------------------------------------------------------------------------
 # 9. Depth policy 's' → merged depth comes from S
 # ---------------------------------------------------------------------------
-def test_depth_policy_s_uses_skjalftalisa_depth(db_session):
+def test_depth_policy_s_uses_quakes_api_depth(db_session):
     original = rec.DEPTH_POLICY
     rec.DEPTH_POLICY = "s"
     try:

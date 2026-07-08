@@ -3,7 +3,7 @@ import "./About.css";
 import { API_URL } from "../api";
 import { useLang, useT } from "../i18n";
 
-const VERSION = "1.1";
+const VERSION = "1.2";
 
 const DATA_CADENCE = {
   en: [
@@ -64,8 +64,8 @@ const Copy = ({ lang }) => lang === "en" ? (
     </p>
     <p>
       The backend keeps a merged earthquake catalogue by scraping MPGV records,
-      fetching recent Skjalftalisa data, and reconciling matching events by time,
-      location, and magnitude. The frontend then layers that catalogue with live
+      fetching recent IMO Quakes API data, and reconciling matching events by
+      time, location, and magnitude. The frontend then layers that catalogue with live
       volcano metadata, ShakeMap links, coordinate grids, and filtered EGDI/HIKE
       fault and fissure geometry.
     </p>
@@ -79,7 +79,7 @@ const Copy = ({ lang }) => lang === "en" ? (
     </p>
     <p>
       Bakendinn heldur utan um sameinaðan jarðskjálftagrunn með því að lesa
-      MPGV-skrá, sækja nýleg Skjálftalista-gögn og samræma atburði eftir tíma,
+      MPGV-skrá, sækja nýleg IMO Quakes API gögn og samræma atburði eftir tíma,
       staðsetningu og stærð. Framendinn bætir við eldfjallagögnum, ShakeMap
       tenglum, hnitaneti og EGDI/HIKE línum fyrir misgengi og sprungur.
     </p>
