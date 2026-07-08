@@ -29,20 +29,74 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   background: transparent;
   padding: 10px 20px;
   border-radius: 12px;
   box-shadow: none;
   z-index: 1001;
+  transition: left 0.25s ease, transform 0.25s ease;
+}
+
+.map-container.title-left .controls {
+  left: 14px;
+  transform: none;
 }
 
 .controls h1 {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
   font-size: 22px;
-  font-weight: bold;
+  font-weight: 500;
+  gap: 0;
+  line-height: 1;
   margin: 0;
   color: #000;
+  white-space: nowrap;
   transition: color 0.3s ease;
+}
+
+.map-container.title-left .controls h1 {
+  align-items: baseline;
+}
+
+.app-title__main {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.app-title__iceland {
+  width: 2.05em;
+  height: 1.6em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+.app-title__mpgv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  line-height: 1;
+}
+
+.app-title__m {
+  font-size: 1.22em;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.app-title__pgv,
+.app-title__map {
+  font-size: 0.92em;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .controls.dark-mode h1 {
@@ -215,9 +269,14 @@ input:checked + .slider:before {
 
   .controls {
     top: 2px;
-    transform: translateX(-50%);
+    left: 14px;
+    transform: none;
     gap: 4px;
     padding: 7px 10px;
+  }
+
+  .map-container.mobile-left-panel-open .controls {
+    left: 170px;
   }
 
   .controls h1 {
