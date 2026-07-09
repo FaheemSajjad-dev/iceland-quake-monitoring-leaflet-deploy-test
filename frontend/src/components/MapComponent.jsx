@@ -740,49 +740,6 @@ const MapUiResizeHandler = () => {
   return null;
 };
 
-// Prevents scroll-wheel events from accumulating while a zoom animation is
-// still playing. Without this, fast scrolling queues extra zoom steps during
-// the ~250 ms CSS animation, causing multi-zoom and direction-inversion bugs.
-//
-// We patch _performZoom (not disable/enable the handler) so that Leaflet's
-// wheel listener remains active and keeps calling preventDefault() on every
-// wheel event — preventing the browser from zooming the page instead.
-const ZoomAnimGuard = () => {
-  const map = useMap();
-  useEffect(() => {
-    const handler = map.scrollWheelZoom;
-    const original = handler._performZoom.bind(handler);
-    let animating = false;
-
-    let lastZoom = 0;
-    const COOLDOWN = 250; // matches Leaflet's CSS zoom animation duration
-
-    handler._performZoom = function () {
-      const now = Date.now();
-      if (animating || now - lastZoom < COOLDOWN) {
-        // Discard accumulated delta so it doesn't bleed into the next zoom.
-        this._delta = 0;
-        this._startTime = null;
-        return;
-      }
-      lastZoom = now;
-      original();
-    };
-
-    const lock   = () => { animating = true; };
-    const unlock = () => { animating = false; };
-    map.on("zoomstart", lock);
-    map.on("zoomend",   unlock);
-
-    return () => {
-      handler._performZoom = original;
-      map.off("zoomstart", lock);
-      map.off("zoomend",   unlock);
-    };
-  }, [map]);
-  return null;
-};
-
 const MapClickHandler = ({ onClick }) => {
   useMapEvents({ click: onClick });
   return null;
@@ -1447,20 +1404,19 @@ const MapComponent = ({
         style={{ width: "100vw", height: "100vh" }}
         zoomControl={false}
         attributionControl={false}
-        zoomAnimation={true}
-        fadeAnimation={true}
-        markerZoomAnimation={true}
+        zoomAnimation={false}
+        fadeAnimation={false}
+        markerZoomAnimation={false}
         preferCanvas={true}        // Canvas markers keep Chrome/macOS zooming responsive with large catalogues.
         zoomSnap={0.5}             // snap to 0.5 zoom increments instead of integers — smoother steps
         zoomDelta={0.5}            // zoom button / keyboard step = 0.5 levels (does NOT affect scroll wheel)
-        wheelPxPerZoomLevel={120}  // 120px of scroll per zoom level → ~1 notch = 0.5 levels (one snap step)
+        wheelPxPerZoomLevel={80}   // more responsive trackpad/wheel zooming now that animated zoom is disabled
       >
         <TileLayerManager key={mapType} mapType={mapType} onReady={handleMapReady} />
         <FitIcelandOnReady />
         <MapViewResetter trigger={resetViewTrigger} />
         <MapReadyHandler />
         <MapUiResizeHandler />
-        <ZoomAnimGuard />
         <RightClickHandler />
         <AttributionControl position="bottomright" prefix={false} />
         <CompactAttribution mapType={mapType} showFaults={showFaults} />
