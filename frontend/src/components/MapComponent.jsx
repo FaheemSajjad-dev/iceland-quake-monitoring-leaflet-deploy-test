@@ -1051,153 +1051,137 @@ const getMarkerHitRadius = (zoom) => {
 
 const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMarkerClick, visible }) => {
   const map = useMap();
-  const canvasRef = useRef(null);
-  const hitPointsRef = useRef([]);
-  const frameRef = useRef(null);
-  const drawnBoundsRef = useRef(null);
+  const layerRef = useRef(null);
+  const dataRef = useRef([]);
+  const selectedRef = useRef(selectedEarthquake);
+  const visibleRef = useRef(visible);
 
-  const drawMarkers = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (!visible) {
-      canvas.style.display = "none";
-      hitPointsRef.current = [];
-      return;
-    }
-    canvas.style.display = "block";
-
-    const ctx = canvas.getContext("2d");
-    const size = map.getSize();
-    const dpr = window.devicePixelRatio || 1;
-    const width = Math.max(1, size.x);
-    const height = Math.max(1, size.y);
-    if (canvas.width !== width * dpr) canvas.width = width * dpr;
-    if (canvas.height !== height * dpr) canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    const topLeft = map.containerPointToLayerPoint([0, 0]);
-    L.DomUtil.setPosition(canvas, topLeft);
-    drawnBoundsRef.current = map.getBounds();
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-
-    const zoom = map.getZoom();
-    const boundsPadding = getMarkerHitRadius(zoom) + 2;
-    const selected = selectedEarthquake;
-    const hitPoints = [];
-    // Sort ascending by magnitude so higher-magnitude markers are added last
-    // and appear on top.
-    const sorted = earthquakes
-      .map((q, i) => ({ q, i, mag: parseFloat(q.Mw_mean) || 0 }))
-      .sort((a, b) => a.mag - b.mag);
-
-    sorted.forEach(({ q: quake, i: index }) => {
-      const lat = parseFloat(quake.Latitude);
-      const lng = parseFloat(quake.Longitude);
-      if (isNaN(lat) || isNaN(lng)) return;
-
-      const point = map.latLngToContainerPoint([lat, lng]);
-      if (
-        point.x < -boundsPadding ||
-        point.y < -boundsPadding ||
-        point.x > width + boundsPadding ||
-        point.y > height + boundsPadding
-      ) {
-        return;
-      }
-
-      const isSelected =
-        selected &&
-        quake["Date-time"] === selected["Date-time"] &&
-        quake.Latitude === selected.Latitude &&
-        quake.Longitude === selected.Longitude;
-
-      const { color } = markerIcons[index] || {};
-      const radius = getMarkerRadius(zoom, isSelected);
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = color || "#888888";
-      ctx.fill();
-      if (isSelected) {
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#ffffff";
-        ctx.stroke();
-      }
-      hitPoints.push({ x: point.x, y: point.y, r: getMarkerHitRadius(zoom), quake });
-    });
-
-    hitPointsRef.current = hitPoints;
-  }, [earthquakes, map, markerIcons, selectedEarthquake, visible]);
-
-  const scheduleDraw = useCallback(() => {
-    if (frameRef.current) return;
-    frameRef.current = window.requestAnimationFrame(() => {
-      frameRef.current = null;
-      drawMarkers();
-    });
-  }, [drawMarkers]);
+  const tileData = useMemo(() =>
+    earthquakes
+      .map((q, i) => ({
+        quake: q,
+        index: i,
+        lat: parseFloat(q.Latitude),
+        lng: parseFloat(q.Longitude),
+        color: markerIcons[i]?.color || "#888888",
+        mag: parseFloat(q.Mw_mean) || 0,
+      }))
+      .filter((item) => !isNaN(item.lat) && !isNaN(item.lng))
+      .sort((a, b) => a.mag - b.mag),
+    [earthquakes, markerIcons]
+  );
+  dataRef.current = tileData;
+  selectedRef.current = selectedEarthquake;
+  visibleRef.current = visible;
 
   useEffect(() => {
-    const paneName = "quake-canvas-pane";
+    const paneName = "quake-tile-pane";
     const pane = map.getPane(paneName) || map.createPane(paneName);
     pane.style.zIndex = 450;
-    pane.style.pointerEvents = "auto";
+    pane.style.pointerEvents = "none";
 
-    const canvas = L.DomUtil.create("canvas", "earthquake-canvas-layer", pane);
-    canvasRef.current = canvas;
+    const EarthquakeTileLayer = L.GridLayer.extend({
+      createTile(coords, done) {
+        const tile = L.DomUtil.create("canvas", "earthquake-tile");
+        const tileSize = this.getTileSize();
+        const dpr = window.devicePixelRatio || 1;
+        tile.width = tileSize.x * dpr;
+        tile.height = tileSize.y * dpr;
+        tile.style.width = `${tileSize.x}px`;
+        tile.style.height = `${tileSize.y}px`;
+
+        const ctx = tile.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, tileSize.x, tileSize.y);
+
+        const zoom = coords.z;
+        const tileOrigin = L.point(coords.x * tileSize.x, coords.y * tileSize.y);
+        const padding = getMarkerRadius(zoom, true) + 2;
+        const selected = selectedRef.current;
+
+        dataRef.current.forEach((item) => {
+          const point = map.project([item.lat, item.lng], zoom).subtract(tileOrigin);
+          if (
+            point.x < -padding ||
+            point.y < -padding ||
+            point.x > tileSize.x + padding ||
+            point.y > tileSize.y + padding
+          ) {
+            return;
+          }
+
+          const isSelected =
+            selected &&
+            item.quake["Date-time"] === selected["Date-time"] &&
+            item.quake.Latitude === selected.Latitude &&
+            item.quake.Longitude === selected.Longitude;
+
+          const radius = getMarkerRadius(zoom, isSelected);
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = item.color;
+          ctx.fill();
+          if (isSelected) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+          }
+        });
+
+        done(null, tile);
+        return tile;
+      },
+    });
+
+    const layer = new EarthquakeTileLayer({
+      pane: paneName,
+      tileSize: 256,
+      keepBuffer: 3,
+      updateWhenIdle: false,
+      updateWhenZooming: false,
+    });
+    layerRef.current = layer;
+    if (visibleRef.current) layer.addTo(map);
 
     const handleClick = (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const hitPoints = hitPointsRef.current;
-      for (let i = hitPoints.length - 1; i >= 0; i -= 1) {
-        const hit = hitPoints[i];
-        const dx = x - hit.x;
-        const dy = y - hit.y;
-        if ((dx * dx) + (dy * dy) <= hit.r * hit.r) {
-          L.DomEvent.stopPropagation(event);
-          onMarkerClick(hit.quake);
-          return;
+      if (!visibleRef.current) return;
+      const clickPoint = map.latLngToContainerPoint(event.latlng);
+      const hitRadius = getMarkerHitRadius(map.getZoom());
+      const data = dataRef.current;
+      for (let i = data.length - 1; i >= 0; i -= 1) {
+        const item = data[i];
+        const point = map.latLngToContainerPoint([item.lat, item.lng]);
+        const dx = clickPoint.x - point.x;
+        const dy = clickPoint.y - point.y;
+        if ((dx * dx) + (dy * dy) <= hitRadius * hitRadius) {
+          onMarkerClick(item.quake);
+          break;
         }
       }
     };
-
-    L.DomEvent.on(canvas, "click", handleClick);
-    const handleAnimatedZoom = (event) => {
-      const bounds = drawnBoundsRef.current;
-      if (!bounds) return;
-      const scale = map.getZoomScale(event.zoom);
-      const offset = map._latLngBoundsToNewLayerBounds(bounds, event.zoom, event.center).min;
-      L.DomUtil.setTransform(canvas, offset, scale);
-    };
-    const handleMapFrame = () => {
-      scheduleDraw();
-    };
-
-    map.on("zoomanim", handleAnimatedZoom);
-    map.on("moveend zoomend resize", handleMapFrame);
-    scheduleDraw();
+    map.on("click", handleClick);
 
     return () => {
-      map.off("zoomanim", handleAnimatedZoom);
-      map.off("moveend zoomend resize", handleMapFrame);
-      L.DomEvent.off(canvas, "click", handleClick);
-      if (frameRef.current) {
-        window.cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-      drawnBoundsRef.current = null;
-      canvas.remove();
-      canvasRef.current = null;
-      hitPointsRef.current = [];
+      map.off("click", handleClick);
+      map.removeLayer(layer);
+      layerRef.current = null;
     };
-  }, [map, onMarkerClick, scheduleDraw]);
+  }, [map, onMarkerClick]);
 
   useEffect(() => {
-    scheduleDraw();
-  }, [scheduleDraw]);
+    const layer = layerRef.current;
+    if (!layer) return;
+    if (visible) {
+      if (!map.hasLayer(layer)) layer.addTo(map);
+    } else if (map.hasLayer(layer)) {
+      map.removeLayer(layer);
+    }
+    layer.redraw();
+  }, [map, visible]);
+
+  useEffect(() => {
+    layerRef.current?.redraw();
+  }, [earthquakes, markerIcons, selectedEarthquake]);
 
   return null;
 };

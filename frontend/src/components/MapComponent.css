@@ -28,9 +28,8 @@
   transition: opacity 0.15s linear;
 }
 
-.earthquake-canvas-layer {
-  position: absolute;
-  pointer-events: all;
+.earthquake-tile {
+  pointer-events: none;
 }
 
 /* Map Type Selector (rendered inside LeftPanel) */
