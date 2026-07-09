@@ -53,16 +53,16 @@ const MapTypeSelector = ({ onMapTypeChange, selectedType = 'roadmap', className 
                     </button>
 
                     <button
-                        className={`map-type-option ${selectedType === 'gray' ? 'active' : ''}`}
-                        onClick={() => handleTypeChange('gray')}
-                    >
-                        {t('map_gray')}
-                    </button>
-                    <button
                         className={`map-type-option ${selectedType === 'terrain' ? 'active' : ''}`}
                         onClick={() => handleTypeChange('terrain')}
                     >
                         {t('map_terrain')}
+                    </button>
+                    <button
+                        className={`map-type-option ${selectedType === 'gray' ? 'active' : ''}`}
+                        onClick={() => handleTypeChange('gray')}
+                    >
+                        {t('map_gray')}
                     </button>
                     <button
                         className={`map-type-option ${selectedType === 'heatmap' ? 'active' : ''}`}
@@ -77,5 +77,3 @@ const MapTypeSelector = ({ onMapTypeChange, selectedType = 'roadmap', className 
 };
 
 export default MapTypeSelector;
-
-

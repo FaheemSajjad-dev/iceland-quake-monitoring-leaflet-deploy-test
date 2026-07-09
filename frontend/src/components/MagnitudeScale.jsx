@@ -42,6 +42,12 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
     return (px / trackLength) * 100;
   };
 
+  const getMagnitudeTickPosition = (value) => {
+    const range = maxMagnitude - minMagnitude;
+    if (range <= 0) return 100;
+    return Math.max(0, Math.min(100, ((maxMagnitude - value) / range) * 100));
+  };
+
   const barClass = colorOwner === 'magnitude' ? 'scale-bar-colored' : 'scale-bar-gray';
 
   return (
@@ -51,6 +57,17 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
 
       <div className="scale-container">
         <div className={`scale-bar-vertical ${barClass}`}></div>
+        {[5.0, 4.0].map((tick) => (
+          tick > minMagnitude && tick < maxMagnitude ? (
+            <span
+              key={tick}
+              className="magnitude-tick-label"
+              style={{ top: `${getMagnitudeTickPosition(tick)}%` }}
+            >
+              {tick.toFixed(1)}
+            </span>
+          ) : null
+        ))}
 
         <div className="slider-container" style={{ position: "absolute", width: "100%", height: "100%" }}>
           <input
@@ -65,9 +82,9 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
               position: "absolute",
               left: "50%",
               top: "50%",
-              width: "200px",
+              width: vertical ? "200px" : "100%",
               height: "10px",
-              transform: vertical ? "translate(-48.5%, -50%) rotate(90deg)" : "translate(-50%, -50%)",
+              transform: vertical ? "translate(-50%, -50%) rotate(90deg)" : "translate(-50%, -50%)",
               margin: 0,
               padding: 0
             }}

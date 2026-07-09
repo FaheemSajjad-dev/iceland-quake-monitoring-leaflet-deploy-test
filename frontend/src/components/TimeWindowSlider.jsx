@@ -549,55 +549,59 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 
 
   const { dividers, labels } = useMemo(() => generateDividers(), [generateDividers]);
+  const dateRangeDisplay = formatDateRangeDisplay();
 
   return (
-    <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
-      {vertical && <span className="vertical-letter-label">T</span>}
-      {vertical && (
-        <div className="timeline-zoom-buttons" aria-label="Timeline zoom controls">
-          <button
-            type="button"
-            className="timeline-zoom-button"
-            onClick={() => handleZoomButtonClick("in")}
-            aria-label="Zoom timeline in"
+    <>
+      <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
+        {vertical && <span className="vertical-letter-label">T</span>}
+        {vertical && (
+          <div className="timeline-zoom-buttons" aria-label="Timeline zoom controls">
+            <button
+              type="button"
+              className="timeline-zoom-button"
+              onClick={() => handleZoomButtonClick("in")}
+              aria-label="Zoom timeline in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="timeline-zoom-button"
+              onClick={() => handleZoomButtonClick("out")}
+              aria-label="Zoom timeline out"
+            >
+              -
+            </button>
+          </div>
+        )}
+        <div className="timeline-slider" ref={sliderRef}>
+          <div
+            className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : isHeatmap ? 'heatmap-neutral' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
+            ref={trackRef}
+            style={{ cursor: "grab" }}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            +
-          </button>
-          <button
-            type="button"
-            className="timeline-zoom-button"
-            onClick={() => handleZoomButtonClick("out")}
-            aria-label="Zoom timeline out"
-          >
-            -
-          </button>
-        </div>
-      )}
-      <div className="timeline-slider" ref={sliderRef}>
-        <div
-          className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : isHeatmap ? 'heatmap-neutral' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
-          ref={trackRef}
-          style={{ cursor: "grab" }}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {dividers}
+            {dividers}
+          </div>
+
+          <div className={(isDayViewMode || isWeekMode) ? "day-labels" : "year-labels"}>
+            {labels}
+          </div>
+
         </div>
 
-        <div className={(isDayViewMode || isWeekMode) ? "day-labels" : "year-labels"}>
-          {labels}
+        {!vertical && <div className="selected-date">{dateRangeDisplay}</div>}
+        <div className="zoom-indicator">
+          {isDayViewMode ? zoomText.day : isWeekMode ? zoomText.week : isYearMode ? zoomText.year : zoomText.month}
+          {` (${zoomText.hint})`}
         </div>
-
       </div>
-
-      <div className="selected-date">{formatDateRangeDisplay()}</div>
-      <div className="zoom-indicator">
-        {isDayViewMode ? zoomText.day : isWeekMode ? zoomText.week : isYearMode ? zoomText.year : zoomText.month}
-        {` (${zoomText.hint})`}
-      </div>
-    </div>
+      {vertical && <div className="selected-date selected-date-below">{dateRangeDisplay}</div>}
+    </>
   );
 };
 

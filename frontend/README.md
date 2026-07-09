@@ -6,7 +6,7 @@ React 18 + Vite frontend for the Iceland Earthquake Monitoring Leaflet app.
 
 - React 18 and Vite
 - react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat
-- CARTO basemaps, IMO terrain tiles, Esri imagery, and MapLibre label overlays
+- OpenFreeMap Positron, CARTO heatmap tiles, IMO terrain tiles, Esri imagery, and MapLibre label overlays
 - Vitest + Testing Library
 
 ## Running
@@ -56,13 +56,13 @@ src/
 
 | Name | Provider |
 |---|---|
-| Map | CARTO light raster basemap |
+| Map | OpenFreeMap Positron vector basemap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office raster terrain tiles |
 | Gray | CARTO light basemap |
 | Heatmap | CARTO dark base with leaflet.heat density overlay |
 
-The default **Map** layer is raster-based for smoother browser zooming. MapLibre GL is still used for label overlays on some non-default layers, so Chrome, Safari, or Edge should allow WebGL/hardware graphics for those overlays.
+The default **Map** layer uses the OpenFreeMap Positron vector style through MapLibre GL. MapLibre GL is also used for label overlays on some non-default layers, so Chrome, Safari, or Edge should allow WebGL/hardware graphics for those overlays.
 
 ## Live Overlays
 

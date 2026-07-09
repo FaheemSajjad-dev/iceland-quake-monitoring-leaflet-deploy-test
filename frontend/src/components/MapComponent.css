@@ -31,6 +31,34 @@
 .earthquake-canvas-layer {
   position: absolute;
   pointer-events: all;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.maplibregl-map {
+  background: #d4d0cb;
+}
+
+.maplibre-volcano-marker {
+  width: 16px;
+  height: 16px;
+  background: #ff3c00;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  cursor: pointer;
+}
+
+.maplibre-volcano-marker.is-selected {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+}
+
+.maplibre-faults-legend {
+  position: absolute;
+  right: 14px;
+  bottom: 58px;
+  z-index: 5;
 }
 
 /* Map Type Selector (rendered inside LeftPanel) */

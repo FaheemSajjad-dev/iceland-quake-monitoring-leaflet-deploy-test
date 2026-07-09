@@ -24,7 +24,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat |
-| Map tiles | CARTO light/dark tiles, IMO terrain, Esri World Imagery, MapLibre label overlays |
+| Map tiles | OpenFreeMap Positron, CARTO dark heatmap tiles, IMO terrain, Esri World Imagery, MapLibre label overlays |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
 | API protection | Flask-Limiter with environment-configurable per-client limits |
@@ -83,13 +83,13 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 
 | Layer | Provider | Notes |
 |---|---|---|
-| Map | CARTO light raster basemap | Default map base optimized for smooth zooming |
+| Map | OpenFreeMap Positron vector basemap | Default map base |
 | Satellite | Esri World Imagery | Visual imagery context |
 | Terrain | Icelandic Meteorological Office raster tiles | `geo.vedur.is` terrain basemap |
 | Gray | CARTO light basemap | Quiet inspection layer |
 | Heatmap | CARTO dark base + `leaflet.heat` + label overlay | Earthquake density visualization |
 
-MapLibre GL is used for label overlays on some non-default layers. The default **Map** layer is raster-based to keep zooming responsive across browsers, including Chrome on macOS.
+MapLibre GL renders the default **Map** layer with the OpenFreeMap Positron vector style and provides label overlays on some non-default layers.
 
 ## Heatmap Layer
 
@@ -227,7 +227,7 @@ Rate limiting protects request frequency, not total user capacity. See `RATE_LIM
 | `HeatmapLayer` | Rebuilt only on data changes and heatmap zoom-band changes; panning does not redraw |
 | `FaultsOverlay` | Fetches filtered WFS GeoJSON on first use, then reuses the in-memory cache |
 | Attribution | Uses one compact bottom-right attribution line instead of stacked provider strings |
-| Map layer | Uses a CARTO raster basemap to avoid expensive vector/Leaflet zoom synchronization |
+| Map layer | Uses the OpenFreeMap Positron vector style through MapLibre GL |
 
 ## Map Tile Licensing
 
@@ -235,7 +235,7 @@ The app uses public third-party map tiles and data services. Confirm licensing b
 
 | Layer | Provider |
 |---|---|
-| Map | CARTO / OpenStreetMap |
+| Map | OpenFreeMap / OpenMapTiles / OpenStreetMap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office terrain raster tiles |
 | Gray | CARTO light tiles |

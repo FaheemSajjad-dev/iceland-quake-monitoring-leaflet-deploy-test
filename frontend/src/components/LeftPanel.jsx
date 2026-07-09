@@ -113,6 +113,12 @@ const LeftPanel = ({
               isHeatmap={isHeatmap}
               vertical
             />
+            <div className="left-panel__range-help left-panel__range-help--time">
+              Scroll to zoom time window, drag to shift
+            </div>
+            <div className="left-panel__range-help left-panel__range-help--magnitude">
+              Set minimum magnitude of displayed events
+            </div>
           </div>
         </div>
       </div>

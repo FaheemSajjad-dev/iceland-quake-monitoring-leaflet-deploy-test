@@ -85,8 +85,8 @@
 .magnitude-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #333;
@@ -94,11 +94,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 10;
+  margin-top: -5px;
 }
 
 .magnitude-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #333;
@@ -184,6 +185,138 @@
   background: linear-gradient(to top, #666666, #444444, #1a1a1a);
 }
 
+.magnitude-scale.horizontal {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--floating-card-bg, #ffffff);
+  border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
+  border-radius: var(--floating-card-radius, 8px);
+  box-shadow: var(--floating-card-shadow, 0 1px 6px rgba(10, 40, 80, 0.09));
+  box-sizing: border-box;
+}
+
+.magnitude-scale.horizontal .scale-letter-label {
+  order: 1;
+}
+
+.magnitude-scale.horizontal .min-value {
+  order: 2;
+}
+
+.magnitude-scale.horizontal .scale-container {
+  order: 3;
+}
+
+.magnitude-scale.horizontal .max-value {
+  order: 4;
+}
+
+.magnitude-scale.horizontal .scale-container {
+  height: 46px;
+  min-width: 0;
+  width: 100%;
+}
+
+.magnitude-scale.horizontal .scale-bar-vertical {
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  border-radius: 5px;
+}
+
+.magnitude-scale.horizontal .scale-bar-vertical.scale-bar-colored {
+  background: linear-gradient(to right, #f5a623, #e07030, #c43c28, #8f1a1a, #4a0a0a);
+}
+
+.magnitude-scale.horizontal .scale-bar-vertical.scale-bar-gray {
+  background: linear-gradient(to right, #666666, #444444, #1a1a1a);
+}
+
+.magnitude-scale.horizontal .magnitude-slider {
+  width: 100% !important;
+}
+
+.magnitude-scale.horizontal .current-filter {
+  top: 30px;
+  font-size: 10px;
+}
+
+.magnitude-scale.horizontal .current-filter span {
+  flex-direction: column;
+}
+
+.left-panel .magnitude-scale.vertical {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-rows: 20px minmax(0, 1fr);
+  width: var(--range-card-width);
+  height: var(--range-card-height);
+  padding: 0 8px 14px;
+  gap: 0 2px;
+  align-items: center;
+  justify-items: center;
+  box-sizing: border-box;
+}
+
+.left-panel .magnitude-scale.vertical .scale-letter-label {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 15px;
+}
+
+.left-panel .magnitude-scale.vertical .max-value {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+}
+
+.left-panel .magnitude-scale.vertical .min-value {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+}
+
+.left-panel .magnitude-scale.vertical .scale-container {
+  grid-column: 2;
+  grid-row: 2;
+  height: 100%;
+  width: 100%;
+}
+
+.left-panel .magnitude-scale.vertical .scale-bar-vertical {
+  width: 20px;
+  height: calc(100% - 8px);
+  margin: 4px 0;
+}
+
+.left-panel .magnitude-scale.vertical .current-filter {
+  left: 100%;
+}
+
+.left-panel .magnitude-scale.vertical .magnitude-slider {
+  width: calc(var(--range-card-height) - 92px) !important;
+  left: 50% !important;
+  top: 50% !important;
+}
+
+.left-panel .magnitude-scale.vertical .magnitude-tick-label {
+  position: absolute;
+  right: calc(100% - 12px);
+  transform: translateY(-50%);
+  color: #333;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 12;
+}
+
 @media (max-width: 767px) {
   .magnitude-scale.vertical {
     width: 34px;
@@ -214,17 +347,32 @@
   }
 
   .magnitude-slider::-webkit-slider-thumb {
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
   }
 
   .magnitude-slider::-moz-range-thumb {
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
   }
 
   .current-filter {
     left: 40px;
     font-size: 8px;
+  }
+
+  .left-panel .magnitude-scale.vertical {
+    width: var(--range-card-width);
+    height: var(--range-card-height);
+    padding: 0 6px 10px;
+    grid-template-columns: 14px minmax(0, 1fr);
+  }
+
+  .left-panel .magnitude-scale.vertical .scale-container {
+    height: 100%;
+  }
+
+  .left-panel .magnitude-scale.vertical .magnitude-slider {
+    width: calc(var(--range-card-height) - 84px) !important;
   }
 }

@@ -85,7 +85,7 @@ SECURITY_HEADERS = {
         "worker-src blob:; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https://server.arcgisonline.com https://services.arcgisonline.com https://basemaps.arcgis.com https://www.arcgis.com https://tiles.openfreemap.org https://*.basemaps.cartocdn.com https://luk.vedur.is https://geo.vedur.is https://maps.europe-geology.eu; "
-        "connect-src 'self' https://basemaps.arcgis.com https://www.arcgis.com https://tiles.openfreemap.org https://luk.vedur.is https://geo.vedur.is https://maps.europe-geology.eu; "
+        "connect-src 'self' https://server.arcgisonline.com https://services.arcgisonline.com https://basemaps.arcgis.com https://www.arcgis.com https://tiles.openfreemap.org https://luk.vedur.is https://geo.vedur.is https://maps.europe-geology.eu; "
         "font-src 'self' https://tiles.openfreemap.org; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
