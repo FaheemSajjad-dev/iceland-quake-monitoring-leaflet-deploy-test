@@ -10,11 +10,12 @@ This is the Leaflet version of the original Google Maps project. It does not req
 
 ## Current Deployment
 
-- Local development frontend: `http://localhost:5174`
-- Local development backend: `http://localhost:5001`
-- Pluto deployment: `http://pluto.cs.hi.is/mpgv/`
+- Live Pluto URL: `http://pluto.cs.hi.is/mpgv/`
+- Pluto backend port: `6000` behind the Pluto `/mpgv/` route
 - Pluto project path: `~/iceland-quake`
 - Pluto deploy command from the server project root: `./deploy.sh`
+- Local development frontend: `http://localhost:5174`
+- Local development backend: `http://localhost:5001`
 
 The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the source used for Pluto uploads.
 
@@ -119,10 +120,12 @@ iceland-quake-monitoring-leaflet/
 
 ## Running Locally
 
+Local development uses separate frontend and backend dev servers. These ports are not the Pluto production port.
+
 Backend, port 5001:
 
 ```bash
-backend/venv/Scripts/python.exe backend/app.py
+BACKEND_PORT=5001 FRONTEND_PORT=5174 python backend/app.py
 ```
 
 Frontend, port 5174:
@@ -137,7 +140,7 @@ Open `http://localhost:5174`. The frontend points to `http://localhost:5001` dur
 
 ## Pluto Deployment
 
-The Pluto server runs the app from `~/iceland-quake` and serves the public URL at `http://pluto.cs.hi.is/mpgv/`.
+The Pluto server runs the app from `~/iceland-quake`. Gunicorn listens locally on port `6000`, and Pluto serves the public URL at `http://pluto.cs.hi.is/mpgv/`.
 
 Typical update flow:
 
@@ -154,7 +157,11 @@ cd ~/iceland-quake
 ./deploy.sh
 ```
 
-`deploy.sh` installs Python and Node dependencies, builds the frontend, stops the old Gunicorn process, and starts the backend on port 6000.
+`deploy.sh` installs Python and Node dependencies, builds the frontend, stops the old Gunicorn process, and starts Gunicorn on port `6000` with frontend base path `/mpgv/`. The explicit equivalent is:
+
+```bash
+./deploy.sh --port 6000 --base-url /mpgv/
+```
 
 ## Running Tests
 

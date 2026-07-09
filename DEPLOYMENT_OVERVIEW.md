@@ -19,7 +19,8 @@ The deploy project at `F:\iceland-quake-monitoring-leaflet-deploy-test` is the l
 - Flask backend runs from `backend/app.py`.
 - React frontend is built from `frontend/`.
 - Flask serves the built frontend from `frontend/dist`.
-- API and frontend are served from the same origin under the Pluto site.
+- API and frontend are served from the same origin under `http://pluto.cs.hi.is/mpgv/`.
+- Gunicorn listens locally on port `6000`; Pluto routes `/mpgv/` traffic to that backend.
 - `deploy.sh` installs dependencies, builds the frontend, stops the existing Gunicorn process, and starts Gunicorn on port 6000.
 - `deploy.sh` defaults to the Pluto public base path `/mpgv/` and accepts `--port` and `--base-url` for other hosting paths.
 - `stop.sh` stops the running server using `server.pid`.

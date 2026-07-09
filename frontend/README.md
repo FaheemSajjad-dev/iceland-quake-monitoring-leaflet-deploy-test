@@ -11,12 +11,16 @@ React 18 + Vite frontend for the Iceland Earthquake Monitoring Leaflet app.
 
 ## Running
 
+For local development:
+
 ```bash
 npm install
 npm run dev
 ```
 
 The dev server opens at `http://localhost:5174`. It expects the Flask backend on port 5001.
+
+For the live Pluto deployment, the built frontend is served by Flask/Gunicorn through `http://pluto.cs.hi.is/mpgv/`. Gunicorn listens locally on port `6000`; the frontend and API are same-origin under `/mpgv/`.
 
 ## Testing
 

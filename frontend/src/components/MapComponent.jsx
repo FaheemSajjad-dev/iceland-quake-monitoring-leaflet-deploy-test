@@ -737,8 +737,8 @@ const TileLayerManager = ({ mapType, onReady }) => {
   );
 };
 
-// Bounding box used to auto-fit Iceland on any screen size.
-const ICELAND_FIT_BOUNDS = [[63.0, -24.5], [66.6, -13.0]];
+// Default viewport: Iceland plus nearby seas, about 650 km east-west at 65 N.
+const ICELAND_FIT_BOUNDS = [[63.25, -25.9], [66.65, -12.1]];
 
 // Fit Iceland to the viewport on initial mount, then lock minZoom to that level
 // so the user cannot zoom out further than the "full island" view on any screen.
@@ -750,7 +750,7 @@ const FitIcelandOnReady = () => {
     didFit.current = true;
     map.fitBounds(ICELAND_FIT_BOUNDS, { padding: [10, 10], animate: false });
     const fitZoom = map.getBoundsZoom(L.latLngBounds(ICELAND_FIT_BOUNDS), false, [10, 10]);
-    const minZoom = Math.max(4.5, fitZoom - 1.0);
+    const minZoom = Math.max(4.5, fitZoom);
     map.setMinZoom(minZoom);
     map.setView(map.getCenter(), minZoom, { animate: false });
   }, [map]);
@@ -1172,8 +1172,10 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   const layerGroupRef = useRef(null);
   const markersMapRef = useRef(new Map());
   const prevSelectedRef = useRef(null);
+  const markerRendererRef = useRef(null);
   const selectedEqRef = useRef(selectedEarthquake);
   const markerIconsRef = useRef(markerIcons);
+  if (!markerRendererRef.current) markerRendererRef.current = L.canvas({ padding: 0.5 });
   selectedEqRef.current = selectedEarthquake;
   markerIconsRef.current = markerIcons;
 
@@ -1201,8 +1203,9 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
 
     const sel = selectedEqRef.current;
     const zoom = map.getZoom();
+    const renderer = markerRendererRef.current;
     // Sort ascending by magnitude so higher-magnitude markers are added last
-    // and appear on top in the SVG stack (higher effective z-index).
+    // and appear on top in the canvas draw order.
     const sorted = earthquakes
       .map((q, i) => ({ q, i, mag: parseFloat(q.Mw_mean) || 0 }))
       .sort((a, b) => a.mag - b.mag);
@@ -1219,12 +1222,16 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
         quake.Longitude === sel.Longitude;
 
       const { color } = markerIcons[index] || {};
-      const hitMarker = L.circleMarker([lat, lng], getQuakeHitTargetStyle(zoom))
+      const hitMarker = L.circleMarker([lat, lng], {
+        ...getQuakeHitTargetStyle(zoom),
+        renderer,
+      })
         .on("click", (e) => { L.DomEvent.stopPropagation(e); onMarkerClick(quake); })
         .addTo(lg);
 
       const marker = L.circleMarker([lat, lng], {
         ...getQuakeMarkerStyle(color, isSelected, zoom),
+        renderer,
         interactive: false,
       })
         .addTo(lg);
@@ -1496,7 +1503,7 @@ const MapComponent = ({
         zoomAnimation={true}
         fadeAnimation={true}
         markerZoomAnimation={true}
-        preferCanvas={false}       // SVG renderer: right-click on markers shows normal browser context menu (canvas would show "Save image as")
+        preferCanvas={true}        // Canvas markers keep Chrome/macOS zooming responsive with large catalogues.
         zoomSnap={0.5}             // snap to 0.5 zoom increments instead of integers — smoother steps
         zoomDelta={0.5}            // zoom button / keyboard step = 0.5 levels (does NOT affect scroll wheel)
         wheelPxPerZoomLevel={120}  // 120px of scroll per zoom level → ~1 notch = 0.5 levels (one snap step)
