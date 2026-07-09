@@ -1054,8 +1054,9 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   const canvasRef = useRef(null);
   const hitPointsRef = useRef([]);
   const frameRef = useRef(null);
+  const pendingViewRef = useRef(null);
 
-  const drawMarkers = useCallback(() => {
+  const drawMarkers = useCallback((view = null) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (!visible) {
@@ -1079,7 +1080,9 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
-    const zoom = map.getZoom();
+    const zoom = view?.zoom ?? map.getZoom();
+    const center = view?.center ?? map.getCenter();
+    const pixelOrigin = map.project(center, zoom).subtract(size.divideBy(2)).round();
     const boundsPadding = getMarkerHitRadius(zoom) + 2;
     const selected = selectedEarthquake;
     const hitPoints = [];
@@ -1094,7 +1097,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
       const lng = parseFloat(quake.Longitude);
       if (isNaN(lat) || isNaN(lng)) return;
 
-      const point = map.latLngToContainerPoint([lat, lng]);
+      const point = map.project([lat, lng], zoom).subtract(pixelOrigin);
       if (
         point.x < -boundsPadding ||
         point.y < -boundsPadding ||
@@ -1127,11 +1130,14 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     hitPointsRef.current = hitPoints;
   }, [earthquakes, map, markerIcons, selectedEarthquake, visible]);
 
-  const scheduleDraw = useCallback(() => {
+  const scheduleDraw = useCallback((view = null) => {
+    pendingViewRef.current = view;
     if (frameRef.current) return;
     frameRef.current = window.requestAnimationFrame(() => {
       frameRef.current = null;
-      drawMarkers();
+      const pendingView = pendingViewRef.current;
+      pendingViewRef.current = null;
+      drawMarkers(pendingView);
     });
   }, [drawMarkers]);
 
@@ -1162,16 +1168,26 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     };
 
     L.DomEvent.on(canvas, "click", handleClick);
-    map.on("moveend zoomend resize", scheduleDraw);
+    const handleAnimatedZoom = (event) => {
+      scheduleDraw({ center: event.center, zoom: event.zoom });
+    };
+    const handleMapFrame = () => {
+      scheduleDraw();
+    };
+
+    map.on("zoomanim", handleAnimatedZoom);
+    map.on("move zoom moveend zoomend resize", handleMapFrame);
     scheduleDraw();
 
     return () => {
-      map.off("moveend zoomend resize", scheduleDraw);
+      map.off("zoomanim", handleAnimatedZoom);
+      map.off("move zoom moveend zoomend resize", handleMapFrame);
       L.DomEvent.off(canvas, "click", handleClick);
       if (frameRef.current) {
         window.cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
       }
+      pendingViewRef.current = null;
       canvas.remove();
       canvasRef.current = null;
       hitPointsRef.current = [];
