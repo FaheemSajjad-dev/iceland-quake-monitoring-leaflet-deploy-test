@@ -1054,9 +1054,9 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   const canvasRef = useRef(null);
   const hitPointsRef = useRef([]);
   const frameRef = useRef(null);
-  const pendingViewRef = useRef(null);
+  const drawnBoundsRef = useRef(null);
 
-  const drawMarkers = useCallback((view = null) => {
+  const drawMarkers = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (!visible) {
@@ -1075,14 +1075,14 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     if (canvas.height !== height * dpr) canvas.height = height * dpr;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
-    L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0, 0]));
+    const topLeft = map.containerPointToLayerPoint([0, 0]);
+    L.DomUtil.setPosition(canvas, topLeft);
+    drawnBoundsRef.current = map.getBounds();
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
-    const zoom = view?.zoom ?? map.getZoom();
-    const center = view?.center ?? map.getCenter();
-    const pixelOrigin = map.project(center, zoom).subtract(size.divideBy(2)).round();
+    const zoom = map.getZoom();
     const boundsPadding = getMarkerHitRadius(zoom) + 2;
     const selected = selectedEarthquake;
     const hitPoints = [];
@@ -1097,7 +1097,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
       const lng = parseFloat(quake.Longitude);
       if (isNaN(lat) || isNaN(lng)) return;
 
-      const point = map.project([lat, lng], zoom).subtract(pixelOrigin);
+      const point = map.latLngToContainerPoint([lat, lng]);
       if (
         point.x < -boundsPadding ||
         point.y < -boundsPadding ||
@@ -1130,14 +1130,11 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
     hitPointsRef.current = hitPoints;
   }, [earthquakes, map, markerIcons, selectedEarthquake, visible]);
 
-  const scheduleDraw = useCallback((view = null) => {
-    if (view || !pendingViewRef.current) pendingViewRef.current = view;
+  const scheduleDraw = useCallback(() => {
     if (frameRef.current) return;
     frameRef.current = window.requestAnimationFrame(() => {
       frameRef.current = null;
-      const pendingView = pendingViewRef.current;
-      pendingViewRef.current = null;
-      drawMarkers(pendingView);
+      drawMarkers();
     });
   }, [drawMarkers]);
 
@@ -1169,25 +1166,29 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
 
     L.DomEvent.on(canvas, "click", handleClick);
     const handleAnimatedZoom = (event) => {
-      scheduleDraw({ center: event.center, zoom: event.zoom });
+      const bounds = drawnBoundsRef.current;
+      if (!bounds) return;
+      const scale = map.getZoomScale(event.zoom);
+      const offset = map._latLngBoundsToNewLayerBounds(bounds, event.zoom, event.center).min;
+      L.DomUtil.setTransform(canvas, offset, scale);
     };
     const handleMapFrame = () => {
       scheduleDraw();
     };
 
     map.on("zoomanim", handleAnimatedZoom);
-    map.on("move zoom moveend zoomend resize", handleMapFrame);
+    map.on("moveend zoomend resize", handleMapFrame);
     scheduleDraw();
 
     return () => {
       map.off("zoomanim", handleAnimatedZoom);
-      map.off("move zoom moveend zoomend resize", handleMapFrame);
+      map.off("moveend zoomend resize", handleMapFrame);
       L.DomEvent.off(canvas, "click", handleClick);
       if (frameRef.current) {
         window.cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
       }
-      pendingViewRef.current = null;
+      drawnBoundsRef.current = null;
       canvas.remove();
       canvasRef.current = null;
       hitPointsRef.current = [];
@@ -1424,8 +1425,8 @@ const MapComponent = ({
         markerZoomAnimation={true}
         preferCanvas={true}        // Canvas markers keep Chrome/macOS zooming responsive with large catalogues.
         zoomSnap={0}               // allow fractional zoom so trackpads do not feel locked to fixed levels
-        zoomDelta={0.25}           // smaller button / keyboard steps to match the continuous wheel feel
-        wheelPxPerZoomLevel={180}  // moderate trackpad/wheel sensitivity with fractional zoom
+        zoomDelta={0.5}            // button / keyboard step; wheel and pinch remain fractional
+        wheelPxPerZoomLevel={80}   // responsive trackpad/wheel zoom with fractional zoom enabled
       >
         <TileLayerManager key={mapType} mapType={mapType} onReady={handleMapReady} />
         <FitIcelandOnReady />
