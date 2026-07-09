@@ -29,5 +29,10 @@ Thumbs.db
 .env
 *.env
 
+# Local run helper output
+.local/
+server.log
+server.pid
+
 # Large binary assets (exceed GitHub's 100 MB limit)
 *.pmtiles

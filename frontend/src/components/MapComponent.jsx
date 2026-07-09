@@ -74,9 +74,15 @@ const getTimelineColorForDate = (isoString, palette = TIMELINE_YEAR_STOPS) => {
   return palette[idx];
 };
 
-// Basemap definitions. The default vector map is handled by MaplibreVectorLayer.
+// Basemap definitions. The default Map layer is raster for smoother Leaflet zooming,
+// especially in Chrome on macOS.
 const TILE_LAYERS = {
-  roadmap: null, // handled by MaplibreVectorLayer
+  roadmap: {
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+    maxZoom: 19,
+    maxNativeZoom: 18,
+    subdomains: "abcd",
+  },
   satellite: {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     maxZoom: 19,
@@ -105,26 +111,20 @@ const TILE_PROPS = {
 
 const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const COMPACT_ATTRIBUTIONS = {
-  roadmap: "<a href='https://openfreemap.org'>OpenFreeMap</a> | <a href='https://openmaptiles.org'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  roadmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a> | Maxar | Earthstar Geographics",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | Natural Science Institute of Iceland | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
 };
 const MOBILE_ATTRIBUTIONS = {
-  roadmap: "<a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  roadmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a>",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
 };
 const FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE, ISOR</a>";
-const ROADMAP_RASTER_FALLBACK = {
-  url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-  maxZoom: 19,
-  maxNativeZoom: 18,
-  subdomains: "abcd",
-};
 
 // Prefer Icelandic names, fall back to local OSM name
 const IS_NAME_EXPR = ["coalesce", ["get", "name:is"], ["get", "name"]];
@@ -512,29 +512,6 @@ const removeMaplibreLayer = (map, gl, layerId) => {
   );
 };
 
-const addRasterRoadmapFallback = (map, onReady) => {
-  const layer = L.tileLayer(ROADMAP_RASTER_FALLBACK.url, {
-    attribution: "",
-    maxZoom: ROADMAP_RASTER_FALLBACK.maxZoom,
-    maxNativeZoom: ROADMAP_RASTER_FALLBACK.maxNativeZoom,
-    subdomains: ROADMAP_RASTER_FALLBACK.subdomains,
-    zIndex: 1,
-    ...TILE_PROPS,
-  });
-
-  if (onReady) layer.once("load", onReady);
-  layer.addTo(map);
-
-  return () => {
-    if (onReady) layer.off("load", onReady);
-    try {
-      if (map.hasLayer(layer)) map.removeLayer(layer);
-    } catch {
-      ignoreCleanupError();
-    }
-  };
-};
-
 const createMaplibreLayer = (map, options) => {
   let gl = null;
   try {
@@ -557,51 +534,6 @@ const removePane = (map, paneName) => {
   }
   if (map._panes) delete map._panes[paneName];
   if (map._paneRenderers) delete map._paneRenderers[paneName];
-};
-
-const MaplibreVectorLayer = ({ onReady }) => {
-  const map = useMap();
-  const cleanupRef = useRef(() => {});
-
-  useEffect(() => {
-    let dead = false;
-
-    const activateRasterFallback = () => {
-      if (dead) return;
-      cleanupRef.current();
-      cleanupRef.current = addRasterRoadmapFallback(map, onReady);
-    };
-
-    fetchRawStyle()
-      .then(raw => {
-        if (dead) return;
-        const layerId = "roadmap-positron";
-        const gl = createMaplibreLayer(map, {
-          layerId,
-          style: patchStyle(raw),
-          attribution: "",
-          fadeDuration: 0,
-          collectResourceTiming: false,
-          trackResize: false,
-          pixelRatio: 1,
-          maxTileCacheSize: 20,
-          antialias: false,
-        });
-
-        if (!gl) {
-          activateRasterFallback();
-          return;
-        }
-
-        const teardown = setupGlLayer(gl, map, { layerId, zIndex: "200", onReady, withFullscreen: true });
-        cleanupRef.current = () => { teardown(); removeMaplibreLayer(map, gl, layerId); };
-      })
-      .catch(() => activateRasterFallback());
-
-    return () => { dead = true; cleanupRef.current(); cleanupRef.current = () => {}; };
-  }, [map, onReady]);
-
-  return null;
 };
 
 const MaplibreLabelOverlay = ({ paneName, paneZIndex, labelTheme = "light" }) => {
@@ -690,7 +622,22 @@ const HeatmapTileLayers = ({ onReady }) => {
 };
 
 const TileLayerManager = ({ mapType, onReady }) => {
-  if (mapType === "roadmap") return <MaplibreVectorLayer onReady={onReady} />;
+  if (mapType === "roadmap") {
+    const layer = TILE_LAYERS.roadmap;
+    return (
+      <TileLayer
+        key={mapType}
+        url={layer.url}
+        attribution=""
+        maxZoom={layer.maxZoom}
+        maxNativeZoom={layer.maxNativeZoom}
+        subdomains={layer.subdomains}
+        zIndex={1}
+        eventHandlers={{ load: onReady }}
+        {...TILE_PROPS}
+      />
+    );
+  }
   if (mapType === "heatmap") {
     return (
       <>

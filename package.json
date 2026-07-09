@@ -2,6 +2,10 @@
   "name": "iceland-quake-monitoring-leaflet",
   "private": true,
   "description": "Iceland earthquake, volcano, and fault monitoring map built with Leaflet.",
+  "scripts": {
+    "dev": "./run-local.sh",
+    "dev:stop": "./stop-local.sh"
+  },
   "dependencies": {
     "maplibre-gl": "^5.18.0"
   }

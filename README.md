@@ -24,7 +24,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat |
-| Map tiles | OpenFreeMap map tiles, IMO terrain, Esri World Imagery, CARTO light/dark tiles |
+| Map tiles | CARTO light/dark tiles, IMO terrain, Esri World Imagery, MapLibre label overlays |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
 | API protection | Flask-Limiter with environment-configurable per-client limits |
@@ -83,13 +83,13 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 
 | Layer | Provider | Notes |
 |---|---|---|
-| Map | OpenFreeMap vector style via MapLibre | Default map base with glacier polygons and labels |
+| Map | CARTO light raster basemap | Default map base optimized for smooth zooming |
 | Satellite | Esri World Imagery | Visual imagery context |
 | Terrain | Icelandic Meteorological Office raster tiles | `geo.vedur.is` terrain basemap |
 | Gray | CARTO light basemap | Quiet inspection layer |
 | Heatmap | CARTO dark base + `leaflet.heat` + label overlay | Earthquake density visualization |
 
-MapLibre GL requires browser WebGL support for the vector **Map** layer. If WebGL is disabled by browser settings, enterprise policy, or graphics acceleration settings, the app falls back to a CARTO light raster basemap so the map remains usable.
+MapLibre GL is used for label overlays on some non-default layers. The default **Map** layer is raster-based to keep zooming responsive across browsers, including Chrome on macOS.
 
 ## Heatmap Layer
 
@@ -120,23 +120,32 @@ iceland-quake-monitoring-leaflet/
 
 ## Running Locally
 
-Local development uses separate frontend and backend dev servers. These ports are not the Pluto production port.
+Local development runs as your current user and uses separate frontend and backend dev servers. These ports are not the Pluto production port.
 
-Backend, port 5001:
-
-```bash
-BACKEND_PORT=5001 FRONTEND_PORT=5174 python backend/app.py
-```
-
-Frontend, port 5174:
+From the repository root:
 
 ```bash
-cd frontend
-npm install
 npm run dev
 ```
 
-Open `http://localhost:5174`. The frontend points to `http://localhost:5001` during local development.
+This starts:
+
+| Service | URL |
+|---|---|
+| Frontend | `http://127.0.0.1:5174` |
+| Backend | `http://127.0.0.1:5001` |
+
+The backend scheduler is disabled by default for faster UI testing. To run the local background refresh jobs too:
+
+```bash
+DISABLE_SCHEDULER=0 npm run dev
+```
+
+To stop a detached local backend if one is left running:
+
+```bash
+npm run dev:stop
+```
 
 ## Pluto Deployment
 
@@ -218,7 +227,7 @@ Rate limiting protects request frequency, not total user capacity. See `RATE_LIM
 | `HeatmapLayer` | Rebuilt only on data changes and heatmap zoom-band changes; panning does not redraw |
 | `FaultsOverlay` | Fetches filtered WFS GeoJSON on first use, then reuses the in-memory cache |
 | Attribution | Uses one compact bottom-right attribution line instead of stacked provider strings |
-| Map vector layer | Falls back to a CARTO raster basemap if MapLibre GL fails to initialize |
+| Map layer | Uses a CARTO raster basemap to avoid expensive vector/Leaflet zoom synchronization |
 
 ## Map Tile Licensing
 
@@ -226,7 +235,7 @@ The app uses public third-party map tiles and data services. Confirm licensing b
 
 | Layer | Provider |
 |---|---|
-| Map | OpenFreeMap / OpenMapTiles / OpenStreetMap |
+| Map | CARTO / OpenStreetMap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office terrain raster tiles |
 | Gray | CARTO light tiles |

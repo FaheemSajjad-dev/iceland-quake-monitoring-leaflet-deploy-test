@@ -41,8 +41,8 @@ try:
 except Exception:  # noqa: BLE001
     Compress = None
 
-FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5176"))
-BACKEND_PORT = int(os.environ.get("PORT") or os.environ.get("BACKEND_PORT", "5002"))
+FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5174"))
+BACKEND_PORT = int(os.environ.get("PORT") or os.environ.get("BACKEND_PORT", "5001"))
 FRONTEND_DIST_DIR = (Path(CURRENT_FILE_PATH).parent / "frontend" / "dist").resolve()
 FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
 
