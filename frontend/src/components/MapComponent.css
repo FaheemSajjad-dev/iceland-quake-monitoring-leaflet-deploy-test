@@ -25,13 +25,11 @@
      Right-clicks fall through to the map container, which shows the
      normal page context menu instead of "Save image as / Copy image". */
   pointer-events: none !important;
+  transition: opacity 0.15s linear;
 }
 
-.earthquake-hit-target {
-  fill: transparent !important;
-  fill-opacity: 0 !important;
-  stroke: transparent !important;
-  stroke-opacity: 0 !important;
+.earthquake-canvas-layer {
+  position: absolute;
   pointer-events: all;
 }
 
