@@ -1131,7 +1131,7 @@ const EarthquakeMarkers = ({ earthquakes, markerIcons, selectedEarthquake, onMar
   }, [earthquakes, map, markerIcons, selectedEarthquake, visible]);
 
   const scheduleDraw = useCallback((view = null) => {
-    pendingViewRef.current = view;
+    if (view || !pendingViewRef.current) pendingViewRef.current = view;
     if (frameRef.current) return;
     frameRef.current = window.requestAnimationFrame(() => {
       frameRef.current = null;
@@ -1423,9 +1423,9 @@ const MapComponent = ({
         fadeAnimation={true}
         markerZoomAnimation={true}
         preferCanvas={true}        // Canvas markers keep Chrome/macOS zooming responsive with large catalogues.
-        zoomSnap={0.5}             // snap to 0.5 zoom increments instead of integers — smoother steps
-        zoomDelta={0.5}            // zoom button / keyboard step = 0.5 levels (does NOT affect scroll wheel)
-        wheelPxPerZoomLevel={120}  // moderate trackpad/wheel sensitivity keeps animated zoom stable
+        zoomSnap={0}               // allow fractional zoom so trackpads do not feel locked to fixed levels
+        zoomDelta={0.25}           // smaller button / keyboard steps to match the continuous wheel feel
+        wheelPxPerZoomLevel={180}  // moderate trackpad/wheel sensitivity with fractional zoom
       >
         <TileLayerManager key={mapType} mapType={mapType} onReady={handleMapReady} />
         <FitIcelandOnReady />
