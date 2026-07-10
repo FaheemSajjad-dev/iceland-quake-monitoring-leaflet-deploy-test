@@ -168,10 +168,11 @@
 /* ── Info cards (earthquake + volcano) ── */
 .info-card {
   position: absolute;
-  left: 300px;
-  top: 60px;
+  left: 286.4px;
+  top: auto;
+  bottom: 18px;
   width: 220px;
-  max-width: calc(100vw - 300px - 200px);
+  max-width: calc(100vw - 306.4px);
   background: var(--floating-card-bg, #ffffff);
   border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
   border-radius: var(--floating-card-radius, 8px);

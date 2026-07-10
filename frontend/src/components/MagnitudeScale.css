@@ -290,8 +290,8 @@
 
 .left-panel .magnitude-scale.vertical .scale-bar-vertical {
   width: 20px;
-  height: calc(100% - 8px);
-  margin: 4px 0;
+  height: 100%;
+  margin: 0;
 }
 
 .left-panel .magnitude-scale.vertical .current-filter {
@@ -371,6 +371,7 @@
   .left-panel .magnitude-scale.vertical .scale-container {
     height: 100%;
   }
+
 
   .left-panel .magnitude-scale.vertical .magnitude-slider {
     width: var(--magnitude-slider-length, 160px) !important;

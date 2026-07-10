@@ -1,16 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import MapComponent from "./components/MapComponent";
 import LeftPanel from "./components/LeftPanel";
+import MapTypeSelector from "./components/MapTypeSelector";
 import RightPanel from "./components/RightPanel";
 import About from "./components/About";
 import { fetchEarthquakeData, fetchVolcanoData } from "./api";
 import { parseBackendUtcDate } from "./utils/datetime";
-import { useT } from "./i18n";
 import "./App.css";
 
 const MIN_MAGNITUDE = 3.0;
 const App = () => {
-    const t = useT();
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     const currentDay = new Date().getDate();
@@ -39,6 +38,10 @@ const App = () => {
 
     const [showAbout, setShowAbout] = useState(false);
     const [selectedVolcano, setSelectedVolcano] = useState(null);
+    const openAbout = useCallback(() => {
+        setSelectedVolcano(null);
+        setShowAbout(true);
+    }, []);
     const [resetViewTrigger, setResetViewTrigger] = useState(0);
     const resetView = useCallback(() => setResetViewTrigger(v => v + 1), []);
     const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() =>
@@ -158,10 +161,8 @@ const App = () => {
     return (
         <div className="app-container">
             <div className={`map-container${rightPanelOpen ? " right-panel-open" : ""}${!isMobile && leftPanelCollapsed ? " title-left" : ""}${isMobile && !leftPanelCollapsed ? " mobile-left-panel-open" : ""}`}>
-                <div className="about-button-container">
-                    <button className="nav-button" onClick={() => setShowAbout(true)}>
-                        {t('about')}
-                    </button>
+                <div className="map-type-control-container">
+                    <MapTypeSelector onMapTypeChange={handleMapTypeChange} selectedType={mapType} />
                 </div>
 
                 <div className="controls">
@@ -187,7 +188,6 @@ const App = () => {
                 </div>
 
                 <LeftPanel
-                    onMapTypeChange={handleMapTypeChange}
                     mapType={mapType}
                     showVolcanoes={showVolcanoes}
                     toggleVolcanoes={toggleVolcanoes}
@@ -203,7 +203,7 @@ const App = () => {
                     maxMagnitude={maxMagnitude}
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}
-                    onShowAbout={() => setShowAbout(true)}
+                    onShowAbout={openAbout}
                     collapsed={leftPanelCollapsed}
                     onCollapsedChange={setLeftPanelCollapsed}
                 />
@@ -229,6 +229,7 @@ const App = () => {
                     isDarkMode={isDarkMode}
                     selectedVolcano={selectedVolcano}
                     onSelectVolcano={setSelectedVolcano}
+                    aboutOpen={showAbout}
                     resetViewTrigger={resetViewTrigger}
                     rightPanelOpen={rightPanelOpen}
                     mobileLeftPanelOpen={isMobile && !leftPanelCollapsed}

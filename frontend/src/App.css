@@ -226,11 +226,12 @@ input:checked + .slider:before {
   background: rgba(255,255,255,1);
 }
 
-.about-button-container {
+.map-type-control-container {
   position: absolute;
   top: 16px;
   right: 14px;
   z-index: 1001;
+  width: 160px;
   transition: right 0.25s ease;
 }
 
@@ -240,7 +241,7 @@ input:checked + .slider:before {
   --right-panel-shift: 203px;
 }
 
-.map-container.right-panel-open .about-button-container {
+.map-container.right-panel-open .map-type-control-container {
   right: calc(14px + var(--right-panel-shift));
 }
 
@@ -286,11 +287,13 @@ input:checked + .slider:before {
     line-height: 1.15;
   }
 
-  .about-button-container {
-    display: none;
+  .map-type-control-container {
+    top: 10px;
+    right: 10px;
+    width: 140px;
   }
 
-  .map-container.right-panel-open .about-button-container {
+  .map-container.right-panel-open .map-type-control-container {
     right: calc(10px + var(--right-panel-shift));
   }
 

@@ -1335,13 +1335,15 @@ const isSameEarthquake = (a, b) =>
   a.Latitude === b.Latitude &&
   a.Longitude === b.Longitude;
 
-const buildGridGeojson = (bounds, zoom) => {
-  if (!bounds) return { type: "FeatureCollection", features: [] };
+const buildGridGeojson = (map) => {
+  if (!map) return { type: "FeatureCollection", features: [] };
+  const bounds = map.getBounds();
+  const zoom = map.getZoom();
   const west = bounds.getWest();
   const east = bounds.getEast();
   const south = bounds.getSouth();
   const north = bounds.getNorth();
-  const { lngGridSpacing } = getGridConfig(zoom);
+  const { lngGridSpacing, labelDecimals } = getGridConfig(zoom);
   const latGridSpacing = lngGridSpacing / 2;
   const normalize = (value, step) => Number((Math.round(value / step) * step).toFixed(6));
   const features = [];
@@ -1350,25 +1352,64 @@ const buildGridGeojson = (bounds, zoom) => {
   const endLat = Math.ceil(north / latGridSpacing) * latGridSpacing;
   const startLng = Math.floor(west / lngGridSpacing) * lngGridSpacing;
   const endLng = Math.ceil(east / lngGridSpacing) * lngGridSpacing;
+  const canvas = map.getCanvas();
+  const mapWidth = canvas.clientWidth;
+  const mapHeight = canvas.clientHeight;
+  const isMobileGrid = mapWidth <= 767;
+  const latLabelX = isMobileGrid ? mapWidth - 52 : 245;
+  const latLabelYOffset = -6;
+  const lngLabelY = mapHeight - 34;
+  const minLngLabelGap = 72;
+  const lngLabelMinX = isMobileGrid ? 18 : 210;
+  const lngLabelMaxX = mapWidth - 40;
+  let lastLngLabelX = -Infinity;
 
   for (let lat = startLat; lat <= endLat; lat = normalize(lat + latGridSpacing, latGridSpacing)) {
     if (lat < -85 || lat > 85) continue;
     features.push({
       type: "Feature",
-      properties: {},
+      properties: { kind: "line" },
       geometry: { type: "LineString", coordinates: [[west - 2, lat], [east + 2, lat]] },
     });
+
+    const labelY = map.project([map.getCenter().lng, lat]).y + latLabelYOffset;
+    if (labelY < 24 || labelY > mapHeight - 38) continue;
+    const labelPoint = map.unproject([latLabelX, labelY]);
+    features.push({
+      type: "Feature",
+      properties: {
+        kind: "label",
+        axis: "latitude",
+        label: `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
+      },
+      geometry: { type: "Point", coordinates: [labelPoint.lng, labelPoint.lat] },
+    });
   }
+
   for (let lng = startLng; lng <= endLng; lng = normalize(lng + lngGridSpacing, lngGridSpacing)) {
     features.push({
       type: "Feature",
-      properties: {},
+      properties: { kind: "line" },
       geometry: { type: "LineString", coordinates: [[lng, south - 1], [lng, north + 1]] },
+    });
+
+    const labelX = map.project([lng, map.getCenter().lat]).x;
+    if (labelX < lngLabelMinX || labelX > lngLabelMaxX) continue;
+    if (labelX - lastLngLabelX < minLngLabelGap) continue;
+    lastLngLabelX = labelX;
+    const labelPoint = map.unproject([labelX, lngLabelY]);
+    features.push({
+      type: "Feature",
+      properties: {
+        kind: "label",
+        axis: "longitude",
+        label: `${lng.toFixed(labelDecimals)}\u00b0${lng > 0 ? "E" : lng < 0 ? "W" : ""}`,
+      },
+      geometry: { type: "Point", coordinates: [labelPoint.lng, labelPoint.lat] },
     });
   }
   return { type: "FeatureCollection", features };
 };
-
 const MapLibreVolcanoMarkers = ({ volcanoes, selectedVolcano, onSelect }) => (
   <>
     {volcanoes.map((volcano, index) => {
@@ -1626,7 +1667,7 @@ const MapLibreEarthquakeMap = ({
   const updateGrid = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map || !showGrid) return;
-    setGridGeojson(buildGridGeojson(map.getBounds(), map.getZoom()));
+    setGridGeojson(buildGridGeojson(map));
   }, [showGrid]);
 
   useEffect(() => {
@@ -1713,10 +1754,47 @@ const MapLibreEarthquakeMap = ({
           <Layer
             id="grid-lines"
             type="line"
+            filter={["==", ["get", "kind"], "line"]}
             paint={{
               "line-color": isDarkMode || mapType === "satellite" ? "#ddd8cc" : "#666666",
               "line-width": 0.5,
               "line-opacity": 0.55,
+            }}
+          />
+          <Layer
+            id="grid-latitude-labels"
+            type="symbol"
+            filter={["==", ["get", "axis"], "latitude"]}
+            layout={{
+              "text-field": ["get", "label"],
+              "text-font": ["Noto Sans Bold"],
+              "text-size": showFaults ? 11 : 10,
+              "text-anchor": "left",
+              "text-allow-overlap": true,
+              "text-ignore-placement": true,
+            }}
+            paint={{
+              "text-color": isDarkMode || mapType === "satellite" ? "#ffffff" : "#333333",
+              "text-halo-color": isDarkMode || mapType === "satellite" ? "#222222" : "#ffffff",
+              "text-halo-width": 1,
+            }}
+          />
+          <Layer
+            id="grid-longitude-labels"
+            type="symbol"
+            filter={["==", ["get", "axis"], "longitude"]}
+            layout={{
+              "text-field": ["get", "label"],
+              "text-font": ["Noto Sans Bold"],
+              "text-size": showFaults ? 11 : 10,
+              "text-anchor": "center",
+              "text-allow-overlap": true,
+              "text-ignore-placement": true,
+            }}
+            paint={{
+              "text-color": isDarkMode || mapType === "satellite" ? "#ffffff" : "#333333",
+              "text-halo-color": isDarkMode || mapType === "satellite" ? "#222222" : "#ffffff",
+              "text-halo-width": 1,
             }}
           />
         </Source>
@@ -1770,6 +1848,7 @@ const MapComponent = ({
   isDarkMode,
   selectedVolcano,
   onSelectVolcano,
+  aboutOpen = false,
   resetViewTrigger = 0,
   rightPanelOpen = false,
   mobileLeftPanelOpen = false,
@@ -1780,6 +1859,13 @@ const MapComponent = ({
   const [loadedMapType, setLoadedMapType] = useState(null);
   const mapReady = loadedMapType === mapType;
   const handleMapReady = useCallback(() => setLoadedMapType(mapType), [mapType]);
+
+  useEffect(() => {
+    if (!aboutOpen) return;
+    setSelectedEarthquake(null);
+    setShakeUrl(null);
+    onSelectVolcano(null);
+  }, [aboutOpen, onSelectVolcano]);
 
   useEffect(() => {
     setLoadedMapType(null);
