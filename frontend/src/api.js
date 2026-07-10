@@ -1,10 +1,11 @@
 import axios from "axios";
 
-// In dev, point explicitly at the Flask backend (port 5001).
-// In production the API is served on the same origin, so an empty base URL is correct.
+// In dev, point explicitly at the Flask backend (port 5001) on the same
+// hostname used to load Vite. Mixing localhost and 127.0.0.1 creates distinct
+// browser origins and can trip CORS during local development.
 const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-export const API_URL = isLocalDev ? "http://localhost:5001" : base;
+export const API_URL = isLocalDev ? `${window.location.protocol}//${window.location.hostname}:5001` : base;
 
 export const fetchEarthquakeData = async () => {
     try {

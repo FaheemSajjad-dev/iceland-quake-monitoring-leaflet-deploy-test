@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MapContainer, TileLayer, ScaleControl, AttributionControl, useMap, useMapEvents } from "react-leaflet";
-import MapLibreMap, { NavigationControl, Source, Layer, Marker, ScaleControl as MapLibreScaleControl } from "react-map-gl/maplibre";
+import MapLibreMap, { NavigationControl, Source, Layer, Marker, ScaleControl as MapLibreScaleControl, useControl } from "react-map-gl/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { ScatterplotLayer } from "@deck.gl/layers";
 import L from "leaflet";
@@ -20,8 +20,6 @@ const ICELAND_CENTER = {
   longitude: -19.0208,
   latitude: 64.9631,
 };
-const TARGET_VIEW_WIDTH_METERS = 650_000;
-const EARTH_CIRCUMFERENCE_METERS = 40_075_016.68557849;
 const ICELAND_VIEW = {
   longitude: ICELAND_CENTER.longitude,
   latitude: ICELAND_CENTER.latitude,
@@ -47,18 +45,10 @@ const getLeftControlRightPx = () => {
   return clamp(rect.right, 0, Math.max(0, window.innerWidth - 1));
 };
 
-const getDefaultIcelandView = ({ tileSize, minZoom = 4, maxZoom = 18 } = {}) => {
-  if (typeof window === "undefined") return ICELAND_VIEW;
-  const viewportWidth = Math.max(320, window.innerWidth || 0);
+const getDefaultIcelandView = ({ tileSize, minZoom = 4 } = {}) => {
+  if (typeof window === "undefined") return { ...ICELAND_VIEW, zoom: minZoom };
   const leftControlRight = getLeftControlRightPx();
-  const usableWidth = Math.max(320, viewportWidth - leftControlRight);
-  const latitudeRad = ICELAND_CENTER.latitude * Math.PI / 180;
-  const metersAtZoomZero = EARTH_CIRCUMFERENCE_METERS * Math.cos(latitudeRad);
-  const zoom = clamp(
-    Math.log2((metersAtZoomZero * usableWidth) / (tileSize * TARGET_VIEW_WIDTH_METERS)),
-    minZoom,
-    maxZoom
-  );
+  const zoom = minZoom;
   const degreesPerPixel = 360 / (tileSize * (2 ** zoom));
   const longitude = ICELAND_CENTER.longitude - (leftControlRight / 2) * degreesPerPixel;
   return {
@@ -154,12 +144,6 @@ const TILE_LAYERS = {
     maxZoom: 19,
     maxNativeZoom: 14,
   },
-  gray: {
-    url: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-    maxZoom: 19,
-    maxNativeZoom: 18,
-    subdomains: "abcd",
-  },
 };
 
 // Shared tile options used to reduce flicker while panning and zooming.
@@ -200,19 +184,12 @@ const MAPLIBRE_RASTER_SOURCES = {
     maxzoom: 14,
     attribution: "Icelandic Met Office | Natural Science Institute of Iceland | OpenStreetMap",
   },
-  gray: {
-    tiles: ["https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],
-    tileSize: 256,
-    maxzoom: 18,
-    attribution: "CARTO | OpenStreetMap",
-  },
 };
 
 const MAPLIBRE_STYLES = {
   roadmap: OPENFREEMAP_STYLE_URL,
   satellite: buildRasterMapStyle("esri-satellite", "esri-satellite-layer", MAPLIBRE_RASTER_SOURCES.satellite),
   terrain: buildRasterMapStyle("imo-basemap", "imo-basemap-layer", MAPLIBRE_RASTER_SOURCES.terrain),
-  gray: buildRasterMapStyle("carto-gray", "carto-gray-layer", MAPLIBRE_RASTER_SOURCES.gray),
 };
 
 const colorStringToDeckRgba = (color, alpha = 230) => {
@@ -232,17 +209,16 @@ const COMPACT_ATTRIBUTIONS = {
   roadmap: "<a href='https://openfreemap.org/'>OpenFreeMap</a> | <a href='https://openmaptiles.org/'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a> | Maxar | Earthstar Geographics",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | Natural Science Institute of Iceland | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
-  gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
 };
 const MOBILE_ATTRIBUTIONS = {
-  roadmap: "<a href='https://openfreemap.org/'>OpenFreeMap</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+  roadmap: "<a href='https://openfreemap.org/'>OFM</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a>",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
-  gray: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
 };
 const FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE, ISOR</a>";
+const MOBILE_FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE</a>";
 const HIKE_METADATA_URL = "https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833";
 
 // Prefer Icelandic names, fall back to local OSM name
@@ -580,7 +556,7 @@ const CompactAttribution = ({ mapType, showFaults }) => {
     removeVerboseProviderAttributions(map);
     const attributions = isMobile ? MOBILE_ATTRIBUTIONS : COMPACT_ATTRIBUTIONS;
     const parts = [attributions[mapType] ?? attributions.roadmap];
-    if (showFaults) parts.push(FAULTS_ATTRIBUTION);
+    if (showFaults) parts.push(isMobile ? MOBILE_FAULTS_ATTRIBUTION : FAULTS_ATTRIBUTION);
     const compact = parts.join(" | ");
     control.addAttribution(compact);
     const keep = new Set([compact]);
@@ -1421,6 +1397,30 @@ const MapLibreVolcanoMarkers = ({ volcanoes, selectedVolcano, onSelect }) => (
   </>
 );
 
+const MapLibreFaultsLegendControl = () => {
+  useControl(() => {
+    let container = null;
+    return {
+      onAdd: () => {
+        container = document.createElement("div");
+        container.className = "maplibregl-ctrl faults-legend-control maplibre-faults-legend";
+        container.innerHTML = `
+          <div class="tectonic-legend">
+            <div class="tectonic-legend__title">Faults / Fissures</div>
+            <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--fault-line"></span><span>Fault</span></div>
+            <a class="tectonic-legend__source" href="${HIKE_METADATA_URL}" target="_blank" rel="noreferrer">Source: EGDI/HIKE, ISOR</a>
+          </div>
+        `;
+        return container;
+      },
+      onRemove: () => {
+        container?.remove();
+        container = null;
+      },
+    };
+  }, { position: "bottom-right" });
+  return null;
+};
 const MapLibreFaultsOverlay = ({ show }) => {
   const [geojson, setGeojson] = useState(null);
 
@@ -1451,13 +1451,6 @@ const MapLibreFaultsOverlay = ({ show }) => {
           layout={{ "line-cap": "round", "line-join": "round" }}
         />
       </Source>
-      <div className="faults-legend-control maplibre-faults-legend">
-        <div className="tectonic-legend">
-          <div className="tectonic-legend__title">Faults / Fissures</div>
-          <div className="tectonic-legend__row"><span className="tec-swatch tec-swatch--fault-line"></span><span>Fault</span></div>
-          <a className="tectonic-legend__source" href={HIKE_METADATA_URL} target="_blank" rel="noreferrer">Source: EGDI/HIKE, ISOR</a>
-        </div>
-      </div>
     </>
   );
 };
@@ -1650,8 +1643,10 @@ const MapLibreEarthquakeMap = ({
 
   useEffect(() => {
     let cancelled = false;
-    setStyledMapStyle(null);
-    if (mapType === "heatmap") return undefined;
+    if (mapType === "heatmap") {
+      setStyledMapStyle(null);
+      return undefined;
+    }
     fetchRawStyle()
       .then((raw) => {
         if (cancelled) return;
@@ -1711,6 +1706,7 @@ const MapLibreEarthquakeMap = ({
       cursor={hoveringEarthquakeRef.current ? "pointer" : "grab"}
     >
       <NavigationControl position="bottom-right" />
+      {showFaults && <MapLibreFaultsLegendControl />}
       <MapLibreScaleControl position="bottom-right" />
       {showGrid && (
         <Source id="grid" type="geojson" data={gridGeojson}>
@@ -1857,7 +1853,7 @@ const MapComponent = ({
         <>
           <MapContainer
             center={CENTER}
-            zoom={6}
+            zoom={4.5}
             minZoom={4.5}
             style={{ width: "100vw", height: "100vh" }}
             zoomControl={false}

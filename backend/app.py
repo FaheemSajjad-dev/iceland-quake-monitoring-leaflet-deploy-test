@@ -56,7 +56,8 @@ _ALLOWED_ORIGINS = [
     f"http://localhost:{FRONTEND_PORT}",
     f"http://127.0.0.1:{FRONTEND_PORT}",
 ]
-CORS(app, origins=_ALLOWED_ORIGINS)
+# CORS is applied explicitly in add_security_headers so localhost and
+# 127.0.0.1 are reflected exactly for local development.
 if Compress:
     Compress(app)
 
@@ -98,6 +99,16 @@ SECURITY_HEADERS = {
 def add_security_headers(response):
     for header, value in SECURITY_HEADERS.items():
         response.headers.setdefault(header, value)
+
+    origin = request.headers.get("Origin")
+    if origin in _ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers.setdefault("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+        requested_headers = request.headers.get("Access-Control-Request-Headers")
+        if requested_headers:
+            response.headers["Access-Control-Allow-Headers"] = requested_headers
+
     return response
 
 logging.getLogger("apscheduler").setLevel(logging.WARNING)

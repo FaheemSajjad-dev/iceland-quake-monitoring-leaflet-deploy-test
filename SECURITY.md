@@ -30,14 +30,14 @@ CORS(app, origins=_ALLOWED_ORIGINS)
 
 When deploying, add the production domain or serve frontend and backend behind the same reverse proxy and remove cross-origin access.
 
-## 3. Admin Endpoints - DONE
+## 3. Localhost-Only Admin Endpoints - DONE
 
 | Endpoint | Method | What it does | Protection |
 |---|---|---|---|
-| `/reconcile` | POST | Reruns reconciliation | Requires `ADMIN_TOKEN` via `Authorization: Bearer ...` or `X-Admin-Token` when configured; falls back to local address only when no token is configured |
-| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same admin-token/local fallback policy |
+| `/reconcile` | POST | Reruns reconciliation | `request.remote_addr` must be `127.0.0.1` or `::1` |
+| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same localhost check |
 
-Set `ADMIN_TOKEN` in production so these maintenance endpoints are not publicly callable. The scheduler handles normal ingestion automatically, so these endpoints are only for server-side maintenance.
+The scheduler handles normal ingestion automatically, so these are only for local/server-side maintenance.
 
 ## 4. Error Message Leakage - DONE
 
@@ -58,11 +58,11 @@ The policy allows:
 
 - Scripts and styles from `'self'`, with inline allowances needed by the current Leaflet/React stack
 - Images from `'self'`, data/blob URLs, Esri, OpenFreeMap, CARTO, IMO tile domains, and EGDI/HIKE map services
-- Connections to the same-origin API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
+- Connections to the local Flask API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
 - Fonts from `'self'` and OpenFreeMap
 - Frames blocked through HTTP `frame-ancestors 'none'` and `X-Frame-Options: DENY`
 
-When deploying, update `connect-src` for any additional production API or tile origins and remove development origins if they are not needed.
+When deploying, update `connect-src` for the production API origin and remove development origins if they are not needed.
 
 ## 6. Unused API Keys - DONE
 

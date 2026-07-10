@@ -295,11 +295,11 @@
 }
 
 .left-panel .magnitude-scale.vertical .current-filter {
-  left: 100%;
+  left: 86%;
 }
 
 .left-panel .magnitude-scale.vertical .magnitude-slider {
-  width: calc(var(--range-card-height) - 92px) !important;
+  width: var(--magnitude-slider-length, 200px) !important;
   left: 50% !important;
   top: 50% !important;
 }
@@ -373,6 +373,29 @@
   }
 
   .left-panel .magnitude-scale.vertical .magnitude-slider {
-    width: calc(var(--range-card-height) - 84px) !important;
+    width: var(--magnitude-slider-length, 160px) !important;
+  }
+  .left-panel .magnitude-scale.vertical .magnitude-slider {
+    height: 8px !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+  }
+
+  .left-panel .magnitude-scale.vertical .magnitude-slider::-webkit-slider-runnable-track {
+    height: 8px;
+  }
+
+  .left-panel .magnitude-scale.vertical .magnitude-slider::-moz-range-track {
+    height: 8px;
+  }
+
+  .left-panel .magnitude-scale.vertical .magnitude-slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    margin-top: -4px;
+  }
+
+  .left-panel .magnitude-scale.vertical .magnitude-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
   }
 }

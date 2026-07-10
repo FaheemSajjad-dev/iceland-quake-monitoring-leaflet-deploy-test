@@ -98,21 +98,23 @@ const LeftPanel = ({
           </div>
 
           <div className="left-panel__range-controls">
-            <TimeWindowSlider
-              onFilterChange={onFilterChange}
-              colorOwner={colorOwner}
-              mapType={mapType}
-              vertical
-              isHeatmap={isHeatmap}
-            />
-            <MagnitudeScale
-              minMagnitude={minMagnitude}
-              maxMagnitude={maxMagnitude}
-              onMagnitudeFilterChange={onMagnitudeFilterChange}
-              colorOwner={colorOwner}
-              isHeatmap={isHeatmap}
-              vertical
-            />
+            <div className="left-panel__scale-row">
+              <TimeWindowSlider
+                onFilterChange={onFilterChange}
+                colorOwner={colorOwner}
+                mapType={mapType}
+                vertical
+                isHeatmap={isHeatmap}
+              />
+              <MagnitudeScale
+                minMagnitude={minMagnitude}
+                maxMagnitude={maxMagnitude}
+                onMagnitudeFilterChange={onMagnitudeFilterChange}
+                colorOwner={colorOwner}
+                isHeatmap={isHeatmap}
+                vertical
+              />
+            </div>
             <div className="left-panel__range-help left-panel__range-help--time">
               Scroll to zoom time window, drag to shift
             </div>

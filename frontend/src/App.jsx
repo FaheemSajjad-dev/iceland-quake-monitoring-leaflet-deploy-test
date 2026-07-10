@@ -8,6 +8,7 @@ import { parseBackendUtcDate } from "./utils/datetime";
 import { useT } from "./i18n";
 import "./App.css";
 
+const MIN_MAGNITUDE = 3.0;
 const App = () => {
     const t = useT();
     const currentYear = new Date().getFullYear();
@@ -17,10 +18,10 @@ const App = () => {
     const [filteredData, setFilteredData] = useState([]);
     const [allData, setAllData] = useState([]);
     const [volcanoData, setVolcanoData] = useState([]);
-    const [maxMagnitude, setMaxMagnitude] = useState(3.0);
+    const [maxMagnitude, setMaxMagnitude] = useState(MIN_MAGNITUDE);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showVolcanoes, setShowVolcanoes] = useState(false);
-    const [magnitudeFilter, setMagnitudeFilter] = useState(3.0);
+    const [magnitudeFilter, setMagnitudeFilter] = useState(MIN_MAGNITUDE);
     const [colorOwner, setColorOwner] = useState('timeline');
     const [mapType, setMapType] = useState('roadmap');
     const [showGrid, setShowGrid] = useState(false);
@@ -198,7 +199,7 @@ const App = () => {
                     onChangeColorOwner={setColorOwner}
                     isHeatmap={isHeatmap}
                     onFilterChange={handleFilterChange}
-                    minMagnitude={3.0}
+                    minMagnitude={MIN_MAGNITUDE}
                     maxMagnitude={maxMagnitude}
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}

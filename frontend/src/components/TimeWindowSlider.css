@@ -352,8 +352,8 @@
 @media (max-width: 767px) {
   .time-window-slider-container.vertical .timeline-zoom-buttons {
     position: absolute;
-    right: -36px;
-    top: 42px;
+    right: -30px;
+    top: 44px;
     z-index: 3;
     display: flex;
     gap: 0;
@@ -361,24 +361,24 @@
     transform-origin: center center;
     pointer-events: all;
     overflow: hidden;
-    background: var(--floating-card-bg, #ffffff);
-    border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
-    border-radius: var(--floating-card-radius, 8px);
-    box-shadow: var(--floating-card-shadow, 0 1px 6px rgba(10, 40, 80, 0.09));
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(10, 40, 80, 0.20);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(10, 40, 80, 0.12);
   }
 
   .time-window-slider-container.vertical .timeline-zoom-button {
-    width: 20px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     border: 0;
-    border-right: 1px solid rgba(10, 40, 80, 0.12);
+    border-right: 1px solid rgba(10, 40, 80, 0.20);
     border-radius: 0;
-    background: #ffffff;
+    background: transparent;
     color: #1a3a5c;
     box-shadow: none;
     cursor: pointer;
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 700;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -393,9 +393,28 @@
   }
 
   .time-window-slider-container.vertical .timeline-zoom-button:active {
-    background: #eef5fb;
+    background: rgba(238, 245, 251, 0.94);
   }
 }
 
 /* Desktop vertical sizing is intentionally fixed so this control stays anchored
    to the left panel instead of drifting on TV-sized or ultra-wide displays. */
+/* Left panel: the rotated card's pre-rotation width is its rendered vertical height.
+   Keep it locked to the shared scale row height so it matches MagnitudeScale. */
+.left-panel__scale-row > .time-window-slider-container.vertical {
+  box-sizing: border-box !important;
+  width: 100cqh !important;
+  min-width: 100cqh !important;
+  max-width: 100cqh !important;
+  height: var(--range-card-width) !important;
+  min-height: var(--range-card-width) !important;
+  max-height: var(--range-card-width) !important;
+  left: calc((var(--range-card-width) - 100cqh) / 2) !important;
+  top: calc((100cqh - var(--range-card-width)) / 2) !important;
+  transform: rotate(-90deg) !important;
+  transform-origin: center center !important;
+}
+
+.left-panel__scale-row > .time-window-slider-container.vertical .timeline-slider {
+  width: 100%;
+}

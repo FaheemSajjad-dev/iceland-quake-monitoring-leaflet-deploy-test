@@ -25,7 +25,6 @@ const T = {
     map_map: "Map",
     map_satellite: "Satellite",
     map_terrain: "Terrain",
-    map_gray: "Gray",
     map_heatmap: "Heatmap",
     // Info cards
     info_earthquake: "Earthquake",
@@ -88,7 +87,6 @@ const T = {
     map_map: "Kort",
     map_satellite: "Gervihnöttur",
     map_terrain: "Landslag",
-    map_gray: "Grátt",
     map_heatmap: "Hitakort",
     // Info cards
     info_earthquake: "Jarðskjálfti",

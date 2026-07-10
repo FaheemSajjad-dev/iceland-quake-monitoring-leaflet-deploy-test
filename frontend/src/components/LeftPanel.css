@@ -4,6 +4,7 @@
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 1001;
   display: flex;
   flex-direction: row;
@@ -20,6 +21,7 @@
   max-width: var(--left-panel-width);
   width: var(--left-panel-width);
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   transition: max-width 0.25s ease;
   pointer-events: all;
@@ -49,14 +51,15 @@
 /* White card body */
 .left-panel__body {
   width: var(--left-panel-width);
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   background: #fff;
   box-shadow: 3px 0 16px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 14px;
-  overflow-y: auto;
+  gap: clamp(10px, 1.45dvh, 16px);
+  padding: clamp(12px, 1.45dvh, 16px) 14px clamp(12px, 1.45dvh, 16px);
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -65,23 +68,47 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
+  flex: 0 0 auto;
 }
 
 .left-panel__range-controls {
   position: relative;
-  flex: 0 0 calc(var(--range-card-height) + 64px);
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   pointer-events: none;
+  --range-card-height: min(480px, calc(100% - 54px));
+  --range-card-offset: max(0px, calc(100% - 54px - var(--range-card-height)));
+  --range-label-gap: 8px;
+  --range-label-height: 18px;
+}
+
+.left-panel__scale-row {
+  position: absolute;
+  top: var(--range-card-offset);
+  left: 0;
+  right: 0;
+  height: var(--range-card-height);
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  pointer-events: none;
+  container-type: size;
 }
 
 /* Fixed-width panel, vertical scales. Both cards render as matching visual
    windows inside the content column: time is rotated, magnitude is native. */
 .left-panel .time-window-slider-container.vertical {
-  width: var(--range-card-height);
+  width: 100cqh;
+  min-width: 100cqh;
+  max-width: 100cqh;
   height: var(--range-card-width);
-  left: calc((var(--range-card-width) - var(--range-card-height)) / 2);
-  top: calc((var(--range-card-height) - var(--range-card-width)) / 2);
+  min-height: var(--range-card-width);
+  max-height: var(--range-card-width);
+  left: calc((var(--range-card-width) - 100cqh) / 2);
+  top: calc((100cqh - var(--range-card-width)) / 2);
   transform: rotate(-90deg);
+  transform-origin: center center;
   box-sizing: border-box;
 }
 
@@ -89,10 +116,28 @@
   right: auto;
   left: calc(100% - var(--range-card-width));
   top: 0;
+  height: 100%;
   transform: none;
   pointer-events: all;
 }
+.left-panel .time-window-slider-container.vertical,
+.left-panel .magnitude-scale.vertical {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
 
+.left-panel .time-window-slider-container.vertical .vertical-letter-label,
+.left-panel .time-window-slider-container.vertical .year-label,
+.left-panel .time-window-slider-container.vertical .day-label,
+.left-panel .time-window-slider-container.vertical .month-label,
+.left-panel .magnitude-scale.vertical .scale-letter-label,
+.left-panel .magnitude-scale.vertical .magnitude-tick-label,
+.left-panel .magnitude-scale.vertical .current-filter,
+.left-panel__scale-row > .selected-date-below,
+.left-panel__range-help {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.82);
+}
 .left-panel .time-window-slider-container.vertical .zoom-indicator {
   display: none;
 }
@@ -104,12 +149,12 @@
   font-size: 15px;
 }
 
-.left-panel__range-controls > .selected-date-below {
+.left-panel__scale-row > .selected-date-below {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--range-card-height) + 8px);
-  height: 18px;
+  top: calc(100cqh + var(--range-label-gap));
+  height: var(--range-label-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,20 +170,20 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--range-card-height) + 32px);
+  top: calc(var(--range-card-offset) + var(--range-card-height) + var(--range-label-gap) + var(--range-label-height) + var(--range-label-gap));
   min-height: 18px;
   color: #1a3a5c;
   font-size: 11px;
   font-style: italic;
   line-height: 1.3;
-  text-align: left;
+  text-align: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
-.left-panel__range-controls:has(.time-window-slider-container:hover) .left-panel__range-help--time,
-.left-panel__range-controls:has(.magnitude-scale:hover) .left-panel__range-help--magnitude {
+.left-panel__range-controls:has(.timeline-slider:hover) .left-panel__range-help--time,
+.left-panel__range-controls:has(.magnitude-slider:hover) .left-panel__range-help--magnitude {
   opacity: 1;
 }
 
@@ -192,7 +237,7 @@
 
 .left-panel__body .color-mode-switch button {
   flex: 1;
-  padding: 4px 6px;
+  padding: clamp(3px, 0.45dvh, 4px) 6px;
   border: none;
   background: none;
   cursor: pointer;
@@ -307,7 +352,33 @@
   background: #f7f7f7;
   border-radius: 8px;
   border: 1px solid #eee;
-  padding: 5px 10px;
+  padding: clamp(3px, 0.55dvh, 5px) 10px;
+}
+
+@media (max-height: 760px) and (min-width: 768px) {
+  .left-panel__body {
+    gap: 9px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .left-panel__section {
+    gap: 5px;
+  }
+
+  .left-panel__body .color-mode-switch button {
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .left-panel__body .volcano-toggle {
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .lang-toggle-btn {
+    line-height: 1.4;
+  }
 }
 
 @media (max-width: 767px) {
@@ -325,7 +396,8 @@
 
   .left-panel__body {
     width: var(--left-panel-width);
-    min-height: 100%;
+    height: 100%;
+    min-height: 0;
     gap: 8px;
     padding: 10px 9px;
   }
@@ -395,7 +467,10 @@
   }
 
   .left-panel__range-controls {
-    flex-basis: calc(var(--range-card-height) + 64px);
+    flex: 1 1 auto;
+    min-height: 0;
+    --range-card-height: min(405px, calc(100% - 54px));
+    --range-card-offset: max(0px, calc(100% - 54px - var(--range-card-height)));
   }
 
   .left-panel .time-window-slider-container.vertical {
@@ -404,6 +479,7 @@
     left: calc((var(--range-card-width) - var(--range-card-height)) / 2);
     top: calc((var(--range-card-height) - var(--range-card-width)) / 2);
     transform: rotate(-90deg);
+  transform-origin: center center;
   }
 
   .left-panel .magnitude-scale.vertical {
