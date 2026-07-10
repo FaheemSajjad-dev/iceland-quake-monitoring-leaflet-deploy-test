@@ -1004,16 +1004,16 @@ const RightClickHandler = () => {
 };
 
 const GRID_ZOOM_LEVELS = [
-  { maxZoom: 5, lngSpacing: 4, labelDecimals: 0 },
-  { maxZoom: 6, lngSpacing: 2, labelDecimals: 0 },
-  { maxZoom: 7, lngSpacing: 1, labelDecimals: 0 },
-  { maxZoom: 8, lngSpacing: 0.5, labelDecimals: 1 },
-  { maxZoom: 9, lngSpacing: 0.25, labelDecimals: 2 },
-  { maxZoom: 10, lngSpacing: 0.1, labelDecimals: 2 },
-  { maxZoom: 11, lngSpacing: 0.05, labelDecimals: 2 },
-  { maxZoom: 12, lngSpacing: 0.025, labelDecimals: 3 },
-  { maxZoom: 13, lngSpacing: 0.01, labelDecimals: 3 },
-  { maxZoom: Infinity, lngSpacing: 0.005, labelDecimals: 4 },
+  { maxZoom: 5, lngSpacing: 1, labelDecimals: 1 },
+  { maxZoom: 6, lngSpacing: 1, labelDecimals: 1 },
+  { maxZoom: 7, lngSpacing: 0.5, labelDecimals: 2 },
+  { maxZoom: 8, lngSpacing: 0.2, labelDecimals: 2 },
+  { maxZoom: 9, lngSpacing: 0.1, labelDecimals: 2 },
+  { maxZoom: 10, lngSpacing: 0.05, labelDecimals: 3 },
+  { maxZoom: 11, lngSpacing: 0.02, labelDecimals: 3 },
+  { maxZoom: 12, lngSpacing: 0.01, labelDecimals: 3 },
+  { maxZoom: 13, lngSpacing: 0.005, labelDecimals: 4 },
+  { maxZoom: Infinity, lngSpacing: 0.002, labelDecimals: 4 },
 ];
 
 const getGridConfig = (zoom) => {

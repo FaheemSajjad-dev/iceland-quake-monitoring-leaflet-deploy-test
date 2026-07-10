@@ -350,6 +350,11 @@
 }
 
 @media (max-width: 767px) {
+  .left-panel__scale-row > .time-window-slider-container.vertical {
+    padding-left: 10px !important;
+    padding-right: 20px !important;
+  }
+
   .time-window-slider-container.vertical .timeline-zoom-buttons {
     position: absolute;
     right: -30px;
@@ -403,6 +408,8 @@
    Keep it locked to the shared scale row height so it matches MagnitudeScale. */
 .left-panel__scale-row > .time-window-slider-container.vertical {
   box-sizing: border-box !important;
+  padding-left: 14px;
+  padding-right: 20px;
   width: 100cqh !important;
   min-width: 100cqh !important;
   max-width: 100cqh !important;
