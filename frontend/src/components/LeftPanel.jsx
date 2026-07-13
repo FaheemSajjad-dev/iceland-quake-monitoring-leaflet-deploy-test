@@ -24,6 +24,11 @@ const LeftPanel = ({
   onShowAbout,
   collapsed,
   onCollapsedChange,
+  isMobile,
+  selectedEarthquake,
+  onClearSelectedEarthquake,
+  shakeUrl,
+  onOpenShakeMap,
 }) => {
   const { lang, toggleLang } = useLang();
   const t = useT();
@@ -83,6 +88,37 @@ const LeftPanel = ({
                   <span className="slider round"></span>
                 </label>
                 <span className="toggle-label"><span className="faults-toggle-icon" aria-hidden="true">╱</span> {t('faults')}</span>
+              </div>
+            )}
+
+            {isMobile && !collapsed && !isHeatmap && selectedEarthquake && (
+              <div className="left-panel__event-summary" aria-label={t('info_earthquake')}>
+                <button
+                  className="info-card__close left-panel__event-close"
+                  onClick={onClearSelectedEarthquake}
+                  title="Close"
+                  aria-label="Close"
+                >
+                  {'\u2715'}
+                </button>
+                <p>
+                  <strong className="left-panel__event-magnitude">
+                    Mpgv {selectedEarthquake.Mw_mean ?? "N/A"}
+                  </strong>{' '}
+                  {t('info_earthquake').toLowerCase()},{' '}
+                  <em>{t('info_depth').toLowerCase()} {selectedEarthquake.Depth != null ? Number(selectedEarthquake.Depth).toFixed(1) : "N/A"} km</em>.{' '}
+                  <strong>{t('info_time')}: {selectedEarthquake["Date-time"] ?? "N/A"}</strong>,{' '}
+                  <em>{t('info_lat')} {selectedEarthquake.Latitude != null ? Number(selectedEarthquake.Latitude).toFixed(4) : "N/A"}, {t('info_lon')} {selectedEarthquake.Longitude != null ? Number(selectedEarthquake.Longitude).toFixed(4) : "N/A"}</em>.
+                </p>
+                {shakeUrl?.url && (
+                  <button
+                    className="info-card__action left-panel__event-action"
+                    onClick={() => onOpenShakeMap(shakeUrl.url)}
+                    title={`ShakeMap (\u0394t ${Math.round(shakeUrl.dt_sec)} s, \u0394d ${shakeUrl.dist_km?.toFixed(1)} km, \u0394M ${shakeUrl.dm ?? "\u2013"})`}
+                  >
+                    {t('info_view_shakemap')}
+                  </button>
+                )}
               </div>
             )}
 

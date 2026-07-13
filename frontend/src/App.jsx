@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import MapComponent from "./components/MapComponent";
 import LeftPanel from "./components/LeftPanel";
 import MapTypeSelector from "./components/MapTypeSelector";
@@ -38,6 +38,8 @@ const App = () => {
 
     const [showAbout, setShowAbout] = useState(false);
     const [selectedVolcano, setSelectedVolcano] = useState(null);
+    const [selectedEarthquake, setSelectedEarthquake] = useState(null);
+    const [shakeUrl, setShakeUrl] = useState(null);
     const openAbout = useCallback(() => {
         setSelectedVolcano(null);
         setShowAbout(true);
@@ -50,14 +52,33 @@ const App = () => {
     const [isMobile, setIsMobile] = useState(() =>
         typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
     );
+    const desktopCollapsedRef = useRef(false);
+    const responsiveModeRef = useRef(isMobile);
 
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
         const query = window.matchMedia("(max-width: 767px)");
-        const update = () => setIsMobile(query.matches);
+        const update = () => {
+            const nextIsMobile = query.matches;
+            setLeftPanelCollapsed(current => {
+                if (nextIsMobile && !responsiveModeRef.current) {
+                    desktopCollapsedRef.current = current;
+                }
+                if (!nextIsMobile && responsiveModeRef.current) {
+                    return desktopCollapsedRef.current;
+                }
+                return nextIsMobile ? true : current;
+            });
+            responsiveModeRef.current = nextIsMobile;
+            setIsMobile(nextIsMobile);
+        };
         update();
-        query.addEventListener?.("change", update);
-        return () => query.removeEventListener?.("change", update);
+        if (query.addEventListener) {
+            query.addEventListener("change", update);
+            return () => query.removeEventListener("change", update);
+        }
+        query.addListener(update);
+        return () => query.removeListener(update);
     }, []);
 
     useEffect(() => {
@@ -205,6 +226,11 @@ const App = () => {
                     onResetView={resetView}
                     onShowAbout={openAbout}
                     collapsed={leftPanelCollapsed}
+                    isMobile={isMobile}
+                    selectedEarthquake={selectedEarthquake}
+                    onClearSelectedEarthquake={() => setSelectedEarthquake(null)}
+                    shakeUrl={shakeUrl}
+                    onOpenShakeMap={url => window.open(url, "_blank", "noopener,noreferrer")}
                     onCollapsedChange={setLeftPanelCollapsed}
                 />
 
@@ -233,6 +259,10 @@ const App = () => {
                     resetViewTrigger={resetViewTrigger}
                     rightPanelOpen={rightPanelOpen}
                     mobileLeftPanelOpen={isMobile && !leftPanelCollapsed}
+                    selectedEarthquake={selectedEarthquake}
+                    setSelectedEarthquake={setSelectedEarthquake}
+                    shakeUrl={shakeUrl}
+                    setShakeUrl={setShakeUrl}
                 />
 
             </div>

@@ -14,6 +14,38 @@
   :root { --mag-clearance: 140px; } /* scale grows to 60px */
 }
 
+.map-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map-stage > .maplibregl-map,
+.map-stage > .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-stage .maplibregl-ctrl-bottom-right {
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  transition: right 0.25s ease;
+}
+
+.map-stage .maplibregl-ctrl-bottom-left {
+  left: var(--safe-left);
+  bottom: var(--safe-bottom);
+}
+
+.map-stage.right-panel-open .maplibregl-ctrl-bottom-right {
+  right: calc(var(--safe-right) + var(--right-panel-shift));
+}
+
+
 /* Neutral fallback colour shown in blank tile areas during zoom/load transitions */
 .leaflet-container {
   background: #d4d0cb; /* approximate OSM/CartoDB base grey — less jarring than white during zoom */
@@ -168,9 +200,9 @@
 /* ── Info cards (earthquake + volcano) ── */
 .info-card {
   position: absolute;
-  left: 286.4px;
+  left: calc(var(--action-rail-left) + var(--action-button-size) + var(--action-card-gap));
   top: auto;
-  bottom: 18px;
+  bottom: var(--action-rail-bottom);
   width: 220px;
   max-width: calc(100vw - 306.4px);
   background: var(--floating-card-bg, #ffffff);
@@ -180,6 +212,7 @@
   z-index: 1000;
   overflow: hidden;
   font-family: system-ui, sans-serif;
+  transition: left 0.25s ease;
 }
 
 /* Coloured left accent border per type */
@@ -312,8 +345,8 @@
 /* Heatmap density legend — sits just above the Leaflet scale control (bottom-right) */
 .heatmap-legend {
   position: absolute;
-  bottom: 104px;
-  right: 14px;
+  bottom: calc(var(--safe-bottom) + 104px);
+  right: calc(var(--safe-right) + 14px);
   z-index: 1000;
   background: var(--floating-card-bg, #ffffff);
   border: var(--floating-card-border, 1px solid rgba(10, 40, 80, 0.14));
@@ -325,8 +358,17 @@
 }
 
 .map-container.right-panel-open .heatmap-legend {
-  right: calc(14px + var(--right-panel-shift));
+  right: calc(var(--safe-right) + 14px + var(--right-panel-shift));
 }
+
+.map-stage .maplibregl-ctrl-bottom-right > .maplibre-heatmap-legend {
+  position: static;
+  clear: both;
+  right: auto;
+  bottom: auto;
+  transition: none;
+}
+
 
 .heatmap-legend-title {
   color: #566272;
@@ -535,8 +577,18 @@
   transition: right 0.25s ease;
 }
 
-.map-container.right-panel-open .leaflet-bottom.leaflet-right {
-  right: 203px;
+.map-stage .leaflet-bottom.leaflet-right {
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+}
+
+.map-stage .leaflet-bottom.leaflet-left {
+  left: var(--safe-left);
+  bottom: var(--safe-bottom);
+}
+
+.map-stage.right-panel-open .leaflet-bottom.leaflet-right {
+  right: calc(var(--safe-right) + var(--right-panel-shift));
 }
 
 /* Align scale bar bottom with the volcano/grid toggles (bottom: 39px); right matches left components (20px) */
@@ -568,22 +620,10 @@
     --mag-clearance: 84px;
   }
 
-  .map-container > .leaflet-container {
-    height: 100svh !important;
-  }
 
-  @supports (height: 100dvh) {
-    .map-container > .leaflet-container {
-      height: 100dvh !important;
-    }
-  }
-
-  .map-container.right-panel-open .leaflet-bottom.leaflet-right {
-    right: 154px;
-  }
 
   .map-container.right-panel-open .heatmap-legend {
-    right: calc(10px + var(--right-panel-shift));
+    right: calc(var(--safe-right) + 10px + var(--right-panel-shift));
   }
 
   .map-type-main {
@@ -614,9 +654,9 @@
 
   .info-card {
     position: fixed;
-    left: 46px;
+    left: var(--action-rail-left);
     top: auto;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--action-rail-bottom) + var(--action-rail-height) + var(--action-card-gap));
     width: 118px;
     max-width: 118px;
     max-height: 34svh;
@@ -630,7 +670,7 @@
     }
   }
 
-  .map-container.mobile-left-panel-open .info-card {
+  .map-stage.mobile-left-panel-open .info-card {
     left: 10px;
   }
 
@@ -687,8 +727,8 @@
   }
 
   .heatmap-legend {
-    right: 10px;
-    bottom: 84px;
+    right: calc(var(--safe-right) + 10px);
+    bottom: calc(var(--safe-bottom) + 84px);
     min-width: 116px;
     padding: 6px 8px 5px;
   }
@@ -710,10 +750,46 @@
     max-width: calc(48vw - 18px);
     font-size: 8px;
     line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
+
+  .leaflet-attribution-mobile {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 24px;
+    padding: 2px 24px 2px 0;
+    overflow: visible;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .leaflet-attribution-mobile .leaflet-attribution-content {
+    display: none;
+  }
+
+  .leaflet-attribution-mobile.leaflet-attribution-expanded {
+    padding: 2px 28px 2px 8px;
+  }
+
+  .leaflet-attribution-mobile.leaflet-attribution-expanded .leaflet-attribution-content {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .leaflet-attribution-mobile .leaflet-attribution-toggle {
+    display: block;
+  }
+
+  .maplibregl-ctrl-attrib.maplibregl-compact-show {
+    box-sizing: border-box;
+    max-width: calc(48vw - 18px);
+  }
+
+  .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
 
   .leaflet-bottom.leaflet-right .leaflet-control-scale {
   clear: both;

@@ -1,8 +1,13 @@
-html, body, #root {
+html,
+body,
+#root,
+.app-container {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -10,20 +15,31 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100vh;
 }
 
 .map-container {
   --right-panel-shift: 0px;
-  width: 100vw;
-  height: 100vh;
+  --right-panel-width: 185px;
+  --right-panel-toggle-width: 18px;
+  --left-panel-width: 230.4px;
+  --action-rail-left: calc(var(--safe-left) + var(--left-panel-width) + 12px);
+  --action-rail-bottom: calc(var(--safe-bottom) + 18px);
+  --action-button-size: 34px;
+  --action-button-gap: 8px;
+  --action-card-gap: 10px;
+  --action-rail-height: calc(var(--action-button-size) + var(--action-button-size) + var(--action-button-size) + var(--action-button-size) + var(--action-button-gap) + var(--action-button-gap) + var(--action-button-gap));
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   position: relative;
 }
 
 /* Header and Controls */
 .controls {
   position: absolute;
-  top: 4px;
+  top: calc(var(--safe-top) + 4px);
   left: 50%;
   transform: translateX(-40%);
   display: flex;
@@ -38,8 +54,12 @@ html, body, #root {
   transition: left 0.25s ease, transform 0.25s ease;
 }
 
+.map-container.title-left {
+  --action-rail-left: calc(var(--safe-left) + 12px);
+}
+
 .map-container.title-left .controls {
-  left: 14px;
+  left: calc(var(--safe-left) + 14px);
   transform: none;
 }
 
@@ -228,8 +248,8 @@ input:checked + .slider:before {
 
 .map-type-control-container {
   position: absolute;
-  top: 16px;
-  right: 14px;
+  top: calc(var(--safe-top) + 16px);
+  right: calc(var(--safe-right) + 14px);
   z-index: 1001;
   width: 160px;
   transition: right 0.25s ease;
@@ -238,46 +258,39 @@ input:checked + .slider:before {
 
 
 .map-container.right-panel-open {
-  --right-panel-shift: 203px;
+  --right-panel-shift: calc(var(--right-panel-width) + var(--right-panel-toggle-width));
 }
 
 .map-container.right-panel-open .map-type-control-container {
-  right: calc(14px + var(--right-panel-shift));
+  right: calc(var(--safe-right) + 14px + var(--right-panel-shift));
 }
 
 @media (max-width: 767px) {
-  html,
-  body,
-  #root,
-  .app-container,
   .map-container {
-    height: 100svh;
+    --right-panel-width: 136px;
+    --left-panel-width: min(52vw, 230px);
+    --action-rail-left: calc(var(--safe-left) + 10px);
+    --action-rail-bottom: calc(var(--safe-bottom) + 14px);
+    --action-button-size: 28px;
+    --action-button-gap: 6px;
+    --right-panel-toggle-width: 16px;
+    --mobile-top-control-offset: 52px;
   }
 
-  @supports (height: 100dvh) {
-    html,
-    body,
-    #root,
-    .app-container,
-    .map-container {
-      height: 100dvh;
-    }
-  }
-
-  .map-container.right-panel-open {
-    --right-panel-shift: 154px;
+  .map-container.mobile-left-panel-open {
+    --action-rail-left: calc(var(--safe-left) + var(--left-panel-width) + 10px);
   }
 
   .controls {
-    top: 2px;
-    left: 14px;
+    top: calc(var(--safe-top) + 2px);
+    left: calc(var(--safe-left) + 14px);
     transform: none;
     gap: 4px;
     padding: 7px 10px;
   }
 
   .map-container.mobile-left-panel-open .controls {
-    left: 170px;
+    left: calc(var(--safe-left) + 170px);
   }
 
   .controls h1 {
@@ -288,13 +301,13 @@ input:checked + .slider:before {
   }
 
   .map-type-control-container {
-    top: 10px;
-    right: 10px;
+    top: calc(var(--safe-top) + var(--mobile-top-control-offset));
+    right: calc(var(--safe-right) + 10px);
     width: 140px;
   }
 
   .map-container.right-panel-open .map-type-control-container {
-    right: calc(10px + var(--right-panel-shift));
+    right: calc(var(--safe-right) + 10px + var(--right-panel-shift));
   }
 
   .nav-button {

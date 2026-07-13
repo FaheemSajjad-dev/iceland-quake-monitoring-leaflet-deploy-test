@@ -3,14 +3,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   z-index: 1001;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   pointer-events: none;
-  --left-panel-width: 230.4px;
   --range-card-gap: 12px;
   --range-card-width: 108px;
   --range-card-height: 480px;
@@ -58,7 +56,7 @@
   display: flex;
   flex-direction: column;
   gap: clamp(10px, 1.45dvh, 16px);
-  padding: clamp(12px, 1.45dvh, 16px) 14px clamp(12px, 1.45dvh, 16px);
+  padding: calc(var(--safe-top) + clamp(12px, 1.45dvh, 16px)) 14px calc(var(--safe-bottom) + clamp(12px, 1.45dvh, 16px)) calc(var(--safe-left) + 14px);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -259,22 +257,18 @@
 .left-panel__map-actions {
   pointer-events: all;
   position: fixed;
-  left: calc(var(--left-panel-width) + 12px);
-  bottom: 18px;
+  left: var(--action-rail-left);
+  bottom: var(--action-rail-bottom);
   z-index: 1002;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--action-button-gap);
   transition: left 0.25s ease;
 }
 
-.left-panel--collapsed .left-panel__map-actions {
-  left: 12px;
-}
-
 .left-panel__map-action-btn {
-  width: 34px;
-  height: 34px;
+  width: var(--action-button-size);
+  height: var(--action-button-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -339,8 +333,8 @@
 @media (max-height: 760px) and (min-width: 768px) {
   .left-panel__body {
     gap: 9px;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: calc(var(--safe-top) + 10px);
+    padding-bottom: calc(var(--safe-bottom) + 10px);
   }
 
   .left-panel__section {
@@ -361,7 +355,6 @@
 
 @media (max-width: 767px) {
   .left-panel {
-    --left-panel-width: min(52vw, 230px);
     --range-card-gap: 8px;
     --range-card-width: 94px;
     --range-card-height: 405px;
@@ -377,7 +370,7 @@
     height: 100%;
     min-height: 0;
     gap: 8px;
-    padding: 10px 9px;
+    padding: calc(var(--safe-top) + 10px) 9px calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 9px);
   }
 
   .left-panel__section {
@@ -392,7 +385,7 @@
   .left-panel__toggle {
     width: 16px;
     height: 34px;
-    margin-top: 52px;
+    margin-top: calc(var(--safe-top) + var(--mobile-top-control-offset));
     font-size: 8px;
   }
 
@@ -438,6 +431,54 @@
     width: 10px;
   }
 
+  .left-panel__event-summary {
+    position: relative;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 2px;
+    padding: 7px 22px 7px 8px;
+    border: 1px solid rgba(74, 111, 165, 0.22);
+    border-left: 3px solid #4a6fa5;
+    border-radius: 6px;
+    background: #f0f4fb;
+    color: #222;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .left-panel__event-summary p {
+    margin: 0;
+  }
+
+  .left-panel__event-summary strong {
+    color: #222;
+    font-weight: 700;
+  }
+
+  .left-panel__event-summary em {
+    color: #566272;
+  }
+
+  .left-panel__event-summary .left-panel__event-magnitude {
+    color: #4a6fa5;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .left-panel__event-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 0;
+  }
+
+  .left-panel__event-action {
+    width: auto;
+    margin-top: 6px;
+    padding: 4px 7px;
+    font-size: 8.5px;
+  }
 
   .left-panel__range-controls {
     flex: 1 1 auto;
@@ -462,18 +503,14 @@
   }
 
   .left-panel__map-actions {
-    left: calc(var(--left-panel-width) + 10px);
-    bottom: 14px;
-    gap: 6px;
-  }
-
-  .left-panel--collapsed .left-panel__map-actions {
-    left: 10px;
+    left: var(--action-rail-left);
+    bottom: var(--action-rail-bottom);
+    gap: var(--action-button-gap);
   }
 
   .left-panel__map-action-btn {
-    width: 28px;
-    height: 28px;
+    width: var(--action-button-size);
+    height: var(--action-button-size);
     border-radius: 5px;
   }
 

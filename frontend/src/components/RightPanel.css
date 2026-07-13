@@ -3,7 +3,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  height: 100vh;
+  height: 100%;
   z-index: 1001;
   display: flex;
   flex-direction: row;
@@ -16,8 +16,8 @@
   order: 1;
   pointer-events: all;
   align-self: flex-start;
-  margin-top: 60px; /* clears the About button */
-  width: 18px;
+  margin-top: calc(var(--safe-top) + 60px); /* clears the About button */
+  width: var(--right-panel-toggle-width, 18px);
   height: 38px;
   background: #fff;
   border: 1px solid #ccc;
@@ -43,8 +43,8 @@
 /* Sliding drawer */
 .right-panel__drawer {
   order: 2;
-  max-width: 185px;
-  width: 185px;
+  max-width: var(--right-panel-width, 185px);
+  width: var(--right-panel-width, 185px);
   height: 100%;
   overflow: hidden;
   transition: max-width 0.25s ease;
@@ -58,14 +58,14 @@
 
 /* White card body — height: 100% is essential: constrains to drawer height so overflow-y:auto scrolls within it */
 .right-panel__body {
-  width: 185px;
+  width: var(--right-panel-width, 185px);
   height: 100%;
   background: #fff;
   box-shadow: -3px 0 16px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 60px 14px 40px; /* top clears About button, bottom clears scale control */
+  padding: calc(var(--safe-top) + 60px) calc(var(--safe-right) + 14px) calc(var(--safe-bottom) + 40px) 14px; /* top clears About button, bottom clears scale control */
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -128,36 +128,36 @@
 
 /* ── Height breakpoints: reduce padding/gap on short screens ── */
 @media (max-height: 800px) {
-  .right-panel__body { gap: 6px; padding: 55px 14px 32px; }
+  .right-panel__body { gap: 6px; padding: calc(var(--safe-top) + 55px) calc(var(--safe-right) + 14px) calc(var(--safe-bottom) + 32px) 14px; }
   .right-panel__item { padding: 4px 8px; }
 }
 @media (max-height: 700px) {
-  .right-panel__body { gap: 4px; padding: 52px 12px 28px; }
+  .right-panel__body { gap: 4px; padding: calc(var(--safe-top) + 52px) calc(var(--safe-right) + 12px) calc(var(--safe-bottom) + 28px) 12px; }
   .right-panel__label { font-size: 9px; letter-spacing: 0.4px; }
   .right-panel__item { padding: 3px 8px; font-size: 11px; }
 }
 @media (max-height: 620px) {
-  .right-panel__body { gap: 2px; padding: 50px 10px 24px; }
+  .right-panel__body { gap: 2px; padding: calc(var(--safe-top) + 50px) calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 24px) 10px; }
   .right-panel__item { padding: 2px 8px; font-size: 10px; border-radius: 4px; }
 }
 
 @media (max-width: 767px) {
   .right-panel__toggle {
-    width: 16px;
+    width: var(--right-panel-toggle-width, 16px);
     height: 34px;
-    margin-top: 52px;
+    margin-top: calc(var(--safe-top) + 52px);
     font-size: 8px;
   }
 
   .right-panel__drawer {
-    max-width: 136px;
-    width: 136px;
+    max-width: var(--right-panel-width, 136px);
+    width: var(--right-panel-width, 136px);
   }
 
   .right-panel__body {
-    width: 136px;
+    width: var(--right-panel-width, 136px);
     gap: 4px;
-    padding: 48px 8px 22px;
+    padding: calc(var(--safe-top) + 48px) calc(var(--safe-right) + 8px) calc(var(--safe-bottom) + 22px) 8px;
   }
 
   .right-panel__label {

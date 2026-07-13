@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from "react";
 import { MapContainer, TileLayer, ScaleControl, AttributionControl, useMap, useMapEvents } from "react-leaflet";
-import MapLibreMap, { NavigationControl, Source, Layer, Marker, ScaleControl as MapLibreScaleControl, useControl } from "react-map-gl/maplibre";
+import MapLibreMap, { NavigationControl, Source, Layer, Marker, ScaleControl as MapLibreScaleControl, useControl, useMap as useMapLibre } from "react-map-gl/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { ScatterplotLayer } from "@deck.gl/layers";
 import L from "leaflet";
@@ -147,6 +147,7 @@ const TILE_LAYERS = {
 };
 
 // Shared tile options used to reduce flicker while panning and zooming.
+const OPENFREEMAP_DARK_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 const TILE_PROPS = {
   updateWhenZooming: false, // scaled existing tiles are shown during CSS zoom animation
   updateWhenIdle:    false, // fetch new tiles immediately after zoom/pan settles, not deferred (better on desktop)
@@ -190,6 +191,7 @@ const MAPLIBRE_STYLES = {
   roadmap: OPENFREEMAP_STYLE_URL,
   satellite: buildRasterMapStyle("esri-satellite", "esri-satellite-layer", MAPLIBRE_RASTER_SOURCES.satellite),
   terrain: buildRasterMapStyle("imo-basemap", "imo-basemap-layer", MAPLIBRE_RASTER_SOURCES.terrain),
+  heatmap: OPENFREEMAP_DARK_STYLE_URL,
 };
 
 const colorStringToDeckRgba = (color, alpha = 230) => {
@@ -209,17 +211,43 @@ const COMPACT_ATTRIBUTIONS = {
   roadmap: "<a href='https://openfreemap.org/'>OpenFreeMap</a> | <a href='https://openmaptiles.org/'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a> | Maxar | Earthstar Geographics",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | Natural Science Institute of Iceland | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
-  heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+  heatmap: "<a href='https://openfreemap.org/'>OpenFreeMap</a> | <a href='https://openmaptiles.org/'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
 };
 const MOBILE_ATTRIBUTIONS = {
-  roadmap: "<a href='https://openfreemap.org/'>OFM</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+  roadmap: "<a href='https://openmaptiles.org/'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
   satellite: "<a href='https://www.esri.com/'>Esri</a>",
   terrain: "<a href='https://www.vedur.is/'>IMO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
-  heatmap: "<a href='https://carto.com/attributions'>CARTO</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
+  heatmap: "<a href='https://openmaptiles.org/'>OpenMapTiles</a> | <a href='https://www.openstreetmap.org/copyright'>OSM</a>",
 };
 const FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE, ISOR</a>";
 const MOBILE_FAULTS_ATTRIBUTION = "<a href='https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833'>EGDI/HIKE</a>";
 const HIKE_METADATA_URL = "https://metadata.europe-geology.eu/record/basic/604a286d-bab0-46be-9e9e-46940a010833";
+
+const MOBILE_MAPLIBRE_ATTRIBUTIONS = {
+  roadmap: MOBILE_ATTRIBUTIONS.roadmap,
+  satellite: COMPACT_ATTRIBUTIONS.satellite,
+  terrain: COMPACT_ATTRIBUTIONS.terrain,
+  heatmap: MOBILE_ATTRIBUTIONS.heatmap,
+};
+
+const compactMobileMapLibreStyleAttribution = (style, mapType) => {
+  if (!style || typeof style === "string") return style;
+  const attribution = MOBILE_MAPLIBRE_ATTRIBUTIONS[mapType] ?? MOBILE_MAPLIBRE_ATTRIBUTIONS.roadmap;
+  let assigned = false;
+  const sources = Object.fromEntries(
+    Object.entries(style.sources ?? {}).map(([sourceId, source]) => {
+      const nextSource = { ...source };
+      delete nextSource.attribution;
+      if (!assigned) {
+        nextSource.attribution = attribution;
+        assigned = true;
+      }
+      return [sourceId, nextSource];
+    })
+  );
+  return assigned ? { ...style, sources } : style;
+};
+
 
 // Prefer Icelandic names, fall back to local OSM name
 const IS_NAME_EXPR = ["coalesce", ["get", "name:is"], ["get", "name"]];
@@ -255,6 +283,16 @@ const GLACIER_LABELS_GEOJSON = {
 };
 
 const HIDDEN_ROADMAP_LAYERS = new Set(["park", "landcover_wood"]);
+const HIDDEN_HEATMAP_LAYERS = new Set([
+  ...HIDDEN_ROADMAP_LAYERS,
+  "landuse_residential",
+  "landuse_park",
+  "building",
+  "boundary_state",
+  "boundary_country_z0-4",
+  "boundary_country_z5-",
+]);
+
 
 const getGlacierLabelSize = (zoom) => {
   if (zoom < 5.2) return 10;
@@ -300,6 +338,13 @@ const fetchRawStyle = () => {
   return _rawStylePromise;
 };
 
+let _darkStylePromise = null;
+const fetchDarkStyle = () => {
+  if (!_darkStylePromise)
+    _darkStylePromise = fetch(OPENFREEMAP_DARK_STYLE_URL).then(r => r.json());
+  return _darkStylePromise;
+};
+
 const LABEL_THEMES = {
   dark: {
     textColor: "#f8fafc",
@@ -322,6 +367,14 @@ const normalizeTextFont = (font) => {
   }
   return font;
 };
+const GLACIER_ICE_LAYER_TOKEN = /(^|[^a-z])(glacier|ice(?:[_ -]?shelf)?|ice[_ -]?cap|icecap|snow)([^a-z]|$)/i;
+
+const isGlacierOrIceStyleLayer = (layer) => GLACIER_ICE_LAYER_TOKEN.test([
+  layer.id,
+  layer["source-layer"],
+  JSON.stringify(layer.filter ?? null),
+].filter(Boolean).join(" "));
+
 
 const insertGlacierLayers = (raw, layers) => {
   const source = Object.entries(raw.sources ?? {}).find(([, value]) => value?.type === "vector")?.[0];
@@ -370,10 +423,16 @@ const insertGlacierLayers = (raw, layers) => {
 
 // Patch every text-field in the style to use Icelandic names.
 // labelsOnly=true draws a transparent symbol-only overlay for raster basemaps.
-const patchStyle = (raw, labelsOnly = false, labelTheme = "light") => {
+const patchStyle = (
+  raw,
+  labelsOnly = false,
+  labelTheme = "light",
+  { hideGlaciers = false, hiddenLayerIds = HIDDEN_ROADMAP_LAYERS } = {}
+) => {
   const theme = LABEL_THEMES[labelTheme] ?? LABEL_THEMES.light;
   let layers = raw.layers
-    .filter(l => labelsOnly || !HIDDEN_ROADMAP_LAYERS.has(l.id))
+    .filter(l => labelsOnly || !hiddenLayerIds.has(l.id))
+    .filter(l => !hideGlaciers || !isGlacierOrIceStyleLayer(l))
     .filter(l => !labelsOnly || (l.type === "symbol" && l.layout?.["text-field"]))
     .map(l => {
       if (!l.layout?.["text-field"]) return l;
@@ -405,10 +464,26 @@ const patchStyle = (raw, labelsOnly = false, labelTheme = "light") => {
       { id: "__transparent_bg__", type: "background", paint: { "background-color": "rgba(0,0,0,0)" } },
       ...layers,
     ];
-  } else {
+  } else if (!hideGlaciers) {
     layers = insertGlacierLayers(raw, layers);
   }
   return { ...raw, layers };
+};
+
+const patchDarkHeatmapStyle = (raw) => {
+  const style = patchStyle(raw, false, "dark", {
+    hideGlaciers: true,
+    hiddenLayerIds: HIDDEN_HEATMAP_LAYERS,
+  });
+  const sources = Object.fromEntries(
+    Object.entries(style.sources ?? {}).map(([sourceId, source]) => [
+      sourceId,
+      source?.type === "vector"
+        ? { ...source, attribution: COMPACT_ATTRIBUTIONS.heatmap }
+        : source,
+    ])
+  );
+  return { ...style, sources };
 };
 
 const buildRasterStyleWithLabels = (rasterStyle, rawOpenFreeMapStyle, labelTheme = "light") => {
@@ -538,11 +613,30 @@ const useMobileAttribution = () => {
     const query = window.matchMedia("(max-width: 767px)");
     const update = () => setIsMobile(query.matches);
     update();
-    query.addEventListener?.("change", update);
-    return () => query.removeEventListener?.("change", update);
+    if (query.addEventListener) {
+      query.addEventListener("change", update);
+      return () => query.removeEventListener("change", update);
+    }
+    query.addListener(update);
+    return () => query.removeListener(update);
   }, []);
 
   return isMobile;
+};
+
+const MapLibreAttributionDefaultState = ({ isMobile }) => {
+  const { current: map } = useMapLibre();
+
+  useLayoutEffect(() => {
+    if (!isMobile) return;
+    const container = map?.getContainer()?.querySelector(".maplibregl-ctrl-attrib");
+    if (!container) return;
+    container.classList.add("maplibregl-compact");
+    container.classList.remove("maplibregl-compact-show");
+    container.removeAttribute("open");
+  }, [map, isMobile]);
+
+  return null;
 };
 
 const CompactAttribution = ({ mapType, showFaults }) => {
@@ -552,6 +646,48 @@ const CompactAttribution = ({ mapType, showFaults }) => {
   useEffect(() => {
     const control = map.attributionControl;
     if (!control) return undefined;
+
+    const originalUpdate = control._update;
+    let expanded = false;
+
+    const renderMobileControl = () => {
+      originalUpdate.call(control);
+      const container = control._container;
+      if (!container) return;
+
+      const attributionHtml = container.innerHTML;
+      container.textContent = "";
+      container.classList.add("leaflet-attribution-mobile");
+
+      const content = document.createElement("span");
+      content.className = "leaflet-attribution-content";
+      content.id = `leaflet-attribution-${L.stamp(map)}`;
+      content.innerHTML = attributionHtml;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "maplibregl-ctrl-attrib-button leaflet-attribution-toggle";
+      button.setAttribute("aria-controls", content.id);
+      button.setAttribute("aria-label", "Toggle attribution");
+      button.title = "Toggle attribution";
+
+      const setExpanded = (nextExpanded) => {
+        expanded = nextExpanded;
+        container.classList.toggle("leaflet-attribution-expanded", expanded);
+        button.setAttribute("aria-expanded", String(expanded));
+      };
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setExpanded(!expanded);
+      });
+
+      container.append(content, button);
+      setExpanded(expanded);
+    };
+
+    if (isMobile) control._update = renderMobileControl;
 
     removeVerboseProviderAttributions(map);
     const attributions = isMobile ? MOBILE_ATTRIBUTIONS : COMPACT_ATTRIBUTIONS;
@@ -566,7 +702,10 @@ const CompactAttribution = ({ mapType, showFaults }) => {
 
     return () => {
       cleanupTimers.forEach(window.clearTimeout);
+      if (isMobile) control._update = originalUpdate;
       removeAttribution(map, compact);
+      const container = control._container;
+      container?.classList.remove("leaflet-attribution-mobile", "leaflet-attribution-expanded");
     };
   }, [map, mapType, showFaults, isMobile]);
 
@@ -855,6 +994,33 @@ const MapReadyHandler = () => {
   return null;
 };
 
+const MapStageResizeHandler = () => {
+  const map = useMap();
+  useEffect(() => {
+    const stage = map.getContainer()?.closest(".map-stage");
+    if (!stage || typeof ResizeObserver === "undefined") return undefined;
+
+    let frame = null;
+    const resize = () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        map.invalidateSize({ animate: false, pan: false, debounceMoveend: true });
+      });
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(stage);
+    resize();
+
+    return () => {
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [map]);
+  return null;
+};
+
+
 const MapUiResizeHandler = () => {
   const map = useMap();
   useEffect(() => {
@@ -1024,7 +1190,51 @@ const getGridConfig = (zoom) => {
   };
 };
 
-const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => {
+const LATITUDE_LABEL_WIDTH = 80;
+const LATITUDE_LABEL_CONTROL_GAP = 10;
+const LATITUDE_LABEL_TOP_GAP = 8;
+const MOBILE_LATITUDE_LABEL_RIGHT_INSET = 52;
+
+const getLatitudeLabelLayout = (mapContainer, mapWidth) => {
+  const fallback = { anchorX: mapWidth - MOBILE_LATITUDE_LABEL_RIGHT_INSET, minY: 24 };
+  if (!mapContainer || typeof document === "undefined") return fallback;
+
+  const mapRect = mapContainer.getBoundingClientRect();
+  const mapTypeControl = document.querySelector(".map-type-control-container");
+  const controlRect = mapTypeControl?.getBoundingClientRect();
+  const dropdownRect = mapTypeControl?.querySelector(".map-type-dropdown")?.getBoundingClientRect();
+  const exclusionBottom = Math.max(
+    controlRect?.bottom ?? mapRect.top + 16,
+    dropdownRect?.bottom ?? controlRect?.bottom ?? mapRect.top + 16
+  );
+  const minY = Math.max(24, exclusionBottom - mapRect.top + LATITUDE_LABEL_TOP_GAP);
+
+  if (mapWidth <= 767) {
+    const rightControlRail = mapContainer.querySelector(
+      ".maplibregl-ctrl-bottom-right, .leaflet-bottom.leaflet-right"
+    );
+    const railRect = rightControlRail?.getBoundingClientRect();
+    const dynamicRightInset = railRect ? Math.max(0, mapRect.right - railRect.right) : 0;
+
+    return {
+      anchorX: Math.max(LATITUDE_LABEL_WIDTH, mapWidth - MOBILE_LATITUDE_LABEL_RIGHT_INSET - dynamicRightInset),
+      minY,
+    };
+  }
+
+  if (!controlRect) return { ...fallback, minY };
+
+  return {
+    anchorX: Math.max(
+      LATITUDE_LABEL_WIDTH,
+      Math.min(mapWidth - LATITUDE_LABEL_CONTROL_GAP, controlRect.left - mapRect.left - LATITUDE_LABEL_CONTROL_GAP)
+    ),
+    minY,
+  };
+};
+
+
+const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false, rightPanelOpen = false }) => {
   const map = useMap();
   const gridRef = useRef([]);
   const darkLike = isDarkMode || mapType === "satellite" || mapType === "heatmap";
@@ -1067,12 +1277,12 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
         L.polyline(coords, { color, weight, opacity, interactive: false }).addTo(map)
       );
     };
-    const addLabel = (lat, lng, text, color, size, fontWeight = "400", iconAnchor = [0, 13]) => {
+    const addLabel = (lat, lng, text, color, size, fontWeight = "400", iconAnchor = [0, 13], alignRight = false) => {
       gridRef.current.push(
         L.marker([lat, lng], {
           icon: L.divIcon({
-            className: "grid-label-icon",
-            html: `<span style="color:${color};font-size:${size};font-weight:${fontWeight};white-space:nowrap;pointer-events:none;">${text}</span>`,
+            className: `grid-label-icon${alignRight ? " grid-label-icon--latitude" : ""}`,
+            html: `<span style="color:${color};font-size:${size};font-weight:${fontWeight};white-space:nowrap;pointer-events:none;${alignRight ? `display:block;width:${LATITUDE_LABEL_WIDTH}px;text-align:right;` : ""}">${text}</span>`,
             iconSize: [80, 16],
             iconAnchor,
           }),
@@ -1090,7 +1300,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     const mapSize = map.getSize();
     const center = map.getCenter();
     const isMobileGrid = mapSize.x <= 767;
-    const LAT_LABEL_X = isMobileGrid ? mapSize.x - 52 : 245;
+    const { anchorX: LAT_LABEL_X, minY: LAT_LABEL_MIN_Y } = getLatitudeLabelLayout(map.getContainer(), mapSize.x);
     const LAT_LABEL_Y_OFFSET = -6;
     const LNG_LABEL_Y = mapSize.y - 34;
     const LNG_LABEL_X_OFFSET = 24;
@@ -1106,11 +1316,11 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
       addLine([[lat, extW], [lat, extE]], mainColor, 0.5, 0.5);
 
       const labelY = map.latLngToContainerPoint([lat, center.lng]).y + LAT_LABEL_Y_OFFSET;
-      if (labelY < 24 || labelY > mapSize.y - 38) continue;
+      if (labelY < LAT_LABEL_MIN_Y || labelY > mapSize.y - 38) continue;
       const labelPoint = labelLatLngFromPoint(LAT_LABEL_X, labelY);
       addLabel(labelPoint.lat, labelPoint.lng,
         `${lat.toFixed(labelDecimals)}\u00b0${lat > 0 ? "N" : lat < 0 ? "S" : ""}`,
-        lblColor, labelSize, labelWeight, [0, 13]);
+        lblColor, labelSize, labelWeight, [LATITUDE_LABEL_WIDTH, 13], true);
     }
     for (let lng = startLng; lng <= endLng; lng = normalizeGridValue(lng + lngGridSpacing, lngGridSpacing)) {
       addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
@@ -1145,12 +1355,24 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
   useEffect(() => {
     createGrid();
     map.on("zoomend moveend", createGrid);
+    const control = document.querySelector(".map-type-control-container");
+    const handleTransitionEnd = (event) => {
+      if (event.propertyName === "right") createGrid();
+    };
+    const observer = typeof MutationObserver !== "undefined" && control
+      ? new MutationObserver(createGrid)
+      : null;
+    control?.addEventListener("transitionend", handleTransitionEnd);
+    if (control && observer) observer.observe(control, { childList: true, subtree: true });
+
     return () => {
       map.off("zoomend moveend", createGrid);
+      control?.removeEventListener("transitionend", handleTransitionEnd);
+      observer?.disconnect();
       gridRef.current.forEach((o) => map.removeLayer(o));
       gridRef.current = [];
     };
-  }, [map, createGrid]);
+  }, [map, createGrid, rightPanelOpen]);
 
   return null;
 };
@@ -1291,6 +1513,63 @@ const HeatmapLegend = () => {
   );
 };
 
+const MapLibreHeatmapLegendControl = () => {
+  const t = useT();
+  const controlRef = useRef(null);
+
+  useControl(() => {
+    const control = {
+      onAdd() {
+        const container = document.createElement("div");
+        container.className = "maplibregl-ctrl heatmap-legend maplibre-heatmap-legend";
+
+        const title = document.createElement("div");
+        title.className = "heatmap-legend-title";
+
+        const bar = document.createElement("div");
+        bar.className = "heatmap-legend-bar";
+
+        const labels = document.createElement("div");
+        labels.className = "heatmap-legend-labels";
+        const low = document.createElement("span");
+        const high = document.createElement("span");
+        labels.append(low, high);
+        container.append(title, bar, labels);
+
+        control.container = container;
+        control.title = title;
+        control.low = low;
+        control.high = high;
+        control.orderFrame = requestAnimationFrame(() => {
+          const parent = container.parentElement;
+          const scale = parent?.querySelector(".maplibregl-ctrl-scale");
+          if (scale && container.nextElementSibling !== scale) {
+            parent.insertBefore(container, scale);
+          }
+        });
+        return container;
+      },
+      onRemove() {
+        if (control.orderFrame) cancelAnimationFrame(control.orderFrame);
+        control.container?.remove();
+        control.container = null;
+      },
+    };
+    controlRef.current = control;
+    return control;
+  }, { position: "bottom-right" });
+
+  useEffect(() => {
+    const control = controlRef.current;
+    if (!control?.container) return;
+    control.title.textContent = t("heatmap_density");
+    control.low.textContent = t("heatmap_low");
+    control.high.textContent = t("heatmap_high");
+  }, [t]);
+
+  return null;
+};
+
 const ML_HIKE_WFS_URL = "https://maps.europe-geology.eu/wfs/";
 const ML_ICELAND_BBOX = "-24.8,63.0,-13.0,66.7";
 let mapLibreFaultsGeojson = null;
@@ -1357,7 +1636,7 @@ const buildGridGeojson = (map) => {
   const mapWidth = canvas.clientWidth;
   const mapHeight = canvas.clientHeight;
   const isMobileGrid = mapWidth <= 767;
-  const latLabelX = isMobileGrid ? mapWidth - 52 : 245;
+  const { anchorX: latLabelX, minY: latLabelMinY } = getLatitudeLabelLayout(map.getContainer(), mapWidth);
   const latLabelYOffset = -6;
   const lngLabelY = mapHeight - 34;
   const lngLabelXOffset = 24;
@@ -1375,7 +1654,7 @@ const buildGridGeojson = (map) => {
     });
 
     const labelY = map.project([map.getCenter().lng, lat]).y + latLabelYOffset;
-    if (labelY < 24 || labelY > mapHeight - 38) continue;
+    if (labelY < latLabelMinY || labelY > mapHeight - 38) continue;
     const labelPoint = map.unproject([latLabelX, labelY]);
     features.push({
       type: "Feature",
@@ -1515,6 +1794,7 @@ const MapLibreEarthquakeMap = ({
   onVolcanoClick,
   onReady,
   resetViewTrigger,
+  rightPanelOpen = false,
 }) => {
   const mapRef = useRef(null);
   const deckOverlayRef = useRef(null);
@@ -1525,6 +1805,8 @@ const MapLibreEarthquakeMap = ({
   const [viewZoom, setViewZoom] = useState(ICELAND_VIEW.zoom);
   const [gridGeojson, setGridGeojson] = useState({ type: "FeatureCollection", features: [] });
   const [styledMapStyle, setStyledMapStyle] = useState(null);
+  const [darkHeatmapStyle, setDarkHeatmapStyle] = useState(null);
+  const isMobileAttribution = useMobileAttribution();
   const initialViewState = useMemo(() => getDefaultMapLibreView(), []);
 
   if (!deckOverlayRef.current) {
@@ -1587,9 +1869,32 @@ const MapLibreEarthquakeMap = ({
       .sort((a, b) => a.mag - b.mag);
   }, [earthquakes, colorOwner, mapType, maxMagnitude]);
 
+  const heatmapGeojson = useMemo(() => ({
+    type: "FeatureCollection",
+    features: earthquakes
+      .map((quake) => {
+        const latitude = Number(quake.Latitude);
+        const longitude = Number(quake.Longitude);
+        const magnitude = Number(quake.Mw_mean);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(magnitude)) return null;
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [longitude, latitude] },
+          properties: { weight: getHeatWeight(magnitude) },
+        };
+      })
+      .filter(Boolean),
+  }), [earthquakes]);
+
   useEffect(() => {
     const overlay = deckOverlayRef.current;
     if (!overlay) return;
+
+
+    if (mapType === "heatmap") {
+      overlay.setProps({ layers: [] });
+      return;
+    }
 
     const hitLayer = new ScatterplotLayer({
       id: "earthquake-hit-targets",
@@ -1642,12 +1947,36 @@ const MapLibreEarthquakeMap = ({
     });
 
     overlay.setProps({ layers: [hitLayer, dotLayer] });
-  }, [deckData, onMarkerClick, selectedEarthquake, viewZoom]);
+  }, [deckData, mapType, onMarkerClick, selectedEarthquake, viewZoom]);
 
   useEffect(() => {
     const map = mapRef.current?.getMap();
     attachDeckOverlay(map);
   }, [attachDeckOverlay, mapType, styledMapStyle]);
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    const stage = map?.getContainer()?.closest(".map-stage");
+    if (!map || !stage || typeof ResizeObserver === "undefined") return undefined;
+
+    let frame = null;
+    const resize = () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        map.resize();
+      });
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(stage);
+    resize();
+
+    return () => {
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [mapType]);
+
 
   useEffect(() => () => {
     const currentMap = deckOverlayMapRef.current ?? mapRef.current?.getMap();
@@ -1682,14 +2011,41 @@ const MapLibreEarthquakeMap = ({
   }, [showGrid, updateGrid]);
 
   useEffect(() => {
-    onReady();
-  }, [mapType, onReady]);
+    if (!showGrid) return undefined;
+    updateGrid();
+
+    const control = document.querySelector(".map-type-control-container");
+    const handleTransitionEnd = (event) => {
+      if (event.propertyName === "right") updateGrid();
+    };
+    const observer = typeof MutationObserver !== "undefined" && control
+      ? new MutationObserver(updateGrid)
+      : null;
+    control?.addEventListener("transitionend", handleTransitionEnd);
+    if (control && observer) observer.observe(control, { childList: true, subtree: true });
+
+    return () => {
+      control?.removeEventListener("transitionend", handleTransitionEnd);
+      observer?.disconnect();
+    };
+  }, [rightPanelOpen, showGrid, updateGrid]);
+
 
   useEffect(() => {
     let cancelled = false;
     if (mapType === "heatmap") {
       setStyledMapStyle(null);
-      return undefined;
+      fetchDarkStyle()
+        .then((raw) => {
+          if (!cancelled) setDarkHeatmapStyle(patchDarkHeatmapStyle(raw));
+        })
+        .catch((error) => {
+          console.error("Unable to load the OpenFreeMap dark style", error);
+          if (!cancelled) setDarkHeatmapStyle(null);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
     fetchRawStyle()
       .then((raw) => {
@@ -1728,20 +2084,35 @@ const MapLibreEarthquakeMap = ({
     }, 0);
   }, [onMapClick]);
 
-  const activeMapStyle = styledMapStyle ?? (MAPLIBRE_STYLES[mapType] ?? MAPLIBRE_STYLES.roadmap);
+  const baseMapStyle = mapType === "heatmap"
+    ? darkHeatmapStyle
+    : styledMapStyle ?? (MAPLIBRE_STYLES[mapType] ?? MAPLIBRE_STYLES.roadmap);
+  const activeMapStyle = useMemo(
+    () => !baseMapStyle || !isMobileAttribution
+      ? baseMapStyle
+      : compactMobileMapLibreStyleAttribution(baseMapStyle, mapType),
+    [baseMapStyle, isMobileAttribution, mapType]
+  );
+
+  if (!activeMapStyle) return null;
 
   return (
     <MapLibreMap
       key={mapType}
       ref={mapRef}
       initialViewState={initialViewState}
-      style={{ width: "100vw", height: "100vh" }}
+      style={{ width: "100%", height: "100%" }}
       mapStyle={activeMapStyle}
       maxBounds={ICELAND_BOUNDS_LNG_LAT}
       minZoom={4}
       maxZoom={18}
       renderWorldCopies={false}
-      attributionControl={true}
+      attributionControl={isMobileAttribution
+        ? { compact: true }
+        : {
+            compact: false,
+            customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
+          }}
       onLoad={handleMapLoad}
       onMove={(event) => setViewZoom(event.viewState.zoom)}
       onMoveEnd={updateGrid}
@@ -1750,8 +2121,35 @@ const MapLibreEarthquakeMap = ({
       cursor={hoveringEarthquakeRef.current ? "pointer" : "grab"}
     >
       <NavigationControl position="bottom-right" />
+      <MapLibreAttributionDefaultState isMobile={isMobileAttribution} />
       {showFaults && <MapLibreFaultsLegendControl />}
+      {mapType === "heatmap" && <MapLibreHeatmapLegendControl />}
       <MapLibreScaleControl position="bottom-right" />
+      {mapType === "heatmap" && (
+        <Source id="earthquake-heatmap" type="geojson" data={heatmapGeojson}>
+          <Layer
+            id="earthquake-heatmap-density"
+            type="heatmap"
+            maxzoom={18}
+            paint={{
+              "heatmap-weight": ["get", "weight"],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, 0.75, 8, 1.15, 12, 1.4],
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 4, 34, 6, 34, 8, 24, 12, 16],
+              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.88, 10, 0.72, 14, 0.55],
+              "heatmap-color": [
+                "interpolate", ["linear"], ["heatmap-density"],
+                0, "rgba(30, 27, 75, 0)",
+                0.2, "#1e1b4b",
+                0.35, "#2563eb",
+                0.5, "#14b8a6",
+                0.65, "#f59e0b",
+                0.8, "#f97316",
+                1, "#dc2626",
+              ],
+            }}
+          />
+        </Source>
+      )}
       {showGrid && (
         <Source id="grid" type="geojson" data={gridGeojson}>
           <Layer
@@ -1772,7 +2170,7 @@ const MapLibreEarthquakeMap = ({
               "text-field": ["get", "label"],
               "text-font": ["Noto Sans Bold"],
               "text-size": showFaults ? 11 : 10,
-              "text-anchor": "left",
+              "text-anchor": "right",
               "text-allow-overlap": true,
               "text-ignore-placement": true,
             }}
@@ -1855,10 +2253,12 @@ const MapComponent = ({
   resetViewTrigger = 0,
   rightPanelOpen = false,
   mobileLeftPanelOpen = false,
+  selectedEarthquake,
+  setSelectedEarthquake,
+  shakeUrl,
+  setShakeUrl,
 }) => {
   const t = useT();
-  const [selectedEarthquake, setSelectedEarthquake] = useState(null);
-  const [shakeUrl, setShakeUrl] = useState(null);
   const [loadedMapType, setLoadedMapType] = useState(null);
   const mapReady = loadedMapType === mapType;
   const handleMapReady = useCallback(() => setLoadedMapType(mapType), [mapType]);
@@ -1868,13 +2268,10 @@ const MapComponent = ({
     setSelectedEarthquake(null);
     setShakeUrl(null);
     onSelectVolcano(null);
-  }, [aboutOpen, onSelectVolcano]);
+  }, [aboutOpen, onSelectVolcano, setSelectedEarthquake, setShakeUrl]);
 
   useEffect(() => {
     setLoadedMapType(null);
-    if (mapType !== "heatmap") return undefined;
-    const id = window.setTimeout(() => setLoadedMapType("heatmap"), 600);
-    return () => window.clearTimeout(id);
   }, [mapType]);
 
   // Clear selections when switching to heatmap
@@ -1883,7 +2280,7 @@ const MapComponent = ({
       setSelectedEarthquake(null);
       onSelectVolcano(null);
     }
-  }, [mapType, onSelectVolcano]);
+  }, [mapType, onSelectVolcano, setSelectedEarthquake]);
 
 
   useEffect(() => {
@@ -1895,13 +2292,13 @@ const MapComponent = ({
         q.Longitude === selectedEarthquake.Longitude
     );
     if (!still) setSelectedEarthquake(null);
-  }, [earthquakes, selectedEarthquake]);
+  }, [earthquakes, selectedEarthquake, setSelectedEarthquake]);
 
   useEffect(() => {
     if (!selectedEarthquake) return;
     const t = setTimeout(() => setSelectedEarthquake(null), 15000);
     return () => clearTimeout(t);
-  }, [selectedEarthquake]);
+  }, [selectedEarthquake, setSelectedEarthquake]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1921,16 +2318,15 @@ const MapComponent = ({
     }
     look();
     return () => { cancelled = true; };
-  }, [selectedEarthquake]);
+  }, [selectedEarthquake, setShakeUrl]);
 
-  const handleMarkerClick  = useCallback((quake)   => { onSelectVolcano(null); setSelectedEarthquake(quake); }, [onSelectVolcano]);
-  const handleVolcanoClick = useCallback((volcano) => { setSelectedEarthquake(null); onSelectVolcano(volcano);    }, [onSelectVolcano]);
-  const handleMapClick     = useCallback(()        => { setSelectedEarthquake(null); onSelectVolcano(null);       }, [onSelectVolcano]);
+  const handleMarkerClick  = useCallback((quake)   => { onSelectVolcano(null); setSelectedEarthquake(quake); }, [onSelectVolcano, setSelectedEarthquake]);
+  const handleVolcanoClick = useCallback((volcano) => { setSelectedEarthquake(null); onSelectVolcano(volcano);    }, [onSelectVolcano, setSelectedEarthquake]);
+  const handleMapClick     = useCallback(()        => { setSelectedEarthquake(null); onSelectVolcano(null);       }, [onSelectVolcano, setSelectedEarthquake]);
 
   return (
     <div
-      className={`map-container${rightPanelOpen ? " right-panel-open" : ""}${mobileLeftPanelOpen ? " mobile-left-panel-open" : ""}`}
-      style={{ position: "relative" }}
+      className={`map-stage${rightPanelOpen ? " right-panel-open" : ""}${mobileLeftPanelOpen ? " mobile-left-panel-open" : ""}`}
     >
       {!mapReady && (
         <div className="map-loading-overlay">
@@ -1938,13 +2334,13 @@ const MapComponent = ({
         </div>
       )}
 
-      {mapType === "heatmap" ? (
+      {mapType === "leaflet_heatmap_legacy" ? (
         <>
           <MapContainer
             center={CENTER}
             zoom={4.5}
             minZoom={4.5}
-            style={{ width: "100vw", height: "100vh" }}
+            style={{ width: "100%", height: "100%" }}
             zoomControl={false}
             attributionControl={false}
             zoomAnimation={true}
@@ -1961,12 +2357,13 @@ const MapComponent = ({
             <MapViewResetter trigger={resetViewTrigger} />
             <MapReadyHandler />
             <MapUiResizeHandler />
+            <MapStageResizeHandler />
             <RightClickHandler />
             <AttributionControl position="bottomright" prefix={false} />
             <CompactAttribution mapType={mapType} showFaults={showFaults} />
             <ScaleControl position="bottomright" />
             <GlacierLabelsOverlay visible={false} />
-            <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} emphasizeLabels={showFaults} />
+            <GridOverlay show={showGrid} isDarkMode={isDarkMode} mapType={mapType} emphasizeLabels={showFaults} rightPanelOpen={rightPanelOpen} />
             <FaultsOverlay show={showFaults} />
             <MapClickHandler onClick={handleMapClick} />
             <HeatmapLayer earthquakes={earthquakes} />
@@ -1983,26 +2380,29 @@ const MapComponent = ({
           <HeatmapLegend />
         </>
       ) : (
-        <MapLibreEarthquakeMap
-          earthquakes={earthquakes}
-          volcanoes={volcanoes}
-          maxMagnitude={maxMagnitude}
-          mapType={mapType}
-          showGrid={showGrid}
-          showFaults={showFaults}
-          colorOwner={colorOwner}
-          isDarkMode={isDarkMode}
-          selectedEarthquake={selectedEarthquake}
-          selectedVolcano={selectedVolcano}
-          onMarkerClick={handleMarkerClick}
-          onMapClick={handleMapClick}
-          onVolcanoClick={handleVolcanoClick}
-          onReady={handleMapReady}
-          resetViewTrigger={resetViewTrigger}
-        />
-      )}
+        <>
+          <MapLibreEarthquakeMap
+            earthquakes={earthquakes}
+            volcanoes={volcanoes}
+            maxMagnitude={maxMagnitude}
+            mapType={mapType}
+            showGrid={showGrid}
+            showFaults={showFaults}
+            colorOwner={colorOwner}
+            isDarkMode={isDarkMode}
+            selectedEarthquake={selectedEarthquake}
+            selectedVolcano={selectedVolcano}
+            onMarkerClick={handleMarkerClick}
+            onMapClick={handleMapClick}
+            onVolcanoClick={handleVolcanoClick}
+            onReady={handleMapReady}
+            resetViewTrigger={resetViewTrigger}
+            rightPanelOpen={rightPanelOpen}
+          />
 
-      {selectedEarthquake && (
+        </>
+      )}
+      {selectedEarthquake && !mobileLeftPanelOpen && (
         <div className="info-card info-card--earthquake">
           <div className="info-card__header">
             <span className="info-card__title">{t('info_earthquake')}</span>
