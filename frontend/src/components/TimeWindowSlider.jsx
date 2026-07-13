@@ -577,7 +577,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
         )}
         <div className="timeline-slider" ref={sliderRef}>
           <div
-            className={`timeline-track ${colorOwner === 'magnitude' ? 'gray' : isHeatmap ? 'heatmap-neutral' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
+            className={`timeline-track ${colorOwner === 'magnitude' || isHeatmap ? 'gray' : mapType === 'satellite' ? 'satellite-colored' : 'colored'}`}
             ref={trackRef}
             style={{ cursor: "grab" }}
             onMouseDown={handleMouseDown}

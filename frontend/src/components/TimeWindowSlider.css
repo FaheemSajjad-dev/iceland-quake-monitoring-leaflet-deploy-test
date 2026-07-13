@@ -222,22 +222,6 @@
   );
 }
 
-/* Heatmap mode: neutral timeline ramp so density colors remain the only
-   saturated map data palette. Left = oldest events; right = most recent. */
-.timeline-track.heatmap-neutral {
-  background: linear-gradient(
-    to right,
-    #17202a,
-    #3b4652,
-    #6f7a84,
-    #b8c0c8,
-    #f2f5f7
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
-    0 1px 3px rgba(23, 32, 42, 0.22);
-}
-
 /* T label: visible only in vertical mode, appears just above the slider's visual top.
    After rotate(-90deg): CSS right edge = visual top, CSS top direction = visual left.
    top must match the track bar's CSS-top centre = padding_top(26) + slider_h - track_bottom - track_h/2.
