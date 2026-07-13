@@ -1093,6 +1093,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     const LAT_LABEL_X = isMobileGrid ? mapSize.x - 52 : 245;
     const LAT_LABEL_Y_OFFSET = -6;
     const LNG_LABEL_Y = mapSize.y - 34;
+    const LNG_LABEL_X_OFFSET = 24;
     const MIN_LNG_LABEL_GAP = 72;
     const LNG_LABEL_MIN_X = isMobileGrid ? 18 : 210;
     const LNG_LABEL_MAX_X = mapSize.x - 40;
@@ -1114,7 +1115,7 @@ const GridOverlay = ({ show, isDarkMode, mapType, emphasizeLabels = false }) => 
     for (let lng = startLng; lng <= endLng; lng = normalizeGridValue(lng + lngGridSpacing, lngGridSpacing)) {
       addLine([[extS, lng], [extN, lng]], mainColor, 0.5, 0.5);
 
-      const labelX = map.latLngToContainerPoint([center.lat, lng]).x;
+      const labelX = map.latLngToContainerPoint([center.lat, lng]).x + LNG_LABEL_X_OFFSET;
       if (labelX < LNG_LABEL_MIN_X || labelX > LNG_LABEL_MAX_X) continue;
       if (labelX - lastLngLabelX < MIN_LNG_LABEL_GAP) continue;
       lastLngLabelX = labelX;
@@ -1359,6 +1360,7 @@ const buildGridGeojson = (map) => {
   const latLabelX = isMobileGrid ? mapWidth - 52 : 245;
   const latLabelYOffset = -6;
   const lngLabelY = mapHeight - 34;
+  const lngLabelXOffset = 24;
   const minLngLabelGap = 72;
   const lngLabelMinX = isMobileGrid ? 18 : 210;
   const lngLabelMaxX = mapWidth - 40;
@@ -1393,7 +1395,7 @@ const buildGridGeojson = (map) => {
       geometry: { type: "LineString", coordinates: [[lng, south - 1], [lng, north + 1]] },
     });
 
-    const labelX = map.project([lng, map.getCenter().lat]).x;
+    const labelX = map.project([lng, map.getCenter().lat]).x + lngLabelXOffset;
     if (labelX < lngLabelMinX || labelX > lngLabelMaxX) continue;
     if (labelX - lastLngLabelX < minLngLabelGap) continue;
     lastLngLabelX = labelX;
@@ -1449,6 +1451,7 @@ const MapLibreFaultsLegendControl = () => {
           <div class="tectonic-legend">
             <div class="tectonic-legend__title">Faults / Fissures</div>
             <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--fault-line"></span><span>Fault</span></div>
+            <div class="tectonic-legend__row"><span class="tec-swatch tec-swatch--fissure-line"></span><span>Fissure</span></div>
             <a class="tectonic-legend__source" href="${HIKE_METADATA_URL}" target="_blank" rel="noreferrer">Source: EGDI/HIKE, ISOR</a>
           </div>
         `;
