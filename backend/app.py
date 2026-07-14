@@ -14,6 +14,7 @@ import time
 import requests
 
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 
 # When the app is launched with a global Python instead of backend/venv,
 # make the local virtualenv's site-packages importable as a fallback.
@@ -29,11 +30,12 @@ if LOCAL_VENV.exists():
         sys.path.insert(0, str(venv_site_packages))
 
 from flask import Flask, jsonify, request, make_response, send_from_directory
-from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
+from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Enable gzip if the optional Flask-Compress package is installed.
 try:
@@ -45,11 +47,33 @@ FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", "5174"))
 BACKEND_PORT = int(os.environ.get("PORT") or os.environ.get("BACKEND_PORT", "5001"))
 FRONTEND_DIST_DIR = (Path(CURRENT_FILE_PATH).parent / "frontend" / "dist").resolve()
 FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
+MAX_DAYS_WINDOW = int(os.environ.get("MAX_DAYS_WINDOW", "3650"))
+EARTHQUAKES_MAX_ROWS = int(os.environ.get("EARTHQUAKES_MAX_ROWS", "20000"))
+CSV_MAX_DAYS_WINDOW = int(os.environ.get("CSV_MAX_DAYS_WINDOW", "3650"))
+CSV_MAX_ROWS = int(os.environ.get("CSV_MAX_ROWS", "50000"))
+REQUEST_TIMEOUT = (5, 20)
+SHAKEMAP_ALLOWED_HOSTS = {"api.vedur.is", "vedur.is", "www.vedur.is"}
+
+
+def parse_bool(value: str | None, default: bool = False) -> bool:
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+APP_ENV = os.environ.get("APP_ENV", os.environ.get("FLASK_ENV", "production")).strip().lower()
+IS_DEVELOPMENT = APP_ENV in {"development", "dev", "local", "test"}
 
 # -----------------------------------------------------------------------------
 # App and DB setup
 # -----------------------------------------------------------------------------
 app = Flask(__name__)
+
+TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
+if TRUSTED_PROXY_COUNT:
+    if TRUSTED_PROXY_COUNT != 1:
+        raise RuntimeError("TRUSTED_PROXY_COUNT must be 0 or 1 for the supported topology.")
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 # Restrict CORS to known frontend dev origins. Production is same-origin on Render/Pluto.
 _ALLOWED_ORIGINS = [
@@ -92,6 +116,10 @@ SECURITY_HEADERS = {
         "base-uri 'self'; "
         "form-action 'self'"
     ),
+    "Permissions-Policy": (
+        "camera=(), microphone=(), payment=(), usb=(), "
+        "browsing-topics=(), geolocation=(self)"
+    ),
 }
 
 
@@ -115,23 +143,47 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 _LOCAL_ADMIN_ADDRS = {"127.0.0.1", "::1", "localhost"}
+ALLOW_DEV_LOCAL_ADMIN = parse_bool(os.environ.get("ALLOW_DEV_LOCAL_ADMIN"), default=IS_DEVELOPMENT)
+
+if ADMIN_TOKEN:
+    logging.info("Maintenance routes require X-Admin-Token.")
+else:
+    logging.warning("ADMIN_TOKEN is not configured; production maintenance routes are disabled.")
 
 def _request_admin_token() -> str:
-    auth_header = request.headers.get("Authorization", "").strip()
-    if auth_header.lower().startswith("bearer "):
-        return auth_header[7:].strip()
     return request.headers.get("X-Admin-Token", "").strip()
+
+def _admin_failure_response():
+    if not ADMIN_TOKEN and not (IS_DEVELOPMENT and ALLOW_DEV_LOCAL_ADMIN):
+        logging.warning("Rejected maintenance request: admin token is not configured.")
+        return jsonify({"error": "Maintenance routes are disabled"}), 503
+    logging.warning(
+        "Rejected maintenance request: invalid credentials from %s to %s",
+        request.remote_addr,
+        request.path,
+    )
+    return jsonify({"error": "Forbidden"}), 403
+
 
 def _is_admin_request() -> bool:
     if ADMIN_TOKEN:
         token = _request_admin_token()
         return bool(token) and hmac.compare_digest(token, ADMIN_TOKEN)
-    return request.remote_addr in _LOCAL_ADMIN_ADDRS
+    return IS_DEVELOPMENT and ALLOW_DEV_LOCAL_ADMIN and request.remote_addr in _LOCAL_ADMIN_ADDRS
+
+
+def require_admin(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not _is_admin_request():
+            return _admin_failure_response()
+        return func(*args, **kwargs)
+    return wrapper
 
 DB_DIR = os.path.join(CURRENT_FILE_PATH, "data")
 os.makedirs(DB_DIR, exist_ok=True)
 DB_PATH = os.path.join(DB_DIR, "earthquakes.db")
-print(f"Using database at: {DB_PATH}")
+logging.info("Using configured SQLite database.")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -252,10 +304,112 @@ _scheduler_lock = threading.Lock()
 _scheduler_started = False
 _bootstrap_lock = threading.Lock()
 _bootstrap_started = False
+_ingestion_thread_lock = threading.Lock()
 
 # Cache the default /earthquakes response between frontend polling intervals.
 _eq_cache: dict = {"data": None, "ts": 0.0}
 _EQ_CACHE_TTL = 60
+
+
+class IngestionLock:
+    def __init__(self, name: str = "ingestion", stale_seconds: int = 1800):
+        runtime_dir = Path(os.environ.get("RUNTIME_DIR", Path(CURRENT_FILE_PATH) / "runtime"))
+        runtime_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.path = runtime_dir / f"{name}.lock"
+        self.stale_seconds = stale_seconds
+        self.fd = None
+
+    def __enter__(self):
+        if not _ingestion_thread_lock.acquire(blocking=False):
+            raise RuntimeError("ingestion busy")
+        try:
+            now = time.time()
+            if self.path.exists() and now - self.path.stat().st_mtime > self.stale_seconds:
+                self.path.unlink(missing_ok=True)
+            self.fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(self.fd, f"{os.getpid()}\n".encode("ascii"))
+            return self
+        except Exception:
+            _ingestion_thread_lock.release()
+            raise
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if self.fd is not None:
+                os.close(self.fd)
+            self.path.unlink(missing_ok=True)
+        finally:
+            _ingestion_thread_lock.release()
+
+
+def _invalid_parameter(name: str):
+    logging.info("Rejected invalid parameter: %s", name)
+    return jsonify({"error": f"Invalid parameter: {name}"}), 400
+
+
+def _parse_days_param(name: str = "days", *, allow_all: bool = True, max_days: int = MAX_DAYS_WINDOW):
+    raw = request.args.get(name)
+    if raw is None or raw == "":
+        return None if allow_all else _invalid_parameter(name)
+    raw = raw.strip()
+    if allow_all and raw.lower() == "all":
+        return None
+    if len(raw) > 5 or not raw.isdecimal():
+        return _invalid_parameter(name)
+    days = int(raw)
+    if days < 1 or days > max_days:
+        return _invalid_parameter(name)
+    return days
+
+
+def _parse_float_param(name: str, min_value: float, max_value: float):
+    raw = request.args.get(name, "")
+    if len(raw) > 32:
+        return None, _invalid_parameter(name)
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None, _invalid_parameter(name)
+    if not math.isfinite(value) or value < min_value or value > max_value:
+        return None, _invalid_parameter(name)
+    return value, None
+
+
+def _parse_event_datetime(value: str, name: str = "dt"):
+    if not value or len(value) > 32:
+        return None, _invalid_parameter(name)
+    normalized = value.replace("T", " ")
+    try:
+        parsed = datetime.strptime(normalized, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None, _invalid_parameter(name)
+    return parsed, None
+
+
+def _validate_shakemap_url(url: str) -> str | None:
+    from urllib.parse import urlparse
+
+    if not url or len(url) > 2048:
+        return None
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.username or parsed.password:
+        return None
+    if parsed.hostname not in SHAKEMAP_ALLOWED_HOSTS:
+        logging.info("Rejected ShakeMap URL host: %s", parsed.hostname)
+        return None
+    if parsed.port not in (None, 443):
+        return None
+    return url
+
+
+@app.errorhandler(HTTPException)
+def handle_http_error(error):
+    payload = {"error": error.name}
+    response = jsonify(payload)
+    response.status_code = error.code or 500
+    if error.code == 429 and getattr(error, "retry_after", None):
+        response.headers["Retry-After"] = str(error.retry_after)
+    return response
 
 # -----------------------------------------------------------------------------
 # Scheduled job
@@ -299,37 +453,41 @@ def scheduled_scrape() -> None:
       3) Reconcile (write EarthquakeMerged)
     """
     with app.app_context():
-        # Imports stay inside the job so app.py can define models before helpers load.
-        sys.path.append(CURRENT_FILE_PATH)
-        import importlib
-        import scrape as _scrape; importlib.reload(_scrape)
-        import reconcile as _reconcile; importlib.reload(_reconcile)
-        import skjalftalisa_client as _sk; importlib.reload(_sk)
-        import volcano_scraper as _volcano; importlib.reload(_volcano)
-        scrape_all_earthquake_data = _scrape.scrape_all_earthquake_data
-        match_and_merge = _reconcile.match_and_merge
-        fetch_last_n_days = _sk.fetch_last_n_days
-        store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
-        refresh_volcanoes = _volcano.refresh_volcanoes
-
-        scrape_all_earthquake_data()
-
         try:
-            rows = fetch_last_n_days(7, size_min=3.0)
-            store_skjalftalisa_rows(rows)
-        except Exception as e:
-            print(f"Quakes API fetch failed: {e}")
+            with IngestionLock():
+                # Imports stay inside the job so app.py can define models before helpers load.
+                sys.path.append(CURRENT_FILE_PATH)
+                import importlib
+                import scrape as _scrape; importlib.reload(_scrape)
+                import reconcile as _reconcile; importlib.reload(_reconcile)
+                import skjalftalisa_client as _sk; importlib.reload(_sk)
+                import volcano_scraper as _volcano; importlib.reload(_volcano)
+                scrape_all_earthquake_data = _scrape.scrape_all_earthquake_data
+                match_and_merge = _reconcile.match_and_merge
+                fetch_last_n_days = _sk.fetch_last_n_days
+                store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
+                refresh_volcanoes = _volcano.refresh_volcanoes
 
-        end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        start = "2020-06-01 00:00:00"
-        match_and_merge(start, end, min_mag=3.0)
+                scrape_all_earthquake_data()
 
-        try:
-            refresh_volcanoes(DB_PATH)
-        except Exception as e:
-            print(f"EPOS volcano refresh failed: {e}")
+                try:
+                    rows = fetch_last_n_days(7, size_min=3.0)
+                    store_skjalftalisa_rows(rows)
+                except Exception as e:
+                    print(f"Quakes API fetch failed: {e}")
 
-        _eq_cache["data"] = None
+                end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                start = "2020-06-01 00:00:00"
+                match_and_merge(start, end, min_mag=3.0)
+
+                try:
+                    refresh_volcanoes(DB_PATH)
+                except Exception as e:
+                    print(f"EPOS volcano refresh failed: {e}")
+
+                _eq_cache["data"] = None
+        except RuntimeError:
+            logging.warning("Scheduler skipped ingestion because another writer is active.")
 
 
 def bootstrap_missing_data() -> None:
@@ -410,14 +568,12 @@ def home(path: str):
 @limiter.limit(lambda: rate_limit("EARTHQUAKES", "120 per minute"))
 def get_earthquake_data():
     """Return merged earthquake data. Optional ?days=NN limits to recent window."""
-    days_param = (request.args.get("days") or "all").strip().lower()
-
-    with app.app_context():
-        if EarthquakeMerged.query.count() == 0:
-            bootstrap_missing_data()
+    days = _parse_days_param(max_days=MAX_DAYS_WINDOW)
+    if not isinstance(days, int) and days is not None:
+        return days
 
     # Serve from cache only for the default "all" case
-    if days_param == "all":
+    if days is None:
         now = time.time()
         if _eq_cache["data"] is not None and (now - _eq_cache["ts"]) < _EQ_CACHE_TTL:
             return _eq_cache["data"]
@@ -425,13 +581,12 @@ def get_earthquake_data():
     with app.app_context():
         q = EarthquakeMerged.query.filter(EarthquakeMerged.mw_mean >= 3.0)
 
-        if days_param != "all":
-            try:
-                days = int(days_param)
-                cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
-                q = q.filter(EarthquakeMerged.date_time >= cutoff)
-            except ValueError:
-                pass
+        if days is not None:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+            q = q.filter(EarthquakeMerged.date_time >= cutoff)
+
+        if q.count() > EARTHQUAKES_MAX_ROWS:
+            return jsonify({"error": "Result set too large"}), 413
 
         rows = q.order_by(EarthquakeMerged.date_time.desc()).all()
         result = jsonify([
@@ -445,7 +600,7 @@ def get_earthquake_data():
             } for r in rows
         ])
 
-        if days_param == "all":
+        if days is None:
             _eq_cache["data"] = result
             _eq_cache["ts"] = time.time()
 
@@ -455,20 +610,21 @@ def get_earthquake_data():
 @limiter.limit(lambda: rate_limit("CSV", "10 per minute"))
 def get_earthquake_data_csv():
     """Download merged earthquake data as CSV. Optional ?days=NN limits the window."""
-    days_param = (request.args.get("days") or "all").strip().lower()
+    days = _parse_days_param(max_days=CSV_MAX_DAYS_WINDOW)
+    if not isinstance(days, int) and days is not None:
+        return days
 
     with app.app_context():
         q = EarthquakeMerged.query.filter(EarthquakeMerged.mw_mean >= 3.0)
 
-        if days_param != "all":
-            try:
-                days = int(days_param)
-                cutoff = (
-                    datetime.now(timezone.utc) - timedelta(days=days)
-                ).strftime("%Y-%m-%d %H:%M:%S")
-                q = q.filter(EarthquakeMerged.date_time >= cutoff)
-            except ValueError:
-                pass
+        if days is not None:
+            cutoff = (
+                datetime.now(timezone.utc) - timedelta(days=days)
+            ).strftime("%Y-%m-%d %H:%M:%S")
+            q = q.filter(EarthquakeMerged.date_time >= cutoff)
+
+        if q.count() > CSV_MAX_ROWS:
+            return jsonify({"error": "Result set too large"}), 413
 
         rows = q.order_by(EarthquakeMerged.date_time.asc()).all()
 
@@ -494,22 +650,30 @@ def get_earthquake_data_csv():
         )
         return response
 
-@app.route('/scrape-volcanoes', methods=['GET'])
-@limiter.exempt
+@app.route('/scrape-volcanoes', methods=['POST'])
+@limiter.limit(lambda: rate_limit("ADMIN", "5 per minute"))
+@require_admin
 def scrape_volcanoes():
     """Fetch and save live volcano data from EPOS Iceland API (admin only)."""
-    if not _is_admin_request():
-        return jsonify({"error": "Forbidden"}), 403
     try:
         sys.path.append(CURRENT_FILE_PATH)
         from volcano_scraper import refresh_volcanoes
-        ok = refresh_volcanoes(DB_PATH)
+        with IngestionLock():
+            ok = refresh_volcanoes(DB_PATH)
         if ok:
             return jsonify({"message": "EPOS volcanoes fetched and saved.", "source": "epos"})
         return jsonify({"message": "No volcano data was found from EPOS API.", "source": "none"}), 502
+    except RuntimeError:
+        logging.warning("Rejected scrape-volcanoes request because ingestion lock is busy.")
+        return jsonify({"error": "Ingestion is already running"}), 409
     except Exception as e:
         logging.exception("scrape-volcanoes failed")
         return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/scrape-volcanoes', methods=['GET'])
+def scrape_volcanoes_get_not_allowed():
+    return jsonify({"error": "Method Not Allowed"}), 405
 
 
 @app.route('/volcanoes', methods=['GET'])
@@ -517,8 +681,6 @@ def scrape_volcanoes():
 def get_volcano_data():
     """Returns volcano data from the database as JSON."""
     with app.app_context():
-        if Volcano.query.count() == 0:
-            bootstrap_missing_data()
         volcanoes = Volcano.query.all()
         return jsonify([
             {
@@ -535,16 +697,34 @@ def get_volcano_data():
 
 
 @app.route("/reconcile", methods=["POST"])
-@limiter.exempt
+@limiter.limit(lambda: rate_limit("ADMIN", "5 per minute"))
+@require_admin
 def run_reconcile():
     """Manual trigger to rerun the reconcile step (admin only)."""
-    if not _is_admin_request():
-        return jsonify({"error": "Forbidden"}), 403
     from reconcile import match_and_merge
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     start = "2020-06-01 00:00:00"
-    match_and_merge(start, end, min_mag=3.0)
+    try:
+        with IngestionLock():
+            match_and_merge(start, end, min_mag=3.0)
+    except RuntimeError:
+        logging.warning("Rejected reconcile request because ingestion lock is busy.")
+        return jsonify({"error": "Ingestion is already running"}), 409
     return jsonify({"message": "Reconcile completed"}), 200
+
+
+@app.route("/initialize-data", methods=["POST"])
+@limiter.limit(lambda: rate_limit("ADMIN", "3 per hour"))
+@require_admin
+def initialize_data():
+    """Protected initial data load for fresh deployments."""
+    try:
+        with IngestionLock():
+            bootstrap_missing_data()
+    except RuntimeError:
+        logging.warning("Rejected initialize-data request because ingestion lock is busy.")
+        return jsonify({"error": "Ingestion is already running"}), 409
+    return jsonify({"message": "Initialization completed"}), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -574,24 +754,23 @@ def _km_distance(lat1, lon1, lat2, lon2):
 def shakemap_lookup():
     """Query EPOS shakemaps near an event. Params: dt, lat, lon."""
     dt_str = (request.args.get("dt") or "").strip()
-    lat = request.args.get("lat", type=float)
-    lon = request.args.get("lon", type=float)
-    if not dt_str or lat is None or lon is None:
-        return jsonify({"found": False, "reason": "missing parameters"}), 400
-
-    # parse event time (treat as UTC)
-    try:
-        # support both "YYYY-MM-DD HH:MM:SS" and ISO "YYYY-MM-DDTHH:MM:SS"
-        dt_str_norm = dt_str.replace("T", " ")
-        evt_dt = datetime.strptime(dt_str_norm[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    except Exception:
-        return jsonify({"found": False, "reason": "bad dt format"}), 400
+    evt_dt, error = _parse_event_datetime(dt_str)
+    if error:
+        return error
+    lat, error = _parse_float_param("lat", -90.0, 90.0)
+    if error:
+        return error
+    lon, error = _parse_float_param("lon", -180.0, 180.0)
+    if error:
+        return error
 
     url = "https://api.vedur.is/epos/seismic/shakemaps"
 
     try:
-        r = requests.get(url, timeout=20)
+        r = requests.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=False)
         r.raise_for_status()
+        if "json" not in r.headers.get("Content-Type", "").lower():
+            return jsonify({"found": False, "reason": "upstream content type error"}), 502
         items = r.json() if isinstance(r.json(), list) else []
     except Exception as e:
         logging.exception("shakemap_lookup fetch failed")
@@ -622,6 +801,7 @@ def shakemap_lookup():
         return jsonify({"found": False})
 
     view_url = (best.get("url_view_file") or "").strip()
+    view_url = _validate_shakemap_url(view_url)
     if not view_url:
         return jsonify({"found": False})
 
@@ -638,12 +818,18 @@ def shakemap_lookup():
 @app.route("/shakemap/<dt>", methods=["GET"])
 @limiter.limit(lambda: rate_limit("SHAKEMAP", "60 per minute"))
 def shakemap(dt):
+    _, error = _parse_event_datetime(dt)
+    if error:
+        return error
     link = db.session.get(ShakeMapLink, dt)
     if not link or link.status != "valid":
         return {"available": False}, 200
+    url = _validate_shakemap_url(link.url_view_file or "")
+    if not url:
+        return {"available": False}, 200
     return {
         "available": True,
-        "url": link.url_view_file,
+        "url": url,
         "dt_sec": link.dt_sec,
         "dist_km": link.dist_km,
         "dm": link.dm

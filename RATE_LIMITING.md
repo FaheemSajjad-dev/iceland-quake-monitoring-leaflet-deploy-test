@@ -30,6 +30,7 @@ When a client exceeds a limit, Flask-Limiter returns HTTP `429 Too Many Requests
 | `RATE_LIMIT_VOLCANOES` | `120 per minute` | `/volcanoes` |
 | `RATE_LIMIT_SHAKEMAP` | `60 per minute` | ShakeMap endpoints |
 | `RATE_LIMIT_CSV` | `10 per minute` | `/earthquakes_csv` |
+| `RATE_LIMIT_ADMIN` | `5 per minute` | Authenticated maintenance routes |
 | `RATE_LIMIT_STORAGE` | `memory://` | Flask-Limiter storage backend |
 
 `memory://` is acceptable for local development and single-process testing. Production deployments with multiple workers or servers should use shared storage, for example Redis:
@@ -43,4 +44,4 @@ RATE_LIMIT_STORAGE=redis://redis-host:6379/0
 - Keep `/health` exempt so uptime checks do not get blocked.
 - Keep `/reconcile` and `/scrape-volcanoes` localhost-only or move them behind authenticated/internal access.
 - Prefer reverse-proxy or platform-level limits in front of Flask for public deployments.
-- If the app is deployed behind a proxy, configure trusted proxy handling so per-client limits use the real client IP rather than the proxy address.
+- If the app is deployed behind exactly one trusted proxy, set `TRUSTED_PROXY_COUNT=1` so per-client limits use the real client IP. Keep it at `0` for direct local development. Gunicorn must not be directly public when forwarded headers are trusted.

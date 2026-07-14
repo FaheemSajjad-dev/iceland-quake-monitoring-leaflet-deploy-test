@@ -7,6 +7,7 @@
 #   bash deploy.sh --base-url /mpgv/
 #   bash deploy.sh --base-url https://example.org/mpgv/
 set -e
+umask 077
 
 PORT=6000
 BASE_URL="/mpgv/"
@@ -17,6 +18,7 @@ VENV_DIR="$BACKEND_DIR/venv"
 VENV_PY_MARKER="$VENV_DIR/.python-path"
 LOG_FILE="$REPO_DIR/server.log"
 PID_FILE="$REPO_DIR/server.pid"
+PRIVATE_ENV_FILE="${PRIVATE_ENV_FILE:-$REPO_DIR/private.env}"
 
 usage() {
     cat <<EOF
@@ -98,6 +100,42 @@ echo "==> Using Python: $PYTHON_BIN ($("$PYTHON_BIN" --version 2>&1))"
 echo "==> Frontend base path: $BASE_PATH"
 echo "==> Gunicorn port: $PORT"
 
+if [ -f "$PRIVATE_ENV_FILE" ]; then
+    if command -v stat >/dev/null 2>&1; then
+        ENV_MODE="$(stat -c '%a' "$PRIVATE_ENV_FILE" 2>/dev/null || true)"
+        if [ "$ENV_MODE" != "600" ]; then
+            echo "ERROR: $PRIVATE_ENV_FILE must have mode 600."
+            echo "Run: chmod 600 '$PRIVATE_ENV_FILE'"
+            exit 1
+        fi
+    fi
+    echo "==> Loading private environment from $PRIVATE_ENV_FILE"
+    set -a
+    # shellcheck disable=SC1090
+    . "$PRIVATE_ENV_FILE"
+    set +a
+else
+    echo "WARNING: $PRIVATE_ENV_FILE not found; ADMIN_TOKEN-dependent maintenance routes will be disabled."
+fi
+
+export APP_ENV="${APP_ENV:-production}"
+export RATE_LIMIT_STORAGE="${RATE_LIMIT_STORAGE:-memory://}"
+export RUNTIME_DIR="${RUNTIME_DIR:-$REPO_DIR/runtime}"
+export TRUSTED_PROXY_COUNT="${TRUSTED_PROXY_COUNT:-0}"
+
+mkdir -p "$RUNTIME_DIR"
+chmod 700 "$RUNTIME_DIR" 2>/dev/null || true
+
+if [ -z "${ADMIN_TOKEN:-}" ]; then
+    echo "WARNING: ADMIN_TOKEN is not set; maintenance routes will be disabled."
+fi
+
+if [ "$TRUSTED_PROXY_COUNT" = "1" ]; then
+    echo "==> Trusting exactly one reverse proxy for forwarded client IP headers."
+else
+    echo "==> Not trusting forwarded client IP headers. Set TRUSTED_PROXY_COUNT=1 only after nginx topology is confirmed."
+fi
+
 SELECTED_PY_VERSION="$("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
 
 if [ -d "$VENV_DIR" ]; then
@@ -158,7 +196,7 @@ echo "==> Starting gunicorn on port $PORT..."
 PORT=$PORT nohup "$VENV_DIR/bin/gunicorn" \
     --chdir "$BACKEND_DIR" \
     app:app \
-    --bind "0.0.0.0:$PORT" \
+    --bind "127.0.0.1:$PORT" \
     --workers 1 \
     --threads 8 \
     --worker-class gthread \

@@ -222,6 +222,35 @@
   );
 }
 
+.time-window-slider-container.vertical .timeline-track.colored {
+  background: linear-gradient(
+    to left,
+    #0a1628,
+    #0f2a48,
+    #164068,
+    #1e5a8a,
+    #2874aa,
+    #3590c0,
+    #45add4,
+    #5ec4de,
+    #78d8e8
+  );
+}
+
+.time-window-slider-container.vertical .timeline-track.satellite-colored {
+  background: linear-gradient(
+    to left,
+    #3b063f,
+    #5d0a62,
+    #7f117f,
+    #a31997,
+    #c026a8,
+    #dc3fba,
+    #f065ce,
+    #ff8adb
+  );
+}
+
 /* T label: visible only in vertical mode, appears just above the slider's visual top.
    After rotate(-90deg): CSS right edge = visual top, CSS top direction = visual left.
    top must match the track bar's CSS-top centre = padding_top(26) + slider_h - track_bottom - track_h/2.

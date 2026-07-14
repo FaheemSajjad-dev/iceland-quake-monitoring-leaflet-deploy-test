@@ -40,13 +40,6 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
             Earthquake.mw_mean >= min_mag
         ).all()
 
-        # Clear merged rows in this window so reruns are idempotent.
-        EarthquakeMerged.query.filter(
-            EarthquakeMerged.date_time >= start_utc,
-            EarthquakeMerged.date_time <= end_utc
-        ).delete()
-        db.session.commit()
-
         v_candidates = {}
         for v in v_rows:
             vt = v.date_time
@@ -83,6 +76,7 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
         inserted = 0
         n_matched = 0
         n_v_only = 0
+        replacement_rows = []
         for v in v_rows:
             match = assigned.get(v.id)
 
@@ -99,7 +93,7 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                     match_dist_km=None,
                     match_dm=None
                 )
-                db.session.add(m)
+                replacement_rows.append(m)
                 inserted += 1
                 n_v_only += 1
 
@@ -133,11 +127,22 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                     match_dist_km=dist,
                     match_dm=dm
                 )
-                db.session.add(m)
+                replacement_rows.append(m)
                 inserted += 1
                 n_matched += 1
 
-        db.session.commit()
+        try:
+            EarthquakeMerged.query.filter(
+                EarthquakeMerged.date_time >= start_utc,
+                EarthquakeMerged.date_time <= end_utc
+            ).delete(synchronize_session=False)
+            db.session.add_all(replacement_rows)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            print("Reconcile failed; previous merged rows were preserved by rollback.")
+            raise
+
         print(f"Total: {inserted}")
         print(f"  Matched: {n_matched}")
         print(f"  V-only:  {n_v_only}")

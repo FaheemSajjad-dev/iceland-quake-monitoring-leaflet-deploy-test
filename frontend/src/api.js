@@ -27,16 +27,6 @@ export const fetchVolcanoData = async () => {
     }
 };
 
-export const triggerVolcanoScrape = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/scrape-volcanoes`);
-        return response.data;
-    } catch (error) {
-        console.error("Error triggering volcano scrape:", error);
-        throw error;
-    }
-};
-
 export async function fetchShakeMapValidated(dt, lat, lon) {
   try {
     const params = new URLSearchParams({ dt, lat, lon });

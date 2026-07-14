@@ -96,6 +96,7 @@ The Flask backend uses Flask-Limiter with conservative per-client API limits. De
 | `RATE_LIMIT_VOLCANOES` | `120 per minute` |
 | `RATE_LIMIT_SHAKEMAP` | `60 per minute` |
 | `RATE_LIMIT_CSV` | `10 per minute` |
+| `RATE_LIMIT_ADMIN` | `5 per minute` |
 | `RATE_LIMIT_STORAGE` | `memory://` |
 
 `/health` is exempt for monitoring. `/reconcile` and `/scrape-volcanoes` remain localhost-only operational routes and are exempt from public API limits.
@@ -107,6 +108,30 @@ RATE_LIMIT_STORAGE=redis://redis-host:6379/0
 ```
 
 See `RATE_LIMITING.md` for the full policy. Prefer reverse-proxy or platform-level rate limits in addition to app-level limits for formal public deployment.
+
+## Maintenance Route Authorization
+
+State-changing maintenance routes require `X-Admin-Token` in production:
+
+- `POST /reconcile`
+- `POST /scrape-volcanoes`
+- `POST /initialize-data`
+
+`ADMIN_TOKEN` is required for production maintenance. If it is missing, public read routes continue to work and maintenance routes return a controlled disabled response. Tokens are not accepted through query strings or `Authorization`.
+
+Local loopback fallback is available only when `APP_ENV` is a development value and `ALLOW_DEV_LOCAL_ADMIN=true`; do not enable that on Pluto.
+
+Initial data loading for an empty deployment is now an explicit maintenance operation, not a public GET side effect. After setting the private production token, run:
+
+```bash
+curl -X POST -H "X-Admin-Token: $ADMIN_TOKEN" http://127.0.0.1:6000/initialize-data
+```
+
+## Trusted Proxy Checklist
+
+Set `TRUSTED_PROXY_COUNT=1` only after confirming exactly one trusted nginx proxy is in front of Gunicorn. Direct local development should use `TRUSTED_PROXY_COUNT=0`. When trusted headers are enabled, Gunicorn must listen only on loopback or a Unix socket and port `6000` must not be directly public.
+
+Ask the server administrator to confirm nginx sets `X-Forwarded-For`, sets `X-Forwarded-Proto`, forwards the expected Host, validates Host headers, and blocks direct public access to Gunicorn.
 
 ## 10. Database File Permissions - TODO DEPLOYMENT
 

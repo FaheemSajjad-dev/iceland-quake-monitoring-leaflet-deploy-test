@@ -28,11 +28,16 @@ Thumbs.db
 # Env files
 .env
 *.env
+private.env
+private.*.env
 
 # Local run helper output
 .local/
+backend/runtime/
+runtime/
 server.log
 server.pid
+*.lock
 
 # Large binary assets (exceed GitHub's 100 MB limit)
 *.pmtiles

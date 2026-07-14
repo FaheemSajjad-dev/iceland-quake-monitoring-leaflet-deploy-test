@@ -47,6 +47,17 @@ Equivalent explicit Pluto command:
 ./deploy.sh --port 6000 --base-url /mpgv/
 ```
 
+Private Pluto configuration should live in an ignored project-owned file such as `~/iceland-quake/private.env` with mode `600`. Required production values include `APP_ENV=production`, a long random `ADMIN_TOKEN`, and `TRUSTED_PROXY_COUNT=1` only after the nginx proxy topology has been confirmed. Do not place real tokens in Git or frontend build variables.
+
+For a fresh empty database, run initialization explicitly after deployment:
+
+```bash
+set -a
+. ./private.env
+set +a
+curl -X POST -H "X-Admin-Token: $ADMIN_TOKEN" http://127.0.0.1:6000/initialize-data
+```
+
 Use `--base-url /` only when serving the app from a domain root. If a full public URL is supplied, such as `https://example.org/mpgv/`, the script normalizes it to the frontend base path.
 
 When root-level deploy files change, upload only the root files that changed. When frontend or backend files change, upload the matching frontend/backend files or directories while excluding `node_modules`.

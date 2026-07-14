@@ -29,6 +29,7 @@ ENDPOINTS = {
 DEFAULT_HEADERS = {
     "Accept": "application/json",
 }
+MIN_VALID_VOLCANO_ROWS = int(os.environ.get("MIN_VALID_VOLCANO_ROWS", "5"))
 
 def _get_json(url, timeout=25):
     for i in range(3):
@@ -129,52 +130,67 @@ def save_volcanoes_to_db(volcanoes, db_path=None):
         print("No volcano data to save, skipping update.")
         return False
 
+    if len(volcanoes) < MIN_VALID_VOLCANO_ROWS:
+        print("Too few volcano rows to safely replace existing data.")
+        return False
+
     if db_path is None:
         current_file_path = os.path.dirname(os.path.abspath(__file__))
         db_dir = os.path.join(current_file_path, "data")
         os.makedirs(db_dir, exist_ok=True)
         db_path = os.path.join(db_dir, "earthquakes.db")
 
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS volcano (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        elevation_m FLOAT,
-        elevation_ft FLOAT,
-        latitude FLOAT,
-        longitude FLOAT,
-        last_eruption TEXT,
-        UNIQUE(name, latitude, longitude)
-    )
-    """)
-
-    # Delete only after confirming we have rows to insert (prevents empty table on API failure)
-    cur.execute("DELETE FROM volcano")
-
-    count = 0
+    prepared_rows = []
     for v in volcanoes:
-        try:
-            cur.execute("""
-                INSERT OR REPLACE INTO volcano
-                (name, description, elevation_m, elevation_ft, latitude, longitude, last_eruption)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                v["name"],
-                v.get("description"),
-                v.get("elevation_m"),
-                v.get("elevation_ft"),
-                v["latitude"],
-                v["longitude"],
-                v.get("last_eruption"),
-            ))
-            count += 1
-        except Exception as e:
-            print(f"Skipped {v.get('name')}: {e}")
-    conn.commit()
-    conn.close()
+        name = (v.get("name") or "").strip()
+        latitude = float(v["latitude"])
+        longitude = float(v["longitude"])
+        if not name or not (-90.0 <= latitude <= 90.0) or not (-180.0 <= longitude <= 180.0):
+            raise ValueError("invalid volcano row")
+        prepared_rows.append((
+            name,
+            v.get("description"),
+            v.get("elevation_m"),
+            v.get("elevation_ft"),
+            latitude,
+            longitude,
+            v.get("last_eruption"),
+        ))
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS volcano (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            elevation_m FLOAT,
+            elevation_ft FLOAT,
+            latitude FLOAT,
+            longitude FLOAT,
+            last_eruption TEXT,
+            UNIQUE(name, latitude, longitude)
+        )
+        """)
+
+        cur.execute("BEGIN")
+        cur.execute("DELETE FROM volcano")
+        cur.executemany("""
+            INSERT OR REPLACE INTO volcano
+            (name, description, elevation_m, elevation_ft, latitude, longitude, last_eruption)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, prepared_rows)
+        count = cur.rowcount if cur.rowcount != -1 else len(prepared_rows)
+        if count < MIN_VALID_VOLCANO_ROWS:
+            raise ValueError("too few volcano rows inserted")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        print("Volcano replacement failed; previous rows were preserved by rollback.")
+        raise
+    finally:
+        conn.close()
     print(f"Saved {count} volcano rows.")
     return count > 0
 
