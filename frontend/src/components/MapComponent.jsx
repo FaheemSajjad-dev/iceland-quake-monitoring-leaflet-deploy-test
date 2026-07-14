@@ -91,26 +91,26 @@ const getMarkerColor = (magnitude, maxMagnitude) => {
   return samplePalette(MAG_PALETTE_STOPS, t);
 };
 
-/* Timeline colour palette — North Atlantic ocean depth, oldest (dark navy) → newest (bright teal).
+/* Timeline colour palette — North Atlantic ocean depth, oldest (bright teal) → newest (dark navy).
    Stops mirror the TimeWindowSlider track gradient exactly, mapped by year.
    Year-based (not month) so each earthquake's dot matches its position on the slider. */
 const TIMELINE_YEAR_STOPS = [
-  "#0a1628", // 2020 — deep navy (oldest)
-  "#164068", // 2021
-  "#2874aa", // 2022
+  "#78d8e8", // 2020 — bright teal (oldest)
+  "#5ec4de", // 2021
+  "#45add4", // 2022
   "#3590c0", // 2023
-  "#45add4", // 2024
-  "#5ec4de", // 2025
-  "#78d8e8", // 2026 — bright teal (most recent)
+  "#2874aa", // 2024
+  "#164068", // 2025
+  "#0a1628", // 2026 — deep navy (most recent)
 ];
 const SATELLITE_TIMELINE_YEAR_STOPS = [
-  "#3b063f",
-  "#5d0a62",
-  "#7f117f",
-  "#a31997",
-  "#c026a8",
-  "#dc3fba",
   "#ff8adb",
+  "#dc3fba",
+  "#c026a8",
+  "#a31997",
+  "#7f117f",
+  "#5d0a62",
+  "#3b063f",
 ];
 const TIMELINE_BASE_YEAR = 2020;
 
