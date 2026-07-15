@@ -79,20 +79,14 @@ Check:
 - `http://pluto.cs.hi.is/mpgv/health` if routed by the server configuration
 - `~/iceland-quake/server.log` on Pluto
 
-## Legacy Render Notes
+## HTTPS Responsibility
 
-This repository still contains Render configuration files for the earlier single-service Render deployment:
-
-- `render.yaml`
-- `RENDER_DEPLOY.md`
-- `backend/requirements-render.txt`
-
-Those files are kept as deployment reference material, but Pluto is the current active deployment target.
+Pluto nginx currently exposes this route on port 80 only. The application and Gunicorn do not terminate TLS. Enabling public HTTPS requires the Pluto server administrator to install or assign a certificate, add an nginx port 443 listener that proxies `/mpgv/` to `127.0.0.1:6000`, and redirect HTTP to HTTPS. No Flask or React protocol change is required.
 
 ## Production Considerations
 
 - The app uses SQLite; consider PostgreSQL for true high-concurrency production use.
 - Review tile-provider licensing before formal public or institutional deployment.
 - Consider nginx/static caching for built assets, tiles, sprites, and fonts.
-- Consider rate limiting before wider public exposure.
+- Use shared rate-limit storage and proxy-level limits if deployment expands beyond one Gunicorn process.
 - MapLibre GL requires browser WebGL support for the vector Map layer.

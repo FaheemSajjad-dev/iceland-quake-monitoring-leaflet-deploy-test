@@ -17,8 +17,8 @@ Measure how the application behaves under concurrent public use, including map i
 
 - Earthquakes and volcanoes refresh every 3 minutes.
 - Fault and fissure linework is fetched on first use, filtered to Iceland/onshore records, and cached in memory for later toggles.
-- Earthquake markers use SVG Leaflet circle markers with separate invisible hit targets for easier selection.
-- Heatmap rendering is density-first, uses weights of 0.20/0.30/0.45 by magnitude band, and rebuilds only on data changes or heatmap zoom-band changes.
+- Earthquake markers use deck.gl scatterplot layers with separate invisible hit targets for easier selection.
+- The MapLibre Heatmap is density-first and uses weights of 0.20/0.30/0.45 by magnitude band.
 - The bottom-right attribution is compact and changes with the active basemap and faults overlay.
 - Flask-Limiter applies per-client limits to public API/export endpoints; expect HTTP 429 when deliberate load tests exceed configured limits.
 
@@ -44,8 +44,9 @@ Ask testers to use the app for 3 to 5 minutes while repeating these actions:
 - Pan and zoom around Iceland.
 - Move the time-window slider across years, months, weeks, and days.
 - Change the magnitude filter.
-- Toggle volcanoes, grid, faults, and heatmap.
+- Toggle volcanoes, grid, faults, and Heatmap.
 - Open earthquake and volcano info cards.
+- Open Recent Selections and return to a recorded earthquake.
 - Try a ShakeMap lookup on eligible earthquake cards.
 - Export CSV once per tester group, not repeatedly.
 

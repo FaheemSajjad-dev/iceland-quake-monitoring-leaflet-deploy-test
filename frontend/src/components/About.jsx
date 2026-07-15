@@ -3,7 +3,7 @@ import "./About.css";
 import { API_URL } from "../api";
 import { useLang, useT } from "../i18n";
 
-const VERSION = "1.2";
+const VERSION = "1.3";
 
 const DATA_CADENCE = {
   en: [
@@ -25,14 +25,14 @@ const MAP_LAYERS = {
     ["Map", "OpenFreeMap vector basemap with Iceland glacier labels."],
     ["Satellite", "Esri World Imagery for visual terrain context."],
     ["Terrain", "Icelandic Meteorological Office raster terrain tiles."],
-    ["Heatmap", "Density-first earthquake heatmap with label overlay."],
+    ["Heatmap", "MapLibre density heatmap on a dark OpenFreeMap basemap; individual marker selection is intentionally unavailable."],
     ["Attribution", "Compact bottom-right map credits show the active basemap providers and EGDI/HIKE when faults are visible."],
   ],
   is: [
     ["Kort", "OpenFreeMap vektorkort með íslenskum jöklaheitum."],
     ["Gervihnöttur", "Esri World Imagery fyrir myndrænt landslagssamhengi."],
     ["Landslag", "Raster landslagsflísar frá Veðurstofu Íslands."],
-    ["Hitakort", "Þéttleikakort jarðskjálfta."],
+    ["Hitakort", "MapLibre þéttleikakort á dökku OpenFreeMap grunnkorti; val á einstökum merkjum er ekki í boði."],
     ["Heimildir", "Stutt heimildalína neðst til hægri sýnir virkar grunnkortsveitur og EGDI/HIKE þegar misgengi eru sýnileg."],
   ],
 };
@@ -57,8 +57,8 @@ const Copy = ({ lang }) => lang === "en" ? (
     <p>
       This application is part of an MSc thesis at the University of Iceland. It
       monitors Icelandic earthquakes from June 2020 onward, focusing on events
-      with <strong>M {">="} 3.0</strong>, and presents them on an interactive Leaflet
-      map for exploration, comparison, and export.
+      with <strong>M {">="} 3.0</strong>, and presents them in an interactive
+      MapLibre-based interface for exploration, comparison, and export.
     </p>
     <p>
       The backend keeps a merged earthquake catalogue by scraping MPGV records,
@@ -67,19 +67,31 @@ const Copy = ({ lang }) => lang === "en" ? (
       volcano metadata, ShakeMap links, coordinate grids, and filtered EGDI/HIKE
       fault and fissure geometry.
     </p>
+    <p>
+      Roadmap, Satellite, and Terrain views provide selectable earthquake markers,
+      information cards, timeline or magnitude colouring, time and magnitude filters,
+      and a ten-item Recent Selections history. Volcanoes, faults, and the latitude/
+      longitude grid can be shown as overlays. The responsive controls support both
+      desktop and mobile layouts.
+    </p>
   </>
 ) : (
   <>
     <p>
       Þetta forrit er hluti af meistaraverkefni við Háskóla Íslands. Það
       fylgist með íslenskum jarðskjálftum frá júní 2020, með áherslu á atburði
-      með <strong>M {">="} 3.0</strong>, og sýnir þá á gagnvirku Leaflet-korti.
+      með <strong>M {">="} 3.0</strong>, og sýnir þá í gagnvirku MapLibre-viðmóti.
     </p>
     <p>
       Bakendinn heldur utan um sameinaðan jarðskjálftagrunn með því að lesa
       MPGV-skrá, sækja nýleg IMO Quakes API gögn og samræma atburði eftir tíma,
       staðsetningu og stærð. Framendinn bætir við eldfjallagögnum, ShakeMap
       tenglum, hnitaneti og EGDI/HIKE línum fyrir misgengi og sprungur.
+    </p>
+    <p>
+      Kort-, gervihnatta- og landslagssýnir hafa valanleg jarðskjálftamerki,
+      upplýsingaspjöld, tíma- eða stærðarlitun, tíma- og stærðarsíur og lista yfir
+      tíu nýlegustu val. Viðmótið styður bæði skjáborð og farsíma.
     </p>
   </>
 );

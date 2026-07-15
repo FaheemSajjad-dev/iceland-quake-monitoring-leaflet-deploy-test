@@ -10,10 +10,10 @@ Before handing this over for production deployment, review the following items. 
 app.run(debug=False, port=5001)
 ```
 
-For production, run behind a WSGI server instead:
+Production uses Gunicorn on a loopback-only address behind nginx:
 
 ```bash
-gunicorn -b 0.0.0.0:5001 app:app --chdir backend
+gunicorn -b 127.0.0.1:6000 app:app --chdir backend
 ```
 
 ## 2. CORS - DONE
@@ -28,16 +28,17 @@ _ALLOWED_ORIGINS = [
 CORS(app, origins=_ALLOWED_ORIGINS)
 ```
 
-When deploying, add the production domain or serve frontend and backend behind the same reverse proxy and remove cross-origin access.
+Production serves the frontend and API from the same origin, so no production CORS origin is required.
 
-## 3. Localhost-Only Admin Endpoints - DONE
+## 3. Maintenance Route Authorization - DONE
 
 | Endpoint | Method | What it does | Protection |
 |---|---|---|---|
-| `/reconcile` | POST | Reruns reconciliation | `request.remote_addr` must be `127.0.0.1` or `::1` |
-| `/scrape-volcanoes` | GET | Triggers live EPOS volcano scrape | Same localhost check |
+| `/reconcile` | POST | Reruns reconciliation | `X-Admin-Token` in production |
+| `/scrape-volcanoes` | POST | Triggers live EPOS volcano scrape | `X-Admin-Token` in production |
+| `/initialize-data` | POST | Initializes an empty deployment | `X-Admin-Token` in production |
 
-The scheduler handles normal ingestion automatically, so these are only for local/server-side maintenance.
+The scheduler handles normal ingestion. A loopback-only fallback is available only in development when `ALLOW_DEV_LOCAL_ADMIN=true`; the legacy `GET /scrape-volcanoes` route returns `405 Method Not Allowed`.
 
 ## 4. Error Message Leakage - DONE
 
@@ -56,7 +57,7 @@ Affected endpoints include `/scrape-volcanoes`, `/volcanoes`, and `/shakemap_loo
 
 The policy allows:
 
-- Scripts and styles from `'self'`, with inline allowances needed by the current Leaflet/React stack
+- Scripts and styles from `'self'`, with inline allowances needed by the current React mapping stack
 - Images from `'self'`, data/blob URLs, Esri, OpenFreeMap, CARTO, IMO tile domains, and EGDI/HIKE map services
 - Connections to the local Flask API plus OpenFreeMap, IMO, Esri/CARTO, and EGDI/HIKE services used by map layers and overlays
 - Fonts from `'self'` and OpenFreeMap
@@ -66,7 +67,7 @@ When deploying, update `connect-src` for the production API origin and remove de
 
 ## 6. Unused API Keys - DONE
 
-The Leaflet version does not use Google Maps and does not require a Google Maps API key. The old `.env` file containing an unused key has been removed.
+The application does not use Google Maps or require a Google Maps API key. The old unused key was removed.
 
 ## 7. Third-Party Tile and Data Services - REVIEW BEFORE PRODUCTION
 
@@ -99,7 +100,7 @@ The Flask backend uses Flask-Limiter with conservative per-client API limits. De
 | `RATE_LIMIT_ADMIN` | `5 per minute` |
 | `RATE_LIMIT_STORAGE` | `memory://` |
 
-`/health` is exempt for monitoring. `/reconcile` and `/scrape-volcanoes` remain localhost-only operational routes and are exempt from public API limits.
+`/health` is exempt for monitoring. Authenticated maintenance routes use `RATE_LIMIT_ADMIN`; initialization is additionally limited to three requests per hour.
 
 `memory://` is acceptable for local development and simple single-process deployments. For production with multiple workers or servers, use shared storage such as Redis:
 
@@ -142,9 +143,9 @@ chmod 700 backend/data/
 chmod 600 backend/data/earthquakes.db
 ```
 
-## 11. HTTPS - TODO DEPLOYMENT
+## 11. HTTPS - SERVER ADMINISTRATION REQUIRED
 
-Terminate TLS at the reverse proxy using Let's Encrypt or an institutional certificate. Flask does not need to serve TLS directly.
+Pluto nginx currently listens only on port 80 and has no active TLS certificate or port 443 listener. Public HTTPS must be configured by the Pluto server administrator at nginx, followed by an HTTP-to-HTTPS redirect. Flask, React, Gunicorn, and `deploy.sh` do not control public TLS; Gunicorn should continue serving plain HTTP on `127.0.0.1:6000` behind nginx.
 
 ## 12. Frontend API URL Detection - DONE
 

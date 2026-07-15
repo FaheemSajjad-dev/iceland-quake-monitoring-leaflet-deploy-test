@@ -1,12 +1,10 @@
-# Iceland Earthquake Monitoring - Leaflet Edition
+# MPGV Monitor
 
 Near-real-time Iceland earthquake monitoring web application built as part of an MSc thesis at the University of Iceland.
 
 ## Overview
 
-The app visualizes Icelandic earthquakes from June 2020 onward, focusing on events with **M >= 3.0**. A Flask backend continuously ingests and reconciles earthquake data, refreshes volcano metadata, and serves a merged catalogue to a React/Leaflet frontend.
-
-This is the Leaflet version of the original Google Maps project. It does not require a Google Maps API key.
+The app visualizes Icelandic earthquakes from June 2020 onward, focusing on events with **M >= 3.0**. A Flask backend ingests and reconciles earthquake data, refreshes volcano metadata, and serves a merged catalogue to a responsive React/MapLibre interface. The application does not use Google Maps or require a Google Maps API key.
 
 ## Current Deployment
 
@@ -23,8 +21,8 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, Vite, react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat |
-| Map tiles | OpenFreeMap Positron, CARTO dark heatmap tiles, IMO terrain, Esri World Imagery, MapLibre label overlays |
+| Frontend | React 18, Vite, MapLibre GL, deck.gl |
+| Map tiles | OpenFreeMap Positron/dark styles, IMO terrain, Esri World Imagery |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
 | API protection | Flask-Limiter with environment-configurable per-client limits |
@@ -62,8 +60,8 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 
 ## Features
 
-- Interactive earthquake markers with timeline and magnitude colour modes
-- SVG `L.circleMarker` earthquake rendering with larger invisible click/tap hit targets
+- Interactive MapLibre/deck.gl earthquake markers with timeline and magnitude colour modes
+- Larger invisible click/tap targets without increasing visible marker size
 - Time window slider with day, week, month, and year filtering
 - Magnitude filter with default minimum **M 3.0**
 - Volcano overlay and right-side volcano list from EPOS metadata
@@ -76,7 +74,9 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 - Main latitude labels plus unlabeled latitude midlines between main lines
 - Longitude labels anchored near the bottom with collision spacing
 - Default map-view button that returns to the Iceland opening view without reloading
-- Heatmap mode for density-first analysis with subdued per-event weights
+- Recent Selections panel containing the latest ten unique marker selections, with map return actions
+- Responsive desktop and mobile controls and information layouts
+- MapLibre Heatmap mode for density-first analysis with subdued per-event weights; individual selection is unavailable in this view
 - Earthquake and volcano info cards positioned near the upper-left map work area
 
 ## Map Layers
@@ -86,16 +86,15 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 | Map | OpenFreeMap Positron vector basemap | Default map base |
 | Satellite | Esri World Imagery | Visual imagery context |
 | Terrain | Icelandic Meteorological Office raster tiles | `geo.vedur.is` terrain basemap |
-| Gray | CARTO light basemap | Quiet inspection layer |
-| Heatmap | CARTO dark base + `leaflet.heat` + label overlay | Earthquake density visualization |
+| Heatmap | OpenFreeMap dark style + MapLibre heatmap layer | Earthquake density visualization without individual markers |
 
-MapLibre GL renders the default **Map** layer with the OpenFreeMap Positron vector style and provides label overlays on some non-default layers.
+MapLibre GL renders all four current map views. Roadmap uses the OpenFreeMap Positron vector style; Satellite and Terrain combine raster sources with MapLibre labels.
 
 ## Heatmap Layer
 
 The heatmap is density-first. M 3-4 events contribute weight 0.20, M 4-5 events contribute 0.30, and M 5+ events contribute 0.45, so nearby clusters dominate over isolated large events. The gradient runs from transparent through dark blue, teal, amber, orange, and red. Individual markers are hidden while heatmap mode is active.
 
-`leaflet.heat` is loaded dynamically after `window.L = L` to avoid module-hoisting issues.
+Heatmap mode intentionally hides marker-only controls, clears active marker selection, and closes Recent Selections.
 
 ## Project Structure
 
@@ -221,11 +220,11 @@ Rate limiting protects request frequency, not total user capacity. See `RATE_LIM
 
 | Component | Technique |
 |---|---|
-| Earthquake markers | SVG `L.circleMarker` rendering with separate invisible hit targets for easier selection |
+| Earthquake markers | deck.gl scatterplot layers with separate invisible hit targets for easier selection |
 | `TimeWindowSlider` | Stable wheel listener via `useRef`, memoized divider generation |
-| `MapComponent` tiles | `updateWhenZooming=false`, `updateWhenIdle=false`, `keepBuffer=4`, `detectRetina=false` |
-| `HeatmapLayer` | Rebuilt only on data changes and heatmap zoom-band changes; panning does not redraw |
-| `FaultsOverlay` | Fetches filtered WFS GeoJSON on first use, then reuses the in-memory cache |
+| Map rendering | MapLibre styles and raster sources share one active map component |
+| Heatmap | MapLibre GPU heatmap layer with zoom-responsive radius and intensity |
+| Fault overlay | Fetches filtered WFS GeoJSON on first use, then reuses the in-memory cache |
 | Attribution | Uses one compact bottom-right attribution line instead of stacked provider strings |
 | Map layer | Uses the OpenFreeMap Positron vector style through MapLibre GL |
 
@@ -238,8 +237,7 @@ The app uses public third-party map tiles and data services. Confirm licensing b
 | Map | OpenFreeMap / OpenMapTiles / OpenStreetMap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office terrain raster tiles |
-| Gray | CARTO light tiles |
-| Heatmap base | CARTO dark tiles |
+| Heatmap base | OpenFreeMap dark style |
 
 No Google Maps API key is used. If deployed formally at IMO or another institution, prefer institution-owned tile infrastructure or provider accounts/keys where required by licence terms.
 

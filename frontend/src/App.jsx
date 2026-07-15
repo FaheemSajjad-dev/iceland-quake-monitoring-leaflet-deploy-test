@@ -4,6 +4,7 @@ import LeftPanel from "./components/LeftPanel";
 import MapTypeSelector from "./components/MapTypeSelector";
 import RightPanel from "./components/RightPanel";
 import About from "./components/About";
+import RecentSelections from "./components/RecentSelections";
 import { fetchEarthquakeData, fetchVolcanoData } from "./api";
 import { parseBackendUtcDate } from "./utils/datetime";
 import "./App.css";
@@ -37,12 +38,29 @@ const App = () => {
     });
 
     const [showAbout, setShowAbout] = useState(false);
+    const [showRecentSelections, setShowRecentSelections] = useState(false);
+    const [recentSelections, setRecentSelections] = useState([]);
+    const [focusEarthquake, setFocusEarthquake] = useState(null);
     const [selectedVolcano, setSelectedVolcano] = useState(null);
     const [selectedEarthquake, setSelectedEarthquake] = useState(null);
     const [shakeUrl, setShakeUrl] = useState(null);
     const openAbout = useCallback(() => {
         setSelectedVolcano(null);
+        setShowRecentSelections(false);
         setShowAbout(true);
+    }, []);
+    const openRecentSelections = useCallback(() => {
+        setShowAbout(false);
+        setShowRecentSelections(true);
+    }, []);
+    const selectEarthquake = useCallback(quake => {
+        setSelectedEarthquake(quake);
+        if (!quake) return;
+        const key = `${quake["Date-time"] ?? ""}|${quake.Latitude ?? ""}|${quake.Longitude ?? ""}`;
+        setRecentSelections(current => [
+            quake,
+            ...current.filter(item => `${item["Date-time"] ?? ""}|${item.Latitude ?? ""}|${item.Longitude ?? ""}` !== key),
+        ].slice(0, 10));
     }, []);
     const [resetViewTrigger, setResetViewTrigger] = useState(0);
     const resetView = useCallback(() => setResetViewTrigger(v => v + 1), []);
@@ -161,6 +179,7 @@ const App = () => {
         if (type === "heatmap") {
             setColorOwner('timeline');
             setShowFaults(false);
+            setShowRecentSelections(false);
         } else if (type === "satellite") {
             setColorOwner('timeline');
         }
@@ -178,6 +197,13 @@ const App = () => {
     const handleMagnitudeFilterChange = useCallback(v => setMagnitudeFilter(v), []);
     const emptyVolcanoes = useMemo(() => [], []);
     const rightPanelOpen = showVolcanoes && !isMobile;
+
+    const viewRecentEarthquake = useCallback(quake => {
+        setShowRecentSelections(false);
+        if (mapType === "heatmap") handleMapTypeChange("roadmap");
+        selectEarthquake(quake);
+        setFocusEarthquake({ quake, requestId: Date.now() });
+    }, [handleMapTypeChange, mapType, selectEarthquake]);
 
     return (
         <div className="app-container">
@@ -225,10 +251,11 @@ const App = () => {
                     onMagnitudeFilterChange={handleMagnitudeFilterChange}
                     onResetView={resetView}
                     onShowAbout={openAbout}
+                    onShowRecentSelections={openRecentSelections}
                     collapsed={leftPanelCollapsed}
                     isMobile={isMobile}
                     selectedEarthquake={selectedEarthquake}
-                    onClearSelectedEarthquake={() => setSelectedEarthquake(null)}
+                    onClearSelectedEarthquake={() => selectEarthquake(null)}
                     shakeUrl={shakeUrl}
                     onOpenShakeMap={url => window.open(url, "_blank", "noopener,noreferrer")}
                     onCollapsedChange={setLeftPanelCollapsed}
@@ -260,7 +287,8 @@ const App = () => {
                     rightPanelOpen={rightPanelOpen}
                     mobileLeftPanelOpen={isMobile && !leftPanelCollapsed}
                     selectedEarthquake={selectedEarthquake}
-                    setSelectedEarthquake={setSelectedEarthquake}
+                    setSelectedEarthquake={selectEarthquake}
+                    focusEarthquake={focusEarthquake}
                     shakeUrl={shakeUrl}
                     setShakeUrl={setShakeUrl}
                 />
@@ -268,6 +296,14 @@ const App = () => {
             </div>
 
             {showAbout && <About onClose={() => setShowAbout(false)} />}
+            {showRecentSelections && !isHeatmap && (
+                <RecentSelections
+                    earthquakes={recentSelections}
+                    onClose={() => setShowRecentSelections(false)}
+                    onClear={() => setRecentSelections([])}
+                    onView={viewRecentEarthquake}
+                />
+            )}
         </div>
     );
 };

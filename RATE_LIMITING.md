@@ -15,8 +15,9 @@ Rate limiting is request-frequency control, not total user capacity control. Ove
 | `/shakemap/<dt>` | 60 requests per minute per client |
 | `/earthquakes_csv` | 10 requests per minute per client |
 | `/health` | Exempt |
-| `/reconcile` | Exempt from rate limiting; localhost-only |
-| `/scrape-volcanoes` | Exempt from rate limiting; localhost-only |
+| `/reconcile` | 5 per minute; authenticated maintenance route |
+| `/scrape-volcanoes` | 5 per minute; authenticated maintenance route |
+| `/initialize-data` | 3 per hour; authenticated maintenance route |
 
 When a client exceeds a limit, Flask-Limiter returns HTTP `429 Too Many Requests`.
 
@@ -42,6 +43,6 @@ RATE_LIMIT_STORAGE=redis://redis-host:6379/0
 ## Production Notes
 
 - Keep `/health` exempt so uptime checks do not get blocked.
-- Keep `/reconcile` and `/scrape-volcanoes` localhost-only or move them behind authenticated/internal access.
+- Keep production maintenance routes protected by `X-Admin-Token`; do not enable the development loopback fallback on Pluto.
 - Prefer reverse-proxy or platform-level limits in front of Flask for public deployments.
 - If the app is deployed behind exactly one trusted proxy, set `TRUSTED_PROXY_COUNT=1` so per-client limits use the real client IP. Keep it at `0` for direct local development. Gunicorn must not be directly public when forwarded headers are trusted.

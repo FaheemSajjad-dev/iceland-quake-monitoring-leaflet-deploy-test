@@ -8,6 +8,7 @@ const T = {
     // App
     app_title: "Iceland MPGV Earthquake Map",
     about: "About",
+    recent_selections: "Recent selections",
     // LeftPanel controls
     show_controls: "Show controls",
     hide_controls: "Hide controls",
@@ -47,7 +48,7 @@ const T = {
     about_contact_desc: "For feedback, collaboration, or support:",
     about_credits: "Credits",
     about_disclaimer: "Disclaimer",
-    about_disclaimer_desc: "Optimized for desktop browsers; mobile support is limited.",
+    about_disclaimer_desc: "The responsive interface supports current desktop and mobile browsers. MapLibre views require WebGL.",
     about_version: "Version",
     about_university: "University of Iceland",
     // Heatmap legend
@@ -70,6 +71,7 @@ const T = {
     // App
     app_title: "MPGV Jarðskjálftakort Íslands",
     about: "Um",
+    recent_selections: "NÃ½leg val",
     // LeftPanel controls
     show_controls: "Sýna stýringar",
     hide_controls: "Fela stýringar",
@@ -109,7 +111,7 @@ const T = {
     about_contact_desc: "Fyrir endurgjöf, samstarf eða stuðning:",
     about_credits: "Þakkarorð",
     about_disclaimer: "Fyrirvari",
-    about_disclaimer_desc: "Fínstillt fyrir skjáborðsvafra; stuðningur við farsíma er takmarkaður.",
+    about_disclaimer_desc: "Skalanlegt viðmót styður nútíma skjáborðs- og farsímavafra. MapLibre sýnir krefjast WebGL.",
     about_version: "Útgáfa",
     about_university: "Háskóli Íslands",
     // Heatmap legend

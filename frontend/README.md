@@ -1,12 +1,12 @@
 # Iceland Earthquake Monitoring - Frontend
 
-React 18 + Vite frontend for the Iceland Earthquake Monitoring Leaflet app.
+React 18 + Vite frontend for MPGV Monitor.
 
 ## Stack
 
 - React 18 and Vite
-- react-leaflet 4, Leaflet, MapLibre GL, leaflet.heat
-- OpenFreeMap Positron, CARTO heatmap tiles, IMO terrain tiles, Esri imagery, and MapLibre label overlays
+- MapLibre GL and deck.gl
+- OpenFreeMap Positron/dark styles, IMO terrain tiles, and Esri imagery
 - Vitest + Testing Library
 
 ## Running
@@ -59,10 +59,9 @@ src/
 | Map | OpenFreeMap Positron vector basemap |
 | Satellite | Esri World Imagery |
 | Terrain | Icelandic Meteorological Office raster terrain tiles |
-| Gray | CARTO light basemap |
-| Heatmap | CARTO dark base with leaflet.heat density overlay |
+| Heatmap | OpenFreeMap dark style with a MapLibre density layer |
 
-The default **Map** layer uses the OpenFreeMap Positron vector style through MapLibre GL. MapLibre GL is also used for label overlays on some non-default layers, so Chrome, Safari, or Edge should allow WebGL/hardware graphics for those overlays.
+All current map views use MapLibre GL. The default **Map** layer uses the OpenFreeMap Positron vector style; Satellite and Terrain use raster sources with MapLibre labels. Current browsers must allow WebGL.
 
 ## Live Overlays
 
@@ -72,18 +71,20 @@ The default **Map** layer uses the OpenFreeMap Positron vector style through Map
 
 ## Current Map UI
 
-- Earthquake points use SVG Leaflet `L.circleMarker` rendering with separate invisible hit targets for easier selection.
+- Earthquake points use deck.gl scatterplot layers with separate invisible hit targets for easier selection.
 - The base layer label is **Map**.
-- The right-side volcano panel shifts the About button and bottom-right Leaflet controls so the scale and fault legend stay visible.
+- The right-side volcano panel shifts map controls so the scale and fault legend stay visible.
 - The faults legend shows solid red faults and dotted red fissures.
 - The lat/lon grid uses Iceland-focused spacing, one-decimal degree labels, fixed latitude label anchoring, and unlabeled latitude midlines.
 - Lat/lon labels become slightly stronger while the faults overlay is visible.
 - The bottom-right attribution is compact and reflects the active basemap plus EGDI/HIKE when faults are visible.
 - Earthquake and volcano info cards open at the upper-left map work area.
+- Recent Selections records the latest ten unique earthquake marker selections and can return to a selected event without changing filters or overlays.
+- The responsive layout supports desktop and mobile controls and information cards.
 
 ## Heatmap
 
 - Gradient: transparent to dark blue, steel blue, teal, amber, orange, and red.
 - Zoom-responsive radius keeps seismic belts visible across zoom levels.
 - Magnitude weights: M 3-4 -> 0.20, M 4-5 -> 0.30, M 5+ -> 0.45. Density remains the main signal.
-- `leaflet.heat` requires `window.L` before import, so it is loaded dynamically after `window.L = L`.
+- Heatmap is rendered by MapLibre and intentionally provides no individual marker selection or Recent Selections control.

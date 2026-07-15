@@ -2,12 +2,13 @@
 
 Work completed since 9 July 2026:
 
-- Refined the Leaflet controls, Iceland-focused latitude/longitude grid, scale positioning, fault/fissure legend, compact attribution, and responsive layout.
+- Refined the map controls, Iceland-focused latitude/longitude grid, scale positioning, fault/fissure legend, compact attribution, and responsive layout.
 - Improved earthquake interaction by keeping markers visually small while adding larger invisible click/touch targets.
 - Improved the volcano side panel and repositioned map controls so they remain usable when the panel is open.
 - Integrated MapLibre GL with OpenFreeMap as the default vector basemap and retained an automatic CARTO raster fallback when WebGL is unavailable.
 - Improved the MapLibre heatmap and aligned its timeline marker/neutral styling with the rest of the interface.
 - Tuned heatmap weights to emphasize event density without allowing larger magnitudes to dominate the visualization.
+- Added Recent Selections for the ten latest unique marker selections on Roadmap, Satellite, and Terrain; the control is hidden and its panel closes in Heatmap view.
 - Completed frontend lint, audit, build, and unit-test checks before deployment synchronization.
 
 Security features added or confirmed:
@@ -42,4 +43,4 @@ Items to discuss / future production work:
 - The current nginx/Gunicorn/SQLite setup is suitable for this project deployment. Static caching and PostgreSQL are future scaling options for sustained heavy traffic, not current application blockers.
 - If the service moves to multiple Gunicorn workers or servers, move Flask-Limiter counters from in-memory storage to shared Redis and add nginx/platform limits.
 - Run department/student stress testing as a future validation step and use the results to decide whether caching, Redis, or PostgreSQL is actually needed.
-- Update screenshots and thesis diagrams so they describe the current Leaflet/MapLibre architecture and interface.
+- Update screenshots and thesis diagrams so they describe the current MapLibre/deck.gl interface accurately.
