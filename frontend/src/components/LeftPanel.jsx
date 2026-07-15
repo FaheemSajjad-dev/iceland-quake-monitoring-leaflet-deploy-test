@@ -23,6 +23,7 @@ const LeftPanel = ({
   onResetView,
   onShowAbout,
   onShowRecentSelections,
+  onShowAnalysis,
   collapsed,
   onCollapsedChange,
   isMobile,
@@ -182,6 +183,11 @@ const LeftPanel = ({
           {lang === 'en' ? 'IS' : 'EN'}
         </button>
 
+        <button className="left-panel__map-action-btn" onClick={onShowAnalysis} title={t('analysis')} aria-label={t('analysis')}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19V3"/><path d="M2 19h20"/>
+          </svg>
+        </button>
         <button className="left-panel__map-action-btn about-action" onClick={onShowAbout} title={t('about')} aria-label={t('about')}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 5.5C4 4.7 4.7 4 5.5 4H10c1.1 0 2 .9 2 2v14c0-1.1-.9-2-2-2H5.5C4.7 18 4 17.3 4 16.5v-11Z" />

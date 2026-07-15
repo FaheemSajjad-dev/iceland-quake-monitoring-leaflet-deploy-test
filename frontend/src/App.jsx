@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import MapComponent from "./components/MapComponent";
 import LeftPanel from "./components/LeftPanel";
 import MapTypeSelector from "./components/MapTypeSelector";
@@ -10,7 +10,11 @@ import { parseBackendUtcDate } from "./utils/datetime";
 import "./App.css";
 
 const MIN_MAGNITUDE = 3.0;
+const AnalysisPage = lazy(() => import("./analysis/AnalysisPage"));
 const App = () => {
+    const [route, setRoute] = useState(() => window.location.pathname.endsWith("/analysis") ? "analysis" : "map");
+    const [dataLoading, setDataLoading] = useState(true);
+    const [dataLoadError, setDataLoadError] = useState(false);
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     const currentDay = new Date().getDate();
@@ -74,6 +78,12 @@ const App = () => {
     const responsiveModeRef = useRef(isMobile);
 
     useEffect(() => {
+        const onPopState = () => setRoute(window.location.pathname.endsWith("/analysis") ? "analysis" : "map");
+        window.addEventListener("popstate", onPopState);
+        return () => window.removeEventListener("popstate", onPopState);
+    }, []);
+
+    useEffect(() => {
         if (typeof window === "undefined") return undefined;
         const query = window.matchMedia("(max-width: 767px)");
         const update = () => {
@@ -109,10 +119,14 @@ const App = () => {
         try {
             const data = await fetchEarthquakeData();
             setAllData(data);
+            setDataLoadError(!data.length);
             const volcanoes = await fetchVolcanoData();
             setVolcanoData(volcanoes);
         } catch (error) {
             console.error("Error loading data:", error);
+            setDataLoadError(true);
+        } finally {
+            setDataLoading(false);
         }
     }, []);
 
@@ -205,9 +219,26 @@ const App = () => {
         setFocusEarthquake({ quake, requestId: Date.now() });
     }, [handleMapTypeChange, mapType, selectEarthquake]);
 
+    const navigate = useCallback(nextRoute => {
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const analysisPath = base ? `${base}/analysis` : "/mpgv/analysis";
+        const path = nextRoute === "analysis" ? analysisPath : `${base}/`.replace(/\/+/g, "/");
+        window.history.pushState({}, "", path);
+        setRoute(nextRoute);
+    }, []);
+
+    const viewAnalysisEarthquake = useCallback(quake => {
+        navigate("map");
+        if (mapType === "heatmap") handleMapTypeChange("roadmap");
+        const original = allData.find(item => item["Date-time"] === quake["Date-time"] && Number(item.Latitude) === quake.latitude && Number(item.Longitude) === quake.longitude) ?? quake;
+        selectEarthquake(original);
+        setFocusEarthquake({ quake: original, requestId: Date.now() });
+    }, [allData, handleMapTypeChange, mapType, navigate, selectEarthquake]);
+
     return (
         <div className="app-container">
-            <div className={`map-container${rightPanelOpen ? " right-panel-open" : ""}${!isMobile && leftPanelCollapsed ? " title-left" : ""}${isMobile && !leftPanelCollapsed ? " mobile-left-panel-open" : ""}`}>
+            {route === "analysis" && <Suspense fallback={<div className="route-loading">Loading analysis…</div>}><AnalysisPage earthquakes={allData} loading={dataLoading} loadError={dataLoadError} onMap={() => navigate("map")} onViewMap={viewAnalysisEarthquake} /></Suspense>}
+            <div aria-hidden={route === "analysis"} className={`map-container${route === "analysis" ? " route-hidden" : ""}${rightPanelOpen ? " right-panel-open" : ""}${!isMobile && leftPanelCollapsed ? " title-left" : ""}${isMobile && !leftPanelCollapsed ? " mobile-left-panel-open" : ""}`}>
                 <div className="map-type-control-container">
                     <MapTypeSelector onMapTypeChange={handleMapTypeChange} selectedType={mapType} />
                 </div>
@@ -252,6 +283,7 @@ const App = () => {
                     onResetView={resetView}
                     onShowAbout={openAbout}
                     onShowRecentSelections={openRecentSelections}
+                    onShowAnalysis={() => navigate("analysis")}
                     collapsed={leftPanelCollapsed}
                     isMobile={isMobile}
                     selectedEarthquake={selectedEarthquake}
@@ -295,7 +327,7 @@ const App = () => {
 
             </div>
 
-            {showAbout && <About onClose={() => setShowAbout(false)} />}
+            {route === "map" && showAbout && <About onClose={() => setShowAbout(false)} />}
             {showRecentSelections && !isHeatmap && (
                 <RecentSelections
                     earthquakes={recentSelections}

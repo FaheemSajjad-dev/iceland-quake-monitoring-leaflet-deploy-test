@@ -21,7 +21,7 @@ The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the sour
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, Vite, MapLibre GL, deck.gl |
+| Frontend | React 18, Vite, MapLibre GL, deck.gl, Recharts |
 | Map tiles | OpenFreeMap Positron/dark styles, IMO terrain, Esri World Imagery |
 | Backend | Python 3, Flask, SQLAlchemy, APScheduler |
 | Database | SQLite with WAL mode |
@@ -78,6 +78,12 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 - Responsive desktop and mobile controls and information layouts
 - MapLibre Heatmap mode for density-first analysis with subdued per-event weights; individual selection is unavailable in this view
 - Earthquake and volcano info cards positioned near the upper-left map work area
+- Dedicated `/mpgv/analysis` page with shared date, magnitude, depth, source, and time-grouping filters
+- Responsive summary cards and six interactive charts with tooltips, range brushes, and PNG/SVG/CSV chart exports
+- Strongest and recent earthquake tables with sorting, pagination, and marker-focused **View on map** handoff
+- Filtered catalogue CSV download and print-ready analysis output for browser PDF saving
+- Depth analysis defaults to Quakes API reference depths from matched events; MPGV-only depths remain raw and can be included with explicit unverified labels
+- Reference and unverified depths are separated in charts, tooltips, tables, and CSV exports, with extreme raw values grouped into a labelled overflow bin
 
 ## Map Layers
 
@@ -111,6 +117,7 @@ iceland-quake-monitoring-leaflet/
 |   `-- tests/                  # pytest tests
 `-- frontend/
     |-- src/
+    |   |-- analysis/           # Analysis page, charts, filters, tables, transforms, exports
     |   |-- components/         # Map, panels, overlays, slider, scale
     |   |-- api.js              # API helpers
     |   `-- __tests__/          # Vitest component tests

@@ -9,6 +9,7 @@ const T = {
     app_title: "Iceland MPGV Earthquake Map",
     about: "About",
     recent_selections: "Recent selections",
+    analysis: "Data analysis",
     // LeftPanel controls
     show_controls: "Show controls",
     hide_controls: "Hide controls",
@@ -70,6 +71,7 @@ const T = {
   is: {
     // App
     app_title: "MPGV Jarðskjálftakort Íslands",
+    analysis: "Gagnagreining",
     about: "Um",
     recent_selections: "NÃ½leg val",
     // LeftPanel controls

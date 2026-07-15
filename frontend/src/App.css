@@ -35,6 +35,8 @@ body,
   min-height: 0;
   position: relative;
 }
+.map-container.route-hidden{display:none}
+.route-loading{display:grid;min-height:100%;place-items:center;background:#f5f7fa;color:#486581}
 
 /* Header and Controls */
 .controls {

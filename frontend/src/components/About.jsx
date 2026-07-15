@@ -3,7 +3,7 @@ import "./About.css";
 import { API_URL } from "../api";
 import { useLang, useT } from "../i18n";
 
-const VERSION = "1.3";
+const VERSION = "1.4";
 
 const DATA_CADENCE = {
   en: [
@@ -146,6 +146,9 @@ const About = ({ onClose }) => {
           <section className="about-section">
             <h3>{t("about_overview")}</h3>
             <Copy lang={lang} />
+            <p>{lang === "en"
+              ? "The responsive Data Analysis page provides filtered statistics, interactive charts, tables, downloads, and print/PDF output. Depth analysis defaults to Quakes API reference depths from matched events. MPGV-only depths can be included as explicitly unverified values; raw depths are preserved and never silently corrected."
+              : "Gagnagreiningarsíðan býður upp á síaðar samantektir, gagnvirk gröf, töflur, niðurhal og prentun/PDF í farsímum og tölvum. Dýptargreining notar sjálfgefið viðmiðunardýpi Quakes API úr samsvöruðum atburðum. Hægt er að taka MPGV-dýpi með sem óstaðfest gildi; hráum dýptargildum er aldrei breytt í hljóði."}</p>
           </section>
 
           <section className="about-section">
