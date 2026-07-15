@@ -49,6 +49,15 @@ Deployment notes:
 - deploy.sh installs dependencies, builds frontend assets, stops the old Gunicorn process, and starts the backend on port 6000.
 - Root-level deploy files such as deploy.sh, stop.sh, render.yaml, package files, and README files should be uploaded from the deploy F project when changed.
 
+HTTPS investigation (confirmed 15 July 2026):
+
+- The application is configured correctly; Flask, React, Gunicorn, and deploy.sh are not the reason the public site uses HTTP.
+- Gunicorn correctly serves plain HTTP only on the private loopback address 127.0.0.1:6000 and is not directly exposed to the internet.
+- Pluto's nginx reverse proxy currently listens only on port 80 and proxies /mpgv/ to Gunicorn at http://127.0.0.1:6000/.
+- Pluto has no active port 443 listener or TLS certificate configuration; an HTTPS request to pluto.cs.hi.is therefore cannot connect.
+- This cannot be fixed properly in the application codebase. The Pluto server administrator must configure a TLS certificate and nginx port 443 listener, proxy HTTPS /mpgv/ traffic to the existing Gunicorn service, and redirect HTTP to HTTPS.
+- No application-code or Gunicorn change is required after the server-side HTTPS configuration is enabled.
+
 Production considerations still open:
 
 - Review tile-provider licensing before formal public or institutional deployment.
