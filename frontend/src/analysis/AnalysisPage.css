@@ -309,6 +309,24 @@
   height: 330px;
   margin-top: 14px;
 }
+.magnitude-depth-chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.analysis-touch-tooltip {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  max-width: calc(100% - 16px);
+  pointer-events: none;
+}
+@media (hover: none), (pointer: coarse) {
+  .magnitude-depth-chart {
+    touch-action: none;
+  }
+}
 .time-chart-with-range {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;

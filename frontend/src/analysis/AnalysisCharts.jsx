@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -125,6 +125,32 @@ const ScatterTooltip = ({ active, payload, text }) => {
       </span>
     </div>
   ) : null;
+};
+
+const ScatterPoint = ({ cx, cy, fill, payload, variant = "circle" }) => {
+  if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null;
+  const touchTarget = { "data-touch-record-id": String(payload.id) };
+  return (
+    <g>
+      <circle
+        {...touchTarget}
+        cx={cx}
+        cy={cy}
+        r={12}
+        fill="transparent"
+        stroke="none"
+      />
+      {variant === "diamond" ? (
+        <path
+          {...touchTarget}
+          d={`M ${cx} ${cy - 5} L ${cx + 5} ${cy} L ${cx} ${cy + 5} L ${cx - 5} ${cy} Z`}
+          fill={fill}
+        />
+      ) : (
+        <circle {...touchTarget} cx={cx} cy={cy} r={3.5} fill={fill} />
+      )}
+    </g>
+  );
 };
 
 const useTimeRange = (data) => {
@@ -321,8 +347,29 @@ export default function AnalysisCharts({
 }) {
   const [zoomKey, setZoomKey] = useState(0);
   const isTouchPointer = useTouchPointer();
+  const [touchedRecord, setTouchedRecord] = useState(null);
   const resetZoom = () => setZoomKey((value) => value + 1);
   const series = analysis.timeSeries;
+  const depthRecordsById = useMemo(
+    () => new Map(depthRecords.map((item) => [String(item.id), item])),
+    [depthRecords],
+  );
+  useEffect(() => setTouchedRecord(null), [depthRecords]);
+  const updateTouchedRecord = (event, dismissWhenEmpty = false) => {
+    if (!isTouchPointer) return;
+    event.preventDefault();
+    const touch = event.touches?.[0];
+    const point = touch
+      ? document
+          .elementFromPoint(touch.clientX, touch.clientY)
+          ?.closest?.("[data-touch-record-id]")
+      : null;
+    const record = point
+      ? depthRecordsById.get(point.getAttribute("data-touch-record-id"))
+      : null;
+    if (record) setTouchedRecord(record);
+    else if (dismissWhenEmpty) setTouchedRecord(null);
+  };
   const showUnverified = depthRecords.some(
     (item) => item.depthQuality === "unverified_mpgv",
   );
@@ -385,8 +432,13 @@ export default function AnalysisCharts({
         title={text.magnitudeDepth}
         text={text}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ right: 18 }}>
+        <div
+          className="magnitude-depth-chart"
+          onTouchStart={(event) => updateTouchedRecord(event, true)}
+          onTouchMove={(event) => updateTouchedRecord(event)}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ right: 18 }}>
             <CartesianGrid />
             <XAxis type="number" dataKey="depth" name={text.depth} unit=" km" />
             <YAxis
@@ -397,8 +449,9 @@ export default function AnalysisCharts({
             />
             <ZAxis range={[35, 35]} />
             <Tooltip
+              active={isTouchPointer ? false : undefined}
               content={<ScatterTooltip text={text} />}
-              trigger={isTouchPointer ? "click" : "hover"}
+              trigger="hover"
             />
             <Legend />
             <Scatter
@@ -407,6 +460,7 @@ export default function AnalysisCharts({
                 (item) => item.depthQuality === "reference",
               )}
               fill={COLORS.teal}
+              shape={(props) => <ScatterPoint {...props} />}
               isAnimationActive={false}
             />
             {showUnverified && (
@@ -416,12 +470,24 @@ export default function AnalysisCharts({
                   (item) => item.depthQuality === "unverified_mpgv",
                 )}
                 fill={COLORS.orange}
-                shape="diamond"
+                shape={(props) => (
+                  <ScatterPoint {...props} variant="diamond" />
+                )}
                 isAnimationActive={false}
               />
             )}
-          </ScatterChart>
-        </ResponsiveContainer>
+            </ScatterChart>
+          </ResponsiveContainer>
+          {isTouchPointer && touchedRecord && (
+            <div className="analysis-touch-tooltip" aria-live="polite">
+              <ScatterTooltip
+                active
+                payload={[{ payload: touchedRecord }]}
+                text={text}
+              />
+            </div>
+          )}
+        </div>
       </ChartCard>
       <ChartCard
         id="average-magnitude-time"
