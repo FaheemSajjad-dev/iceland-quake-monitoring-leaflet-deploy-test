@@ -42,6 +42,27 @@ const tooltipStyle = {
   boxShadow: "0 6px 20px rgba(20,40,70,.12)",
 };
 
+const TOUCH_POINTER_QUERY = "(hover: none), (pointer: coarse)";
+
+const useTouchPointer = () => {
+  const [isTouchPointer, setIsTouchPointer] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia(TOUCH_POINTER_QUERY).matches
+      : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const mediaQuery = window.matchMedia(TOUCH_POINTER_QUERY);
+    const updatePointerType = () => setIsTouchPointer(mediaQuery.matches);
+    updatePointerType();
+    mediaQuery.addEventListener?.("change", updatePointerType);
+    return () => mediaQuery.removeEventListener?.("change", updatePointerType);
+  }, []);
+
+  return isTouchPointer;
+};
+
 const TimeTooltip = ({ active, payload, text }) => {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -299,6 +320,7 @@ export default function AnalysisCharts({
   text,
 }) {
   const [zoomKey, setZoomKey] = useState(0);
+  const isTouchPointer = useTouchPointer();
   const resetZoom = () => setZoomKey((value) => value + 1);
   const series = analysis.timeSeries;
   const showUnverified = depthRecords.some(
@@ -374,7 +396,10 @@ export default function AnalysisCharts({
               domain={["dataMin - 0.1", "dataMax + 0.1"]}
             />
             <ZAxis range={[35, 35]} />
-            <Tooltip content={<ScatterTooltip text={text} />} />
+            <Tooltip
+              content={<ScatterTooltip text={text} />}
+              trigger={isTouchPointer ? "click" : "hover"}
+            />
             <Legend />
             <Scatter
               name={text.referenceDepth}
