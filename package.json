@@ -1,7 +1,7 @@
 {
   "name": "iceland-quake-monitoring-leaflet",
   "private": true,
-  "description": "Iceland earthquake, volcano, and fault monitoring map built with MapLibre GL and deck.gl.",
+  "description": "Iceland earthquake monitoring map and Insights application built with React, MapLibre GL, deck.gl, and Flask.",
   "scripts": {
     "dev": "./run-local.sh",
     "dev:stop": "./stop-local.sh"

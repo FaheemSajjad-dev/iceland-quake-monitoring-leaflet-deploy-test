@@ -1333,7 +1333,6 @@ const MapComponent = ({
     setLoadedMapType(null);
   }, [mapType]);
 
-  // Clear selections when switching to heatmap
   useEffect(() => {
     if (mapType === "heatmap") {
       setSelectedEarthquake(null);

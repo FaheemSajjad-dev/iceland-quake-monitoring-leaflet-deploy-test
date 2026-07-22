@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "React and MapLibre frontend for Iceland earthquake, volcano, and fault monitoring.",
+  "description": "React frontend for the MPGV Monitor map and earthquake Insights page.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

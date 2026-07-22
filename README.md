@@ -1,10 +1,10 @@
 # MPGV Monitor
 
-Near-real-time Iceland earthquake monitoring web application built as part of an MSc thesis at the University of Iceland.
+Near-real-time Iceland earthquake monitoring and Insights application built as part of an MSc thesis at the University of Iceland.
 
 ## Overview
 
-The app visualizes Icelandic earthquakes from June 2020 onward, focusing on events with **M >= 3.0**. A Flask backend ingests and reconciles earthquake data, refreshes volcano metadata, and serves a merged catalogue to a responsive React/MapLibre interface. The application does not use Google Maps or require a Google Maps API key.
+The app visualizes Icelandic earthquakes from June 2020 onward, focusing on events with **M >= 3.0**. A Flask backend ingests and reconciles earthquake data, refreshes volcano metadata, and serves a merged catalogue to a responsive React interface with a MapLibre map and a separate Insights page. The application does not use Google Maps or require a Google Maps API key.
 
 ## Current Deployment
 
@@ -78,12 +78,24 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 - Responsive desktop and mobile controls and information layouts
 - MapLibre Heatmap mode for density-first analysis with subdued per-event weights; individual selection is unavailable in this view
 - Earthquake and volcano info cards positioned near the upper-left map work area
-- Dedicated `/mpgv/analysis` page with shared date, magnitude, depth, source, and time-grouping filters
-- Responsive summary cards and six interactive charts with tooltips, range brushes, and PNG/SVG/CSV chart exports
-- Strongest and recent earthquake tables with sorting, pagination, and marker-focused **View on map** handoff
-- Filtered catalogue CSV download and print-ready analysis output for browser PDF saving
+- Dedicated Insights page at `/mpgv/analysis`, linked from the map with matching navigation and visual identity
+- Date, minimum/maximum magnitude, minimum/maximum depth, depth-quality, data-category, and day/week/month/year grouping filters
+- Responsive summary cards and five interactive charts: magnitude distribution, depth distribution, magnitude versus depth, average magnitude over time, and data category over time
+- Hover tooltips on desktop and touch tracking on the magnitude-versus-depth chart; time charts include range brushes and explicit visible range labels
+- Recent and strongest earthquake tables with sorting, five rows per page, pagination, and **View on map** handoff
+- Filtered-catalogue CSV download and print-ready Insights output for browser PDF saving
 - Depth analysis defaults to Quakes API reference depths from matched events; MPGV-only depths remain raw and can be included with explicit unverified labels
 - Reference and unverified depths are separated in charts, tooltips, tables, and CSV exports, with extreme raw values grouped into a labelled overflow bin
+
+## Insights
+
+The Insights page analyzes the same merged catalogue loaded by the map. The map action opens `/mpgv/analysis`; its home action returns to the map, and **View on map** returns with the selected earthquake focused while preserving the map's current filters and overlays.
+
+On initial load, the page waits for both the earthquake catalogue and two policy-specific responses from `GET /insights/limits`. That endpoint calculates the current catalogue magnitude minimum/maximum and the eligible depth minimum/maximum for either `reference_only` or `include_unverified`. Filter fields use those dynamic limits, clamp values on blur or policy changes, and reject invalid date or numeric ranges before applying them.
+
+Depth statistics use matched IMO Quakes API depths by default. Users may explicitly include raw MPGV-only depths as unverified values. This policy affects depth limits, depth filtering, summary statistics, histogram series, scatter points, tooltips, table labels, and exported CSV metadata; it does not silently modify source depth values.
+
+The Recent table contains the ten newest filtered events and the Strongest table contains the ten strongest filtered events. Both display five rows at a time and allow sorting by date or magnitude. Insights is responsive: filters collapse on narrow screens, tables scroll horizontally when needed, and charts resize for mobile and desktop.
 
 ## Map Layers
 
@@ -117,7 +129,7 @@ iceland-quake-monitoring-leaflet/
 |   `-- tests/                  # pytest tests
 `-- frontend/
     |-- src/
-    |   |-- analysis/           # Analysis page, charts, filters, tables, transforms, exports
+    |   |-- analysis/           # Insights page, charts, filters, tables, transforms, CSV export
     |   |-- components/         # Map, panels, overlays, slider, scale
     |   |-- api.js              # API helpers
     |   `-- __tests__/          # Vitest component tests

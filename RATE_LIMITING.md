@@ -10,6 +10,7 @@ Rate limiting is request-frequency control, not total user capacity control. Ove
 |---|---:|
 | Application default | 300 requests per minute per client |
 | `/earthquakes` | 120 requests per minute per client |
+| `/insights/limits` | 120 requests per minute per client |
 | `/volcanoes` | 120 requests per minute per client |
 | `/shakemap_lookup` | 60 requests per minute per client |
 | `/shakemap/<dt>` | 60 requests per minute per client |

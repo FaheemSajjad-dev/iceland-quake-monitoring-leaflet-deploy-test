@@ -8,8 +8,8 @@ Measure how the application behaves under concurrent public use, including map i
 
 | Area | What to observe |
 |---|---|
-| Frontend responsiveness | Map pan/zoom, slider movement, overlay toggles, info-card opening |
-| Backend API | `/earthquakes`, `/volcanoes`, `/shakemap_lookup`, `/earthquakes_csv`, `/health` |
+| Frontend responsiveness | Map pan/zoom, slider movement, overlay toggles, info-card opening, Insights filtering and charts |
+| Backend API | `/earthquakes`, `/insights/limits`, `/volcanoes`, `/shakemap_lookup`, `/earthquakes_csv`, `/health` |
 | Scheduler impact | Scrape/reconcile job timing, SQLite lock behavior, CPU and memory use |
 | External services | Map tile latency, EGDI/HIKE fault WFS first-load time, EPOS/IMO response behavior |
 
@@ -21,6 +21,7 @@ Measure how the application behaves under concurrent public use, including map i
 - The MapLibre Heatmap is density-first and uses weights of 0.20/0.30/0.45 by magnitude band.
 - The bottom-right attribution is compact and changes with the active basemap and faults overlay.
 - Flask-Limiter applies per-client limits to public API/export endpoints; expect HTTP 429 when deliberate load tests exceed configured limits.
+- Insights uses the loaded merged catalogue plus policy-specific `/insights/limits` responses. Its two tables show five rows per page, and its exports are client-side filtered CSV or browser print/PDF.
 
 ## Local Verification Before Load Testing
 
@@ -49,6 +50,7 @@ Ask testers to use the app for 3 to 5 minutes while repeating these actions:
 - Open Recent Selections and return to a recorded earthquake.
 - Try a ShakeMap lookup on eligible earthquake cards.
 - Export CSV once per tester group, not repeatedly.
+- Open Insights, change each filter type, move both time-chart brushes, inspect desktop or touch tooltips, paginate both tables, and return an event to the map.
 
 Collect:
 
@@ -70,6 +72,9 @@ ab -n 1000 -c 100 http://HOST/earthquakes
 
 # Volcano endpoint
 ab -n 200 -c 20 http://HOST/volcanoes
+
+# Insights limits endpoint
+ab -n 200 -c 20 'http://HOST/insights/limits?depth_quality=reference_only'
 
 # Health endpoint
 ab -n 200 -c 20 http://HOST/health

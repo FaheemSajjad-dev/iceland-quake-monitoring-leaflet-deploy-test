@@ -1,6 +1,6 @@
 # Iceland Earthquake Monitoring - Frontend
 
-React 18 + Vite frontend for MPGV Monitor.
+React 18 + Vite frontend for the MPGV Monitor map and Insights page.
 
 ## Stack
 
@@ -47,10 +47,24 @@ npm test
 
 ```text
 src/
+|-- analysis/           # Insights filters, summaries, charts, tables, and CSV export
 |-- components/         # Map, overlays, panels, slider, scale, markers
 |-- api.js              # API helpers pointing to localhost in dev and same-origin in production
 `-- __tests__/          # Vitest component tests
 ```
+
+## Insights
+
+The separate `/analysis` route (served as `/mpgv/analysis` on Pluto) is linked from the map and can return selected table events to the map. It analyzes the same merged earthquake catalogue and provides:
+
+- Date, magnitude, depth, depth-quality, data-category, and time-grouping filters.
+- Dynamic magnitude and policy-specific depth bounds from `GET /insights/limits`; numeric entries are clamped to catalogue bounds and invalid ranges are rejected.
+- Summary cards plus five Recharts visualizations: magnitude distribution, depth distribution, magnitude versus depth, average magnitude over time, and category counts over time.
+- Desktop tooltips, touch interaction for the magnitude-versus-depth scatter plot, and range brushes on both time-series charts.
+- Recent and strongest tables with sorting, five rows per page, pagination, and **View on map** actions.
+- Filtered CSV export and print/PDF output.
+
+Depth analysis defaults to matched IMO Quakes API depths. Raw MPGV-only depths can be included explicitly as unverified values; the interface preserves and labels those values rather than correcting them.
 
 ## Map Layers
 

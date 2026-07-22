@@ -75,16 +75,16 @@ The app currently uses OpenFreeMap, Esri, CARTO, IMO, EPOS, the Quakes API, MPGV
 
 EGDI/HIKE fault and fissure linework is treated as reference data: the frontend fetches it on first use and keeps an in-memory cache for later overlay toggles. Earthquake and volcano data remain the live-refreshing datasets.
 
-## 8. Frontend Dependency Audit - DONE
+## 8. Frontend Dependency Audit - REQUIRED
 
-The local frontend dependency tree is expected to pass:
+Run the dependency audit as part of each release review:
 
 ```bash
 cd frontend
 npm audit --audit-level=low
 ```
 
-`frontend/package.json` includes an `overrides.esbuild` entry to keep Vite's esbuild dependency on a fixed version while staying compatible with the local Node 20 runtime. `frontend/vite.config.js` sets both production build and dev dependency optimization targets to `esnext`.
+Review and resolve reported advisories in context; do not assume a clean result from a previous installation or deployment. `frontend/package.json` includes an `overrides.esbuild` entry to keep Vite's esbuild dependency on a fixed version while staying compatible with the local Node 20 runtime. `frontend/vite.config.js` sets both production build and dev dependency optimization targets to `esnext`.
 
 ## 9. Rate Limiting - DONE
 

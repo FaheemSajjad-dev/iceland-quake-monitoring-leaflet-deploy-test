@@ -12,7 +12,6 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
   );
   const roundMagnitude = (value) => Math.round(value * 10) / 10;
 
-  // Clamp filterValue if maxMagnitude shrinks (e.g. time window change), so indicator stays on-screen
   useEffect(() => {
     setFilterValue(prev => clampMagnitude(prev));
   }, [clampMagnitude, minMagnitude, maxMagnitude]);

@@ -68,7 +68,7 @@ const Copy = ({ lang }) => lang === "en" ? (
       fault and fissure geometry.
     </p>
     <p>
-      Roadmap, Satellite, and Terrain views provide selectable earthquake markers,
+      Map, Satellite, and Terrain views provide selectable earthquake markers,
       information cards, timeline or magnitude colouring, time and magnitude filters,
       and a ten-item Recent Selections history. Volcanoes, faults, and the latitude/
       longitude grid can be shown as overlays. The responsive controls support both
@@ -146,9 +146,13 @@ const About = ({ onClose }) => {
           <section className="about-section">
             <h3>{t("about_overview")}</h3>
             <Copy lang={lang} />
+          </section>
+
+          <section className="about-section">
+            <h3>{lang === "en" ? "Insights" : "Jarðskjálftayfirlit"}</h3>
             <p>{lang === "en"
-              ? "The responsive Earthquake Insights page provides filtered statistics, interactive charts, tables, downloads, and print/PDF output. Depth statistics default to matched depths. MPGV-only depths can be included as explicitly unverified values; raw depths are preserved and never silently corrected."
-              : "Jarðskjálftayfirlitið býður upp á síaðar samantektir, gagnvirk gröf, töflur, niðurhal og prentun/PDF í farsímum og tölvum. Dýptartölfræði notar sjálfgefið samsvöruð dýpi. Hægt er að taka MPGV-dýpi með sem óstaðfest gildi; hráum dýptargildum er aldrei breytt í hljóði."}</p>
+              ? "MPGV Monitor includes a responsive Insights page, opened from the main map with the same visual identity and a clear return to the map. Users can filter the reconciled earthquake catalogue by date, magnitude, depth, depth quality, and data category; review summary statistics and visual charts; inspect recent and strongest events; download the filtered data as CSV or print it to PDF; and open selected earthquakes directly on the map. Matched depths are used by default, while raw MPGV-only depths can be included as clearly labelled unverified values."
+              : "MPGV Monitor inniheldur skalanlegt jarðskjálftayfirlit sem er opnað af aðalkortinu, notar sama útlit og býður skýra leið aftur á kortið. Notendur geta síað samræmda jarðskjálftaskrá eftir dagsetningu, stærð, dýpi, gæðum dýpis og gagnaflokki; skoðað samantektir og myndræn gröf; kannað nýjustu og stærstu atburðina; sótt síuð gögn sem CSV eða prentað í PDF; og opnað valda jarðskjálfta beint á kortinu. Samsvöruð dýpi eru notuð sjálfgefið en hægt er að taka hrá MPGV-dýpi með sem skýrt merkt óstaðfest gildi."}</p>
           </section>
 
           <section className="about-section">

@@ -64,9 +64,6 @@ def parse_bool(value: str | None, default: bool = False) -> bool:
 APP_ENV = os.environ.get("APP_ENV", os.environ.get("FLASK_ENV", "production")).strip().lower()
 IS_DEVELOPMENT = APP_ENV in {"development", "dev", "local", "test"}
 
-# -----------------------------------------------------------------------------
-# App and DB setup
-# -----------------------------------------------------------------------------
 app = Flask(__name__)
 
 TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
@@ -75,7 +72,7 @@ if TRUSTED_PROXY_COUNT:
         raise RuntimeError("TRUSTED_PROXY_COUNT must be 0 or 1 for the supported topology.")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
-# Restrict CORS to known frontend dev origins. Production is same-origin on Render/Pluto.
+# Restrict CORS to known development origins; Pluto serves the frontend and API same-origin.
 _ALLOWED_ORIGINS = [
     f"http://localhost:{FRONTEND_PORT}",
     f"http://127.0.0.1:{FRONTEND_PORT}",
@@ -200,9 +197,6 @@ with app.app_context():
     except Exception:
         db.session.rollback()
 
-# -----------------------------------------------------------------------------
-# Models
-# -----------------------------------------------------------------------------
 class Earthquake(db.Model):
     """MPGV source table (v)."""
     id = db.Column(db.Integer, primary_key=True)
@@ -283,9 +277,6 @@ class ShakeMapLink(db.Model):
     status  = db.Column(db.String)  # "valid" | "no_candidate" | "no_valid" | "error"
     note    = db.Column(db.String)
 
-# -----------------------------------------------------------------------------
-# DB init
-# -----------------------------------------------------------------------------
 def create_tables() -> None:
     with app.app_context():
         db.create_all()
@@ -411,9 +402,6 @@ def handle_http_error(error):
         response.headers["Retry-After"] = str(error.retry_after)
     return response
 
-# -----------------------------------------------------------------------------
-# Scheduled job
-# -----------------------------------------------------------------------------
 def _refresh_derived_data() -> None:
     """Fetch secondary sources and rebuild derived tables."""
     sys.path.append(CURRENT_FILE_PATH)
@@ -535,9 +523,6 @@ def ensure_background_services() -> None:
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_background_services()
 
-# -----------------------------------------------------------------------------
-# Routes
-# -----------------------------------------------------------------------------
 @app.route("/assets/<path:path>", methods=["GET"])
 @limiter.exempt
 def frontend_assets(path):
@@ -572,7 +557,6 @@ def get_earthquake_data():
     if not isinstance(days, int) and days is not None:
         return days
 
-    # Serve from cache only for the default "all" case
     if days is None:
         now = time.time()
         if _eq_cache["data"] is not None and (now - _eq_cache["ts"]) < _EQ_CACHE_TTL:
@@ -781,7 +765,6 @@ def health():
         })
 
 
-# --- Simple EPOS shakemap lookup for one event -------------------------------
 def _km_distance(lat1, lon1, lat2, lon2):
     # Local copy keeps ShakeMap lookup independent from reconcile.py imports.
     R = 6371.0
@@ -818,7 +801,6 @@ def shakemap_lookup():
         logging.exception("shakemap_lookup fetch failed")
         return jsonify({"found": False, "reason": "upstream fetch error"}), 502
 
-    # pick the closest in time+space with simple thresholds
     best = None
     best_score = 1e18
     for it in items:
@@ -828,7 +810,6 @@ def shakemap_lookup():
             dt = datetime.strptime(ot_norm[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             dmin = abs((dt - evt_dt).total_seconds()) / 60.0
             dkm = _km_distance(lat, lon, float(it["latitude"]), float(it["longitude"]))
-            # combine; time weighs more than distance here
             score = dmin * 3 + dkm
             if score < best_score:
                 best_score = score
@@ -836,7 +817,6 @@ def shakemap_lookup():
         except Exception:
             continue
 
-    # only accept if reasonably close
     if not best:
         return jsonify({"found": False})
     if best["dmin"] > 180 or best["dkm"] > 200:
@@ -856,7 +836,6 @@ def shakemap_lookup():
     })
 
 
-# --- Return validated ShakeMap URL for an event -----------------------------
 @app.route("/shakemap/<dt>", methods=["GET"])
 @limiter.limit(lambda: rate_limit("SHAKEMAP", "60 per minute"))
 def shakemap(dt):
@@ -878,9 +857,6 @@ def shakemap(dt):
     }, 200
 
 
-# -----------------------------------------------------------------------------
-# Entrypoint
-# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     print(f"Starting server with database at: {DB_PATH}")
     start_background_services()
