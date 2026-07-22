@@ -27,7 +27,7 @@ body,
   --action-button-size: 34px;
   --action-button-gap: 8px;
   --action-card-gap: 10px;
-  --action-rail-height: calc(var(--action-button-size) * 5 + var(--action-button-gap) * 4);
+  --action-rail-height: calc(var(--action-button-size) * 6 + var(--action-button-gap) * 5);
   flex: 1 1 auto;
   width: 100%;
   height: 100%;
