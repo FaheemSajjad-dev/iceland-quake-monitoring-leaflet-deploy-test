@@ -15,6 +15,7 @@ const App = () => {
     const [route, setRoute] = useState(() => window.location.pathname.endsWith("/analysis") ? "analysis" : "map");
     const [dataLoading, setDataLoading] = useState(true);
     const [dataLoadError, setDataLoadError] = useState(false);
+    const [dataRetry, setDataRetry] = useState(0);
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     const currentDay = new Date().getDate();
@@ -115,26 +116,51 @@ const App = () => {
         return () => clearTimeout(t);
     }, [selectedVolcano]);
 
-    const loadData = useCallback(async () => {
-        try {
-            const data = await fetchEarthquakeData();
-            setAllData(data);
-            setDataLoadError(!data.length);
-            const volcanoes = await fetchVolcanoData();
-            setVolcanoData(volcanoes);
-        } catch (error) {
-            console.error("Error loading data:", error);
-            setDataLoadError(true);
-        } finally {
-            setDataLoading(false);
+    const loadData = useCallback((signal, { initial = false } = {}) => {
+        if (initial) {
+            setDataLoading(true);
+            setDataLoadError(false);
         }
+        const earthquakesRequest = fetchEarthquakeData(signal)
+            .then(data => {
+                if (signal.aborted) return;
+                setAllData(data);
+                setDataLoadError(!data.length);
+            })
+            .catch(error => {
+                if (signal.aborted) return;
+                console.error("Error loading earthquake data:", error);
+                setDataLoadError(true);
+            })
+            .finally(() => {
+                if (!signal.aborted) setDataLoading(false);
+            });
+        const volcanoesRequest = fetchVolcanoData(signal)
+            .then(volcanoes => {
+                if (!signal.aborted) setVolcanoData(volcanoes);
+            })
+            .catch(error => {
+                if (!signal.aborted) console.error("Error loading volcano data:", error);
+            });
+        return Promise.allSettled([earthquakesRequest, volcanoesRequest]);
     }, []);
 
     useEffect(() => {
-        loadData();
-        const interval = setInterval(loadData, 3 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, [loadData]);
+        const controllers = new Set();
+        const run = (initial = false) => {
+            const controller = new AbortController();
+            controllers.add(controller);
+            loadData(controller.signal, { initial })
+                .finally(() => controllers.delete(controller));
+        };
+        run(true);
+        const interval = setInterval(() => run(false), 3 * 60 * 1000);
+        return () => {
+            clearInterval(interval);
+            controllers.forEach(controller => controller.abort());
+            controllers.clear();
+        };
+    }, [dataRetry, loadData]);
 
     useEffect(() => {
         if (allData.length === 0) return;
@@ -237,7 +263,7 @@ const App = () => {
 
     return (
         <div className="app-container">
-            {route === "analysis" && <Suspense fallback={<div className="route-loading">Loading analysis…</div>}><AnalysisPage earthquakes={allData} loading={dataLoading} loadError={dataLoadError} onMap={() => navigate("map")} onViewMap={viewAnalysisEarthquake} /></Suspense>}
+            {route === "analysis" && <Suspense fallback={<div className="route-loading">Loading earthquake insights…</div>}><AnalysisPage earthquakes={allData} loading={dataLoading} loadError={dataLoadError} onRetryData={() => setDataRetry(value => value + 1)} onMap={() => navigate("map")} onViewMap={viewAnalysisEarthquake} /></Suspense>}
             <div aria-hidden={route === "analysis"} className={`map-container${route === "analysis" ? " route-hidden" : ""}${rightPanelOpen ? " right-panel-open" : ""}${!isMobile && leftPanelCollapsed ? " title-left" : ""}${isMobile && !leftPanelCollapsed ? " mobile-left-panel-open" : ""}`}>
                 <div className="map-type-control-container">
                     <MapTypeSelector onMapTypeChange={handleMapTypeChange} selectedType={mapType} />

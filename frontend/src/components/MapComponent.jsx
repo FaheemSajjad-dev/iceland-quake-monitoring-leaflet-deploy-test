@@ -1032,9 +1032,23 @@ const MapLibreEarthquakeMap = ({
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
     const map = mapRef.current?.getMap();
     if (!map) return;
+    const mapContainer = map.getContainer();
+    const mapBounds = mapContainer.getBoundingClientRect();
+    const leftDrawer = mapContainer
+      .closest(".map-container")
+      ?.querySelector(".left-panel__drawer");
+    const drawerBounds = leftDrawer?.getBoundingClientRect();
+    const leftPadding = drawerBounds
+      ? Math.max(
+          0,
+          Math.min(mapBounds.width, drawerBounds.right - mapBounds.left),
+        )
+      : 0;
     map.flyTo({
       center: [longitude, latitude],
       zoom: Math.max(map.getZoom(), 9),
+      padding: { top: 0, right: 0, bottom: 0, left: leftPadding },
+      retainPadding: false,
       duration: 900,
       essential: true,
     });

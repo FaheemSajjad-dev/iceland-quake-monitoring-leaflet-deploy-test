@@ -180,6 +180,45 @@
   align-items: flex-end;
   gap: 8px;
 }
+.analysis-initial-skeleton { min-height: 1500px; }
+.analysis-skeleton-block {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #edf2f7 25%, #f7f9fb 50%, #edf2f7 75%);
+  background-size: 200% 100%;
+  animation: analysis-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.analysis-skeleton-heading { width: 150px; height: 22px; margin-bottom: 16px; }
+.analysis-skeleton-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 14px;
+}
+.analysis-skeleton-field { display: grid; gap: 7px; }
+.analysis-skeleton-label { width: 62%; height: 12px; }
+.analysis-skeleton-input { width: 100%; height: 38px; }
+.analysis-skeleton-summary { margin-top: 18px; }
+.analysis-skeleton-summary .summary-card { min-height: 92px; }
+.analysis-skeleton-value { width: 48%; height: 26px; margin-top: 14px; }
+.analysis-skeleton-chart { min-height: 366px; }
+.analysis-skeleton-chart-title { width: 42%; height: 20px; }
+.analysis-skeleton-plot { width: 100%; height: 300px; margin-top: 18px; }
+.analysis-skeleton-results { margin-top: 18px; }
+.analysis-skeleton-table { min-height: 340px; }
+.analysis-skeleton-row { width: 100%; height: 38px; margin-top: 16px; }
+@keyframes analysis-skeleton-pulse {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .analysis-skeleton-block { animation: none; }
+}
+@media (max-width: 900px) {
+  .analysis-skeleton-filter-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+}
+@media (max-width: 560px) {
+  .analysis-skeleton-filter-grid { grid-template-columns: 1fr; }
+}
 .analysis-error {
   margin: 12px 0 0;
   color: #b42318;
@@ -270,6 +309,34 @@
   height: 330px;
   margin-top: 14px;
 }
+.time-chart-with-range {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+.time-chart-plot {
+  min-width: 0;
+  min-height: 0;
+}
+.time-range-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  color: #486581;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.time-range-labels span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.time-range-labels span:last-child {
+  text-align: right;
+}
 .analysis-tooltip {
   display: flex;
   flex-direction: column;
@@ -312,8 +379,31 @@
 }
 .results-card table {
   width: 100%;
+  min-width: 850px;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
+}
+.results-col-date {
+  width: 20%;
+}
+.results-col-magnitude {
+  width: 11%;
+}
+.results-col-depth {
+  width: 14%;
+}
+.results-col-coordinates {
+  width: 18%;
+}
+.results-col-category {
+  width: 14%;
+}
+.results-col-source {
+  width: 10%;
+}
+.results-col-action {
+  width: 13%;
 }
 .results-card th,
 .results-card td {
@@ -337,8 +427,8 @@
   background: #d9f3ed;
 }
 .category-badge.mpgv_only {
-  color: #9c4219;
-  background: #ffead9;
+  color: #52606d;
+  background: #e9eef2;
 }
 .pagination {
   display: flex;
@@ -355,6 +445,44 @@
 }
 .analysis-state.error {
   color: #b42318;
+}
+.analysis-footer {
+  max-width: 920px;
+  margin: 38px auto 0;
+  padding: 24px 18px 4px;
+  border-top: 1px solid #d9e2ec;
+  color: #486581;
+  text-align: center;
+}
+.analysis-footer h2 {
+  margin: 0 0 9px;
+  color: #334e68;
+  font-size: 16px;
+  font-weight: 700;
+}
+.analysis-footer p {
+  margin: 0 auto;
+  line-height: 1.6;
+}
+.analysis-footer-sources {
+  margin-top: 11px !important;
+  color: #627d98;
+  font-size: 12px;
+}
+.analysis-footer-divider {
+  margin: 0 9px;
+  color: #9fb3c8;
+}
+@media (max-width: 560px) {
+  .analysis-footer {
+    margin-top: 28px;
+    padding-inline: 8px;
+  }
+  .analysis-footer-divider {
+    display: block;
+    height: 4px;
+    overflow: hidden;
+  }
 }
 .recharts-wrapper:focus,
 .recharts-surface:focus {
@@ -383,6 +511,15 @@
   }
   .export-menu {
     justify-content: flex-start;
+  }
+}
+@media (max-width: 520px) {
+  .time-range-labels {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .time-range-labels span:last-child {
+    text-align: left;
   }
 }
 @media (max-width: 600px) {

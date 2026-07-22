@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -24,10 +24,16 @@ const COLORS = {
   teal: "#16877b",
   purple: "#7b61a8",
 };
-const periodLabel = (value) =>
-  new Date(value).toLocaleDateString(undefined, {
+const periodLabel = (value, locale) =>
+  new Date(value).toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
+    day: "numeric",
+  });
+const accessiblePeriodLabel = (value, locale) =>
+  new Date(value).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "long",
     day: "numeric",
   });
 const tooltipStyle = {
@@ -41,7 +47,7 @@ const TimeTooltip = ({ active, payload, text }) => {
   const row = payload[0].payload;
   return (
     <div className="analysis-tooltip">
-      <strong>{periodLabel(row.period)}</strong>
+      <strong>{periodLabel(row.period, text.locale)}</strong>
       <span>
         {text.count}: {row.count}
       </span>
@@ -100,56 +106,173 @@ const ScatterTooltip = ({ active, payload, text }) => {
   ) : null;
 };
 
-const TimeChart = ({ data, metric, color, text, children }) => {
+const useTimeRange = (data) => {
+  const [range, setRange] = useState(() => ({
+    startIndex: 0,
+    endIndex: Math.max(0, data.length - 1),
+  }));
+  useEffect(() => {
+    setRange({ startIndex: 0, endIndex: Math.max(0, data.length - 1) });
+  }, [data]);
+  const onChange = (next) => {
+    if (
+      Number.isInteger(next?.startIndex) &&
+      Number.isInteger(next?.endIndex)
+    )
+      setRange(next);
+  };
+  return { ...range, onChange };
+};
+
+const TimeRangeLabels = ({ data, range, text }) => {
+  const start = data[range.startIndex]?.period;
+  const end = data[range.endIndex]?.period;
+  if (!start || !end) return null;
+  return (
+    <div className="time-range-labels" aria-live="polite">
+      <span>
+        <strong>{text.rangeStart}:</strong> {periodLabel(start, text.locale)}
+      </span>
+      <span>
+        <strong>{text.rangeEnd}:</strong> {periodLabel(end, text.locale)}
+      </span>
+    </div>
+  );
+};
+
+const brushAriaLabel = (data, range, text) => {
+  const start = data[range.startIndex]?.period;
+  const end = data[range.endIndex]?.period;
+  if (!start || !end) return undefined;
+  return `${text.rangeStart}: ${accessiblePeriodLabel(start, text.locale)}; ${text.rangeEnd}: ${accessiblePeriodLabel(end, text.locale)}`;
+};
+
+export const TimeChart = ({ data, metric, color, text, children }) => {
   const highest = data.reduce(
     (best, row) => (!best || row[metric] > best[metric] ? row : best),
     null,
   );
+  const range = useTimeRange(data);
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart
-        data={data}
-        margin={{ top: 18, right: 18, left: 0, bottom: 8 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="period" tickFormatter={periodLabel} minTickGap={35} />
-        <YAxis width={42} />
-        <Tooltip
-          content={<TimeTooltip text={text} />}
-          cursor={{ stroke: "#627d98" }}
-          wrapperStyle={tooltipStyle}
-        />
-        <Line
-          type="monotone"
-          dataKey={metric}
-          stroke={color}
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 6 }}
-          isAnimationActive={false}
-        />
-        {highest && (
-          <ReferenceDot
-            x={highest.period}
-            y={highest[metric]}
-            r={4}
-            fill={color}
-            stroke="#fff"
-          />
-        )}
-        {children}
-        <Brush
-          dataKey="period"
-          tickFormatter={periodLabel}
-          height={24}
-          travellerWidth={8}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="time-chart-with-range">
+      <div className="time-chart-plot">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 18, right: 18, left: 0, bottom: 8 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="period"
+              tickFormatter={(value) => periodLabel(value, text.locale)}
+              minTickGap={35}
+            />
+            <YAxis width={42} />
+            <Tooltip
+              content={<TimeTooltip text={text} />}
+              cursor={{ stroke: "#627d98" }}
+              wrapperStyle={tooltipStyle}
+            />
+            <Line
+              type="monotone"
+              dataKey={metric}
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 6 }}
+              isAnimationActive={false}
+            />
+            {highest && (
+              <ReferenceDot
+                x={highest.period}
+                y={highest[metric]}
+                r={4}
+                fill={color}
+                stroke="#fff"
+              />
+            )}
+            {children}
+            <Brush
+              dataKey="period"
+              tickFormatter={() => ""}
+              height={24}
+              travellerWidth={8}
+              startIndex={range.startIndex}
+              endIndex={range.endIndex}
+              onChange={range.onChange}
+              ariaLabel={brushAriaLabel(data, range, text)}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <TimeRangeLabels data={data} range={range} text={text} />
+    </div>
   );
 };
 
-const DepthBinTooltip = ({ active, payload, text }) => {
+export const CategoryTimeChart = ({ data, includeUnverified, text }) => {
+  const range = useTimeRange(data);
+  return (
+    <div className="time-chart-with-range">
+      <div className="time-chart-plot">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 18, right: 18, left: 0, bottom: 8 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="period"
+              tickFormatter={(value) => periodLabel(value, text.locale)}
+              minTickGap={35}
+            />
+            <YAxis width={42} />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              labelFormatter={(value) => periodLabel(value, text.locale)}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="matched"
+              name={text.matched}
+              stroke={COLORS.teal}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5 }}
+              isAnimationActive={false}
+            />
+            {includeUnverified && (
+              <Line
+                type="monotone"
+                dataKey="mpgv_only"
+                name={text.mpgvOnly}
+                stroke={COLORS.orange}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 5 }}
+                isAnimationActive={false}
+              />
+            )}
+            <Brush
+              dataKey="period"
+              tickFormatter={() => ""}
+              height={24}
+              travellerWidth={8}
+              startIndex={range.startIndex}
+              endIndex={range.endIndex}
+              onChange={range.onChange}
+              ariaLabel={brushAriaLabel(data, range, text)}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <TimeRangeLabels data={data} range={range} text={text} />
+    </div>
+  );
+};
+
+const DepthBinTooltip = ({ active, payload, text, showUnverified }) => {
   const row = payload?.[0]?.payload;
   return active && row ? (
     <div className="analysis-tooltip">
@@ -157,9 +280,11 @@ const DepthBinTooltip = ({ active, payload, text }) => {
       <span>
         {text.referenceDepth}: {row.reference}
       </span>
-      <span>
-        {text.unverifiedDepth}: {row.unverified}
-      </span>
+      {showUnverified && (
+        <span>
+          {text.unverifiedDepth}: {row.unverified}
+        </span>
+      )}
       <span>
         {text.count}: {row.count}
       </span>
@@ -170,36 +295,21 @@ const DepthBinTooltip = ({ active, payload, text }) => {
 export default function AnalysisCharts({
   analysis,
   depthRecords,
-  exportContext,
+  includeUnverified,
   text,
 }) {
   const [zoomKey, setZoomKey] = useState(0);
   const resetZoom = () => setZoomKey((value) => value + 1);
   const series = analysis.timeSeries;
+  const showUnverified = depthRecords.some(
+    (item) => item.depthQuality === "unverified_mpgv",
+  );
   return (
     <section className="charts-grid" aria-label={text.charts}>
       <ChartCard
-        id="earthquakes-over-time"
-        title={text.overTime}
-        rows={series}
-        text={text}
-        onResetZoom={resetZoom}
-        exportContext={exportContext}
-      >
-        <TimeChart
-          key={`count-${zoomKey}`}
-          data={series}
-          metric="count"
-          color={COLORS.blue}
-          text={text}
-        />
-      </ChartCard>
-      <ChartCard
         id="magnitude-distribution"
         title={text.magnitudeDistribution}
-        rows={analysis.magnitudeBins}
         text={text}
-        exportContext={exportContext}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={analysis.magnitudeBins}>
@@ -214,16 +324,21 @@ export default function AnalysisCharts({
       <ChartCard
         id="depth-distribution"
         title={text.depthDistribution}
-        rows={analysis.depthBins}
         text={text}
-        exportContext={exportContext}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={analysis.depthBins}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="range" />
             <YAxis width={42} />
-            <Tooltip content={<DepthBinTooltip text={text} />} />
+            <Tooltip
+              content={
+                <DepthBinTooltip
+                  text={text}
+                  showUnverified={showUnverified}
+                />
+              }
+            />
             <Legend />
             <Bar
               dataKey="reference"
@@ -231,22 +346,22 @@ export default function AnalysisCharts({
               stackId="depth"
               fill={COLORS.teal}
             />
-            <Bar
-              dataKey="unverified"
-              name={text.unverifiedDepth}
-              stackId="depth"
-              fill={COLORS.orange}
-              radius={[4, 4, 0, 0]}
-            />
+            {showUnverified && (
+              <Bar
+                dataKey="unverified"
+                name={text.unverifiedDepth}
+                stackId="depth"
+                fill={COLORS.orange}
+                radius={[4, 4, 0, 0]}
+              />
+            )}
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
       <ChartCard
         id="magnitude-depth"
         title={text.magnitudeDepth}
-        rows={depthRecords}
         text={text}
-        exportContext={exportContext}
       >
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ right: 18 }}>
@@ -269,25 +384,25 @@ export default function AnalysisCharts({
               fill={COLORS.teal}
               isAnimationActive={false}
             />
-            <Scatter
-              name={text.unverifiedDepth}
-              data={depthRecords.filter(
-                (item) => item.depthQuality === "unverified_mpgv",
-              )}
-              fill={COLORS.orange}
-              shape="diamond"
-              isAnimationActive={false}
-            />
+            {showUnverified && (
+              <Scatter
+                name={text.unverifiedDepth}
+                data={depthRecords.filter(
+                  (item) => item.depthQuality === "unverified_mpgv",
+                )}
+                fill={COLORS.orange}
+                shape="diamond"
+                isAnimationActive={false}
+              />
+            )}
           </ScatterChart>
         </ResponsiveContainer>
       </ChartCard>
       <ChartCard
         id="average-magnitude-time"
         title={text.averageMagnitudeTime}
-        rows={series}
         text={text}
         onResetZoom={resetZoom}
-        exportContext={exportContext}
       >
         <TimeChart
           key={`average-${zoomKey}`}
@@ -300,52 +415,15 @@ export default function AnalysisCharts({
       <ChartCard
         id="category-time"
         title={text.categoryTime}
-        rows={series}
         text={text}
         onResetZoom={resetZoom}
-        exportContext={exportContext}
       >
-        <ResponsiveContainer
+        <CategoryTimeChart
           key={`category-${zoomKey}`}
-          width="100%"
-          height="100%"
-        >
-          <LineChart
-            data={series}
-            margin={{ top: 18, right: 18, left: 0, bottom: 8 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="period"
-              tickFormatter={periodLabel}
-              minTickGap={35}
-            />
-            <YAxis width={42} />
-            <Tooltip contentStyle={tooltipStyle} labelFormatter={periodLabel} />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="matched"
-              name={text.matched}
-              stroke={COLORS.teal}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="mpgv_only"
-              name={text.mpgvOnly}
-              stroke={COLORS.orange}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5 }}
-              isAnimationActive={false}
-            />
-            <Brush dataKey="period" tickFormatter={periodLabel} height={24} />
-          </LineChart>
-        </ResponsiveContainer>
+          data={series}
+          includeUnverified={includeUnverified}
+          text={text}
+        />
       </ChartCard>
     </section>
   );

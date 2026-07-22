@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { depthLabel } from "./analysisData";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 const format = (value, digits = 1) => Number(value).toFixed(digits);
 
 function ResultsTable({ title, rows, text, onViewMap, recent }) {
@@ -15,7 +14,11 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
     [rows, sort],
   );
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const visible = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages - 1);
+  const visible = sorted.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
   return (
     <article className="results-card">
       <div className="results-heading">
@@ -36,6 +39,15 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
       </div>
       <div className="table-scroll">
         <table>
+          <colgroup>
+            <col className="results-col-date" />
+            <col className="results-col-magnitude" />
+            <col className="results-col-depth" />
+            <col className="results-col-coordinates" />
+            <col className="results-col-category" />
+            <col className="results-col-source" />
+            <col className="results-col-action" />
+          </colgroup>
           <thead>
             <tr>
               <th>{text.date}</th>
@@ -44,7 +56,7 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
               <th>{text.coordinates}</th>
               <th>{text.category}</th>
               <th>{text.source}</th>
-              {recent && <th />}
+              <th aria-label={text.viewMap} />
             </tr>
           </thead>
           <tbody>
@@ -55,12 +67,14 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
                 <td
                   title={
                     item.hasDepth
-                      ? depthLabel(item, text)
+                      ? item.depthQuality === "unverified_mpgv"
+                        ? text.unverifiedDepth
+                        : text.referenceDepth
                       : text.depthUnavailable
                   }
                 >
                   {item.hasDepth
-                    ? `${format(item.depth)} km · ${item.depthSource}${item.depthQuality === "unverified_mpgv" ? `, ${text.unverifiedShort}` : ""}`
+                    ? `${format(item.depth)} km${item.depthQuality === "unverified_mpgv" ? ` (${text.unverifiedShort})` : ""}`
                     : "—"}
                 </td>
                 <td>
@@ -72,13 +86,11 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
                   </span>
                 </td>
                 <td>{item.category === "matched" ? "MPGV + IMO" : "MPGV"}</td>
-                {recent && (
-                  <td>
-                    <button type="button" onClick={() => onViewMap(item)}>
-                      {text.viewMap}
-                    </button>
-                  </td>
-                )}
+                <td>
+                  <button type="button" onClick={() => onViewMap(item)}>
+                    {text.viewMap}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -87,18 +99,18 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
       <div className="pagination">
         <button
           type="button"
-          disabled={page === 0}
-          onClick={() => setPage((value) => value - 1)}
+          disabled={currentPage === 0}
+          onClick={() => setPage((value) => Math.max(0, value - 1))}
         >
           {text.previous}
         </button>
         <span>
-          {page + 1} / {totalPages}
+          {currentPage + 1} / {totalPages}
         </span>
         <button
           type="button"
-          disabled={page + 1 >= totalPages}
-          onClick={() => setPage((value) => value + 1)}
+          disabled={currentPage + 1 >= totalPages}
+          onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}
         >
           {text.next}
         </button>
@@ -111,17 +123,17 @@ export default function ResultsTables({ analysis, text, onViewMap }) {
   return (
     <section className="results-grid" aria-label={text.results}>
       <ResultsTable
-        title={text.strongestEarthquakes}
-        rows={analysis.strongestRows}
-        text={text}
-        onViewMap={onViewMap}
-      />
-      <ResultsTable
         title={text.recentEarthquakes}
         rows={analysis.recentRows}
         text={text}
         onViewMap={onViewMap}
         recent
+      />
+      <ResultsTable
+        title={text.strongestEarthquakes}
+        rows={analysis.strongestRows.slice(0, 10)}
+        text={text}
+        onViewMap={onViewMap}
       />
     </section>
   );

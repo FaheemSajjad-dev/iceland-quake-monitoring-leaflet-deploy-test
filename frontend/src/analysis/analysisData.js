@@ -7,6 +7,13 @@ export const DEPTH_QUALITY = {
   UNAVAILABLE: "unavailable",
 };
 
+const localDateValue = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export const categoryOf = (quake) =>
   quake.status === "matched" ? "matched" : "mpgv_only";
 
@@ -80,30 +87,53 @@ export const getDatasetBounds = (earthquakes) => {
     .map((item) => item.depth);
   return {
     startDate: new Date(Math.min(...dates)).toISOString().slice(0, 10),
-    endDate: new Date(Math.max(...dates)).toISOString().slice(0, 10),
+    endDate: localDateValue(),
     minMagnitude: Math.min(...magnitudes),
     maxMagnitude: Math.max(...magnitudes),
-    minDepth: depths.length ? Math.min(...depths) : 0,
-    maxDepth: depths.length ? Math.max(...depths) : 100,
+    minDepth: depths.length ? Math.min(...depths) : null,
+    maxDepth: depths.length ? Math.max(...depths) : null,
   };
 };
 
 export const makeDefaultFilters = (bounds) => ({
   startDate: bounds?.startDate ?? "",
   endDate: bounds?.endDate ?? "",
-  minMagnitude: bounds
-    ? Math.max(
-        MIN_CATALOGUE_MAGNITUDE,
-        Math.floor(bounds.minMagnitude * 10) / 10,
-      )
-    : MIN_CATALOGUE_MAGNITUDE,
-  maxMagnitude: bounds ? Math.ceil(bounds.maxMagnitude * 10) / 10 : 10,
-  minDepth: bounds ? Math.floor(bounds.minDepth) : 0,
-  maxDepth: bounds ? Math.ceil(bounds.maxDepth) : 100,
+  minMagnitude: bounds?.minMagnitude ?? "",
+  maxMagnitude: bounds?.maxMagnitude ?? "",
+  minDepth: bounds?.minDepth ?? "",
+  maxDepth: bounds?.maxDepth ?? "",
   category: "all",
   grouping: "month",
   depthQuality: "reference_only",
 });
+
+const clamp = (value, minimum, maximum) =>
+  Math.min(Math.max(Number(value), minimum), maximum);
+
+export const clampFiltersToBounds = (filters, bounds) => {
+  if (!bounds) return filters;
+  const next = { ...filters };
+  if (Number.isFinite(bounds.minMagnitude) && Number.isFinite(bounds.maxMagnitude)) {
+    next.minMagnitude = clamp(
+      next.minMagnitude,
+      bounds.minMagnitude,
+      bounds.maxMagnitude,
+    );
+    next.maxMagnitude = clamp(
+      next.maxMagnitude,
+      next.minMagnitude,
+      bounds.maxMagnitude,
+    );
+  }
+  if (Number.isFinite(bounds.minDepth) && Number.isFinite(bounds.maxDepth)) {
+    next.minDepth = clamp(next.minDepth, bounds.minDepth, bounds.maxDepth);
+    next.maxDepth = clamp(next.maxDepth, next.minDepth, bounds.maxDepth);
+  } else {
+    next.minDepth = "";
+    next.maxDepth = "";
+  }
+  return next;
+};
 
 export const validateFilters = (filters, bounds) => {
   const errors = {};
@@ -116,12 +146,20 @@ export const validateFilters = (filters, bounds) => {
   if (
     !Number.isFinite(Number(filters.minMagnitude)) ||
     !Number.isFinite(Number(filters.maxMagnitude)) ||
+    Number(filters.minMagnitude) < 0 ||
+    Number(filters.maxMagnitude) < 0 ||
+    (bounds && Number(filters.minMagnitude) < bounds.minMagnitude) ||
+    (bounds && Number(filters.maxMagnitude) > bounds.maxMagnitude) ||
     Number(filters.minMagnitude) > Number(filters.maxMagnitude)
   )
     errors.magnitude = "invalidMagnitude";
   if (
     !Number.isFinite(Number(filters.minDepth)) ||
     !Number.isFinite(Number(filters.maxDepth)) ||
+    Number(filters.minDepth) < 0 ||
+    Number(filters.maxDepth) < 0 ||
+    (bounds && Number(filters.minDepth) < bounds.minDepth) ||
+    (bounds && Number(filters.maxDepth) > bounds.maxDepth) ||
     Number(filters.minDepth) > Number(filters.maxDepth)
   )
     errors.depth = "invalidDepth";
@@ -352,6 +390,6 @@ export const buildAnalysis = (earthquakes, depthRecords, grouping) => {
     depthRecords,
     depthQuality: summarizeDepthQuality(earthquakes, depthRecords),
     strongestRows: sortedByMagnitude.slice(0, 50),
-    recentRows: sortedRecent.slice(0, 50),
+    recentRows: sortedRecent.slice(0, 10),
   };
 };

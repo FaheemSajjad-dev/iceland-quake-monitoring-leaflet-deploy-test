@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   aggregateByTime,
   buildDepthHistogram,
   buildAnalysis,
+  clampFiltersToBounds,
   filterEarthquakes,
+  getDatasetBounds,
+  makeDefaultFilters,
   normalizeEarthquakes,
   selectDepthRecords,
   summarizeDepthQuality,
@@ -39,6 +42,22 @@ const rows = [
 ];
 
 describe("analysis transformations", () => {
+  it("defaults the end date to the current system date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 20, 12));
+    const bounds = getDatasetBounds(normalizeEarthquakes(rows));
+    expect(bounds.endDate).toBe("2026-07-20");
+    expect(makeDefaultFilters(bounds).endDate).toBe("2026-07-20");
+    vi.useRealTimers();
+  });
+
+  it("defaults numeric maximums to the exact catalogue maximums", () => {
+    const bounds = getDatasetBounds(normalizeEarthquakes(rows));
+    const defaults = makeDefaultFilters(bounds);
+    expect(defaults.maxMagnitude).toBe(4.1);
+    expect(defaults.maxDepth).toBe(15);
+  });
+
   it("keeps non-depth filtering independent from depth eligibility", () => {
     const normalized = normalizeEarthquakes(rows);
     const filtered = filterEarthquakes(normalized, {
@@ -115,11 +134,11 @@ describe("analysis transformations", () => {
   it("exports the active depth mode and raw depth provenance", () => {
     const normalized = normalizeEarthquakes(rows);
     const csv = buildEarthquakesCsv(normalized, {
-      depthMode: "Reference only",
-      depthSummary: "1 reference depth; 1 excluded",
+      depthMode: "Matched depths only",
+      depthSummary: "1 matched depth; 1 excluded",
       filters: { depthQuality: "reference_only" },
     });
-    expect(csv).toContain('"Depth analysis","Reference only"');
+    expect(csv).toContain('"Depth data","Matched depths only"');
     expect(csv).toContain("Depth_source,Depth_quality");
     expect(csv).toContain('"Quakes API","reference"');
     expect(csv).toContain('"MPGV","unverified_mpgv"');
@@ -141,6 +160,91 @@ describe("analysis transformations", () => {
       date: "invalidDate",
       magnitude: "invalidMagnitude",
       depth: "invalidDepth",
+    });
+  });
+
+  it("rejects negative magnitude and depth filters", () => {
+    const errors = validateFilters(
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-01-03",
+        minMagnitude: -1,
+        maxMagnitude: 5,
+        minDepth: -2,
+        maxDepth: 20,
+      },
+      { startDate: "2024-01-01", endDate: "2024-01-03" },
+    );
+    expect(errors).toMatchObject({
+      magnitude: "invalidMagnitude",
+      depth: "invalidDepth",
+    });
+  });
+
+  it("rejects magnitude and depth filters above catalogue maximums", () => {
+    const errors = validateFilters(
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-01-03",
+        minMagnitude: 3,
+        maxMagnitude: 6,
+        minDepth: 0,
+        maxDepth: 30,
+      },
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-01-03",
+        maxMagnitude: 4.1,
+        maxDepth: 15,
+      },
+    );
+    expect(errors).toMatchObject({
+      magnitude: "invalidMagnitude",
+      depth: "invalidDepth",
+    });
+  });
+
+  it("allows equal minimum and maximum values", () => {
+    const errors = validateFilters(
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-01-03",
+        minMagnitude: 4.1,
+        maxMagnitude: 4.1,
+        minDepth: 12.5,
+        maxDepth: 12.5,
+      },
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-01-03",
+        minMagnitude: 3,
+        maxMagnitude: 5,
+        minDepth: 2,
+        maxDepth: 20,
+      },
+    );
+    expect(errors).toEqual({});
+  });
+
+  it("clamps manually entered and crossed values to catalogue bounds", () => {
+    expect(clampFiltersToBounds(
+      {
+        minMagnitude: 9,
+        maxMagnitude: 20,
+        minDepth: -5,
+        maxDepth: 100,
+      },
+      {
+        minMagnitude: 3.01,
+        maxMagnitude: 5.83,
+        minDepth: 2.4,
+        maxDepth: 40.7,
+      },
+    )).toMatchObject({
+      minMagnitude: 5.83,
+      maxMagnitude: 5.83,
+      minDepth: 2.4,
+      maxDepth: 40.7,
     });
   });
 });

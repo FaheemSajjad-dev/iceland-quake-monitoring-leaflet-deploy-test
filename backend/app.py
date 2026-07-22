@@ -606,6 +606,48 @@ def get_earthquake_data():
 
         return result
 
+
+@app.route("/insights/limits", methods=["GET"])
+@limiter.limit(lambda: rate_limit("EARTHQUAKES", "120 per minute"))
+def get_insights_limits():
+    """Return catalogue magnitude and policy-eligible depth aggregates."""
+    allowed_params = {"depth_quality"}
+    unexpected = set(request.args) - allowed_params
+    if unexpected:
+        return jsonify({"error": "Unsupported query parameter"}), 400
+
+    depth_quality = request.args.get("depth_quality", "reference_only")
+    if depth_quality not in {"reference_only", "include_unverified"}:
+        return jsonify({"error": "Invalid depth_quality"}), 400
+
+    catalogue = EarthquakeMerged.query.filter(EarthquakeMerged.mw_mean >= 3.0)
+    magnitude_min, magnitude_max = catalogue.with_entities(
+        db.func.min(EarthquakeMerged.mw_mean),
+        db.func.max(EarthquakeMerged.mw_mean),
+    ).one()
+
+    eligible_depths = catalogue.filter(EarthquakeMerged.depth.isnot(None))
+    if depth_quality == "reference_only":
+        eligible_depths = eligible_depths.filter(
+            EarthquakeMerged.status == "matched"
+        )
+    depth_min, depth_max = eligible_depths.with_entities(
+        db.func.min(EarthquakeMerged.depth),
+        db.func.max(EarthquakeMerged.depth),
+    ).one()
+
+    return jsonify({
+        "depth_quality": depth_quality,
+        "magnitude_limits": {
+            "minimum": magnitude_min,
+            "maximum": magnitude_max,
+        },
+        "depth_limits": {
+            "minimum": depth_min,
+            "maximum": depth_max,
+        },
+    })
+
 @app.route("/earthquakes_csv", methods=["GET"])
 @limiter.limit(lambda: rate_limit("CSV", "10 per minute"))
 def get_earthquake_data_csv():

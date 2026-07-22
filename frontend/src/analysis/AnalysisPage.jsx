@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import About from "../components/About";
+import {
+  DEPTH_POLICIES,
+  fetchInsightsLimits,
+  normalizeLimitsResponse,
+} from "../api";
 import { useLang } from "../i18n";
 import AnalysisFilters from "./AnalysisFilters";
 import AnalysisCharts from "./AnalysisCharts";
@@ -7,6 +12,7 @@ import ResultsTables from "./ResultsTables";
 import SummaryCards from "./SummaryCards";
 import {
   buildAnalysis,
+  clampFiltersToBounds,
   filterEarthquakes,
   getDatasetBounds,
   makeDefaultFilters,
@@ -19,7 +25,8 @@ import "./AnalysisPage.css";
 
 const COPY = {
   en: {
-    analysis: "Data Analysis",
+    locale: "en-GB",
+    analysis: "Earthquake Insights",
     map: "Home / Map",
     about: "About",
     filters: "Filters",
@@ -32,11 +39,11 @@ const COPY = {
     category: "Data category",
     grouping: "Time grouping",
     depthQuality: "Depth quality",
-    referenceOnly: "Reference only",
+    referenceOnly: "Matched depths only",
     includeUnverified: "Include unverified MPGV depths",
     depthFilterHint:
-      "Depth limits apply only to depths participating in depth analysis.",
-    referenceDepth: "Reference depth",
+      "Depth limits apply only to depths included in depth statistics.",
+    referenceDepth: "Matched depth",
     unverifiedDepth: "Unverified MPGV depth",
     unverifiedShort: "unverified",
     depthUnavailable: "Depth unavailable",
@@ -45,9 +52,9 @@ const COPY = {
     unverifiedWarning:
       "MPGV-only depth values may contain unreliable outliers. Raw values are unchanged.",
     depthReferenceSummary:
-      "Depth analysis uses {reference} reference depth values. {excluded} MPGV-only depth values are excluded.",
+      "Depth statistics use {reference} matched depth values. {excluded} MPGV-only depth values are excluded.",
     depthIncludedSummary:
-      "Depth analysis uses {reference} reference and {included} unverified MPGV depth values.",
+      "Depth statistics use {reference} matched and {included} unverified MPGV depth values.",
     all: "All",
     matched: "Matched",
     mpgvOnly: "MPGV-only",
@@ -58,12 +65,18 @@ const COPY = {
     apply: "Apply filters",
     reset: "Reset filters",
     invalidDate: "Start date must be on or before the end date.",
-    invalidMagnitude: "Minimum magnitude cannot exceed maximum magnitude.",
-    invalidDepth: "Minimum depth cannot exceed maximum depth.",
+    invalidMagnitude:
+      "Magnitudes must stay between zero and the catalogue maximum, and minimum cannot exceed maximum.",
+    invalidDepth:
+      "Depths must stay between zero and the catalogue maximum, and minimum cannot exceed maximum.",
     outsideRange: "Dates must stay within the available catalogue range.",
-    loading: "Loading earthquake analysis…",
+    loading: "Loading earthquake insights…",
     loadError: "Earthquake data could not be loaded. Try again shortly.",
     noResults: "No earthquakes match these filters.",
+    noEligibleDepths:
+      "No eligible depth values are available for this depth-quality selection.",
+    limitsLoadError: "Filter limits could not be loaded. Try again shortly.",
+    retryLimits: "Retry",
     summary: "Summary statistics",
     total: "Total earthquakes",
     strongest: "Strongest earthquake",
@@ -85,9 +98,11 @@ const COPY = {
     depth: "Depth",
     magnitude: "Magnitude",
     resetZoom: "Reset zoom",
+    rangeStart: "Start",
+    rangeEnd: "End",
     results: "Results tables",
-    strongestEarthquakes: "Strongest earthquakes",
-    recentEarthquakes: "Recent earthquakes",
+    strongestEarthquakes: "Strongest earthquakes (filtered)",
+    recentEarthquakes: "Recent earthquakes (filtered)",
     date: "Date and time",
     coordinates: "Coordinates",
     source: "Source",
@@ -95,20 +110,26 @@ const COPY = {
     sort: "Sort by ",
     previous: "Previous",
     next: "Next",
-    exportAnalysis: "Export Analysis",
+    exportAnalysis: "Export Insights",
     downloadCsv: "Download filtered CSV",
-    printPdf: "Save / print PDF",
+    printPdf: "Save PDF",
+    analysisNotes: "Analysis Notes",
+    analysisNotesText:
+      'All charts, statistics, and tables reflect the currently selected filters. "Recent earthquakes" and "Strongest earthquakes" display results from the filtered earthquake catalogue. Depth-related analyses follow the selected depth-quality policy.',
+    dataSources: "Data sources:",
+    universityOfIceland: "University of Iceland",
     showing:
-      "Showing {count} earthquakes from {start} to {end} with magnitude {minMag}–{maxMag}. Depth analysis range: {minDepth}–{maxDepth} km.",
+      "Showing {count} earthquakes from {start} to {end} with magnitude {minMag}–{maxMag}. Depth range: {minDepth}–{maxDepth} km.",
     language: "Íslenska",
   },
   is: {
+    locale: "is-IS",
     depthQuality: "Gæði dýpis",
-    referenceOnly: "Aðeins viðmiðunardýpi",
+    referenceOnly: "Aðeins samsvöruð dýpi",
     includeUnverified: "Taka með óstaðfest MPGV-dýpi",
     depthFilterHint:
       "Dýptarmörk eiga aðeins við gögn sem taka þátt í dýptargreiningu.",
-    referenceDepth: "Viðmiðunardýpi",
+    referenceDepth: "Samsvarað dýpi",
     unverifiedDepth: "Óstaðfest MPGV-dýpi",
     unverifiedShort: "óstaðfest",
     depthUnavailable: "Dýpi ekki tiltækt",
@@ -117,10 +138,10 @@ const COPY = {
     unverifiedWarning:
       "MPGV-dýpi geta innihaldið óáreiðanleg frávik. Hráum gildum er ekki breytt.",
     depthReferenceSummary:
-      "Dýptargreining notar {reference} viðmiðunardýpi. {excluded} MPGV-dýpi eru undanskilin.",
+      "Dýptargreining notar {reference} samsvöruð dýpi. {excluded} MPGV-dýpi eru undanskilin.",
     depthIncludedSummary:
-      "Dýptargreining notar {reference} viðmiðunardýpi og {included} óstaðfest MPGV-dýpi.",
-    analysis: "Gagnagreining",
+      "Dýptargreining notar {reference} samsvöruð dýpi og {included} óstaðfest MPGV-dýpi.",
+    analysis: "Jarðskjálftayfirlit",
     map: "Heim / Kort",
     about: "Um verkefnið",
     filters: "Síur",
@@ -142,12 +163,18 @@ const COPY = {
     apply: "Nota síur",
     reset: "Endurstilla",
     invalidDate: "Upphafsdagur þarf að vera á undan lokadegi.",
-    invalidMagnitude: "Lágmarksstærð má ekki vera hærri en hámarksstærð.",
-    invalidDepth: "Minnsta dýpi má ekki vera meira en mesta dýpi.",
+    invalidMagnitude:
+      "Stærðir verða að vera milli nulls og hámarks gagnasafnsins og lágmark má ekki vera hærra en hámark.",
+    invalidDepth:
+      "Dýpi verða að vera milli nulls og hámarks gagnasafnsins og lágmark má ekki vera hærra en hámark.",
     outsideRange: "Dagsetningar þurfa að vera innan gagnatímabilsins.",
-    loading: "Hleð greiningu…",
+    loading: "Hleð jarðskjálftayfirliti…",
     loadError: "Ekki tókst að hlaða jarðskjálftagögnum.",
     noResults: "Engir jarðskjálftar passa við síurnar.",
+    noEligibleDepths:
+      "Engin gjaldgeng dýptargildi eru tiltæk fyrir þetta val á gæðum dýpis.",
+    limitsLoadError: "Ekki tókst að hlaða mörkum sía.",
+    retryLimits: "Reyna aftur",
     summary: "Samantekt",
     total: "Jarðskjálftar alls",
     strongest: "Stærsti jarðskjálfti",
@@ -169,9 +196,11 @@ const COPY = {
     depth: "Dýpi",
     magnitude: "Stærð",
     resetZoom: "Endurstilla aðdrátt",
+    rangeStart: "Upphaf",
+    rangeEnd: "Endir",
     results: "Niðurstöður",
-    strongestEarthquakes: "Stærstu jarðskjálftar",
-    recentEarthquakes: "Nýlegir jarðskjálftar",
+    strongestEarthquakes: "Stærstu jarðskjálftar (síaðir)",
+    recentEarthquakes: "Nýlegir jarðskjálftar (síaðir)",
     date: "Dagsetning og tími",
     coordinates: "Hnit",
     source: "Uppruni",
@@ -179,19 +208,71 @@ const COPY = {
     sort: "Raða eftir ",
     previous: "Fyrri",
     next: "Næsta",
-    exportAnalysis: "Flytja út greiningu",
+    exportAnalysis: "Flytja út yfirlit",
     downloadCsv: "Sækja síað CSV",
-    printPdf: "Vista / prenta PDF",
+    printPdf: "Vista PDF",
+    analysisNotes: "Athugasemdir um greiningu",
+    analysisNotesText:
+      "Öll gröf, tölfræði og töflur endurspegla valdar síur. „Nýlegir jarðskjálftar“ og „Stærstu jarðskjálftar“ sýna niðurstöður úr síaðri jarðskjálftaskrá. Dýptargreiningar fylgja valinni stefnu um gæði dýpis.",
+    dataSources: "Gagnaheimildir:",
+    universityOfIceland: "Háskóli Íslands",
     showing:
       "Sýni {count} jarðskjálfta frá {start} til {end}, stærð {minMag}–{maxMag}. Dýptargreining: {minDepth}–{maxDepth} km.",
     language: "English",
   },
 };
 
+const SkeletonBlock = ({ className = "" }) => (
+  <span className={`analysis-skeleton-block ${className}`} aria-hidden="true" />
+);
+
+const AnalysisSkeleton = ({ text }) => (
+  <div className="analysis-initial-skeleton" data-testid="analysis-skeleton" role="status" aria-label={text.loading}>
+    <section className="analysis-filters analysis-skeleton-filters" aria-hidden="true">
+      <SkeletonBlock className="analysis-skeleton-heading" />
+      <div className="analysis-skeleton-filter-grid">
+        {Array.from({ length: 8 }, (_, index) => (
+          <div className="analysis-skeleton-field" key={index}>
+            <SkeletonBlock className="analysis-skeleton-label" />
+            <SkeletonBlock className="analysis-skeleton-input" />
+          </div>
+        ))}
+      </div>
+    </section>
+    <div className="summary-grid analysis-skeleton-summary" aria-hidden="true">
+      {Array.from({ length: 8 }, (_, index) => (
+        <div className="summary-card" key={index}>
+          <SkeletonBlock className="analysis-skeleton-label" />
+          <SkeletonBlock className="analysis-skeleton-value" />
+        </div>
+      ))}
+    </div>
+    <div className="charts-grid analysis-skeleton-charts" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => (
+        <div className="chart-card analysis-skeleton-chart" key={index}>
+          <SkeletonBlock className="analysis-skeleton-chart-title" />
+          <SkeletonBlock className="analysis-skeleton-plot" />
+        </div>
+      ))}
+    </div>
+    <div className="results-grid analysis-skeleton-results" aria-hidden="true">
+      {Array.from({ length: 2 }, (_, index) => (
+        <div className="results-card analysis-skeleton-table" key={index}>
+          <SkeletonBlock className="analysis-skeleton-chart-title" />
+          {Array.from({ length: 5 }, (_, row) => (
+            <SkeletonBlock className="analysis-skeleton-row" key={row} />
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function AnalysisPage({
   earthquakes,
   loading,
   loadError,
+  onRetryData,
   onMap,
   onViewMap,
 }) {
@@ -201,18 +282,106 @@ export default function AnalysisPage({
     () => normalizeEarthquakes(earthquakes),
     [earthquakes],
   );
-  const bounds = useMemo(() => getDatasetBounds(normalized), [normalized]);
-  const defaults = useMemo(() => makeDefaultFilters(bounds), [bounds]);
-  const [filters, setFilters] = useState(defaults);
+  const dateBounds = useMemo(() => getDatasetBounds(normalized), [normalized]);
+  const [limitsByPolicy, setLimitsByPolicy] = useState(null);
+  const [limitsLoading, setLimitsLoading] = useState(true);
+  const [limitsError, setLimitsError] = useState(null);
+  const [limitsRetry, setLimitsRetry] = useState(0);
+  const [filters, setFilters] = useState(() => makeDefaultFilters(null));
+  const [filtersInitialized, setFiltersInitialized] = useState(false);
   const [errors, setErrors] = useState({});
   const [showAbout, setShowAbout] = useState(false);
   useEffect(() => {
-    if (bounds)
-      setFilters((current) => (current.startDate ? current : defaults));
-  }, [bounds, defaults]);
+    let cancelled = false;
+    const controller = new AbortController();
+    setLimitsLoading(true);
+    setLimitsError(null);
+    setLimitsByPolicy(null);
+    setFiltersInitialized(false);
+    Promise.all([
+      fetchInsightsLimits("reference_only", controller.signal),
+      fetchInsightsLimits("include_unverified", controller.signal),
+    ])
+      .then(([referenceOnly, includeUnverified]) => {
+        if (cancelled) return;
+        setLimitsByPolicy({
+          [DEPTH_POLICIES.MATCHED_ONLY]: normalizeLimitsResponse(
+            referenceOnly,
+            DEPTH_POLICIES.MATCHED_ONLY,
+          ),
+          [DEPTH_POLICIES.INCLUDE_UNVERIFIED]: normalizeLimitsResponse(
+            includeUnverified,
+            DEPTH_POLICIES.INCLUDE_UNVERIFIED,
+          ),
+        });
+        setLimitsError(null);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Failed to load insight limits", {
+            message: error?.message,
+            status: error?.response?.status ?? error?.status,
+            contentType:
+              error?.response?.headers?.["content-type"] ?? error?.contentType,
+            body: error?.response?.data ?? error?.body,
+          });
+          setLimitsByPolicy(null);
+          setLimitsError(error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLimitsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [limitsRetry]);
+  const earthquakeDataReady = !loading && earthquakes.length > 0;
+  const limitsReady = !limitsLoading && Boolean(limitsByPolicy);
+  const boundsForPolicy = useCallback((policy) => {
+    const metadata = limitsByPolicy?.[policy];
+    const magnitude = metadata?.magnitude_limits;
+    const depth = metadata?.depth_limits;
+    if (
+      !dateBounds ||
+      !Number.isFinite(magnitude?.minimum) ||
+      !Number.isFinite(magnitude?.maximum)
+    )
+      return null;
+    const hasDepthLimits = Number.isFinite(depth?.minimum) &&
+      Number.isFinite(depth?.maximum);
+    return {
+      startDate: dateBounds.startDate,
+      endDate: dateBounds.endDate,
+      minMagnitude: magnitude.minimum,
+      maxMagnitude: magnitude.maximum,
+      minDepth: hasDepthLimits ? depth.minimum : null,
+      maxDepth: hasDepthLimits ? depth.maximum : null,
+    };
+  }, [dateBounds, limitsByPolicy]);
+  const bounds = useMemo(
+    () => boundsForPolicy(filters.depthQuality),
+    [boundsForPolicy, filters.depthQuality],
+  );
+  const defaultBounds = useMemo(
+    () => boundsForPolicy(DEPTH_POLICIES.MATCHED_ONLY),
+    [boundsForPolicy],
+  );
+  const defaults = useMemo(
+    () => makeDefaultFilters(defaultBounds),
+    [defaultBounds],
+  );
+  useEffect(() => {
+    if (!earthquakeDataReady || !limitsReady || !defaultBounds || filtersInitialized)
+      return;
+    setFilters(defaults);
+    setFiltersInitialized(true);
+  }, [defaultBounds, defaults, earthquakeDataReady, filtersInitialized, limitsReady]);
+  const isInitialized = earthquakeDataReady && limitsReady && filtersInitialized;
   const filtered = useMemo(
-    () => (bounds ? filterEarthquakes(normalized, filters) : []),
-    [bounds, filters, normalized],
+    () => (isInitialized && bounds ? filterEarthquakes(normalized, filters) : []),
+    [bounds, filters, isInitialized, normalized],
   );
   const depthRecords = useMemo(
     () => selectDepthRecords(filtered, filters),
@@ -223,14 +392,15 @@ export default function AnalysisPage({
     [depthRecords, filtered, filters.grouping],
   );
   const apply = (draft) => {
-    const next = {
+    const policyBounds = boundsForPolicy(draft.depthQuality);
+    const next = clampFiltersToBounds({
       ...draft,
       minMagnitude: Number(draft.minMagnitude),
       maxMagnitude: Number(draft.maxMagnitude),
-      minDepth: Number(draft.minDepth),
-      maxDepth: Number(draft.maxDepth),
-    };
-    const nextErrors = validateFilters(next, bounds);
+      minDepth: draft.minDepth === "" ? "" : Number(draft.minDepth),
+      maxDepth: draft.maxDepth === "" ? "" : Number(draft.maxDepth),
+    }, policyBounds);
+    const nextErrors = validateFilters(next, policyBounds);
     setErrors(nextErrors);
     if (!Object.keys(nextErrors).length) setFilters(next);
   };
@@ -272,7 +442,7 @@ export default function AnalysisPage({
   return (
     <div className="analysis-page">
       <header className="analysis-header">
-        <h1 className="analysis-brand" aria-label="MPGV Map Analysis">
+        <h1 className="analysis-brand" aria-label="MPGV Map Earthquake Insights">
           <span className="app-title__main">
             <svg
               className="app-title__iceland"
@@ -287,7 +457,7 @@ export default function AnalysisPage({
               <span className="app-title__pgv">PGV</span>
             </span>
           </span>
-          <span className="app-title__map">-MAP — ANALYSIS</span>
+          <span className="app-title__map">-MAP — INSIGHTS</span>
         </h1>
         <div className="analysis-header-actions">
           <button
@@ -335,7 +505,6 @@ export default function AnalysisPage({
       <main id="analysis-content">
         <div className="analysis-title">
           <div>
-            <p>MPGV Monitor</p>
             <h1>{text.analysis}</h1>
           </div>
           <div className="export-menu">
@@ -356,14 +525,25 @@ export default function AnalysisPage({
             </button>
           </div>
         </div>
-        {loading && !earthquakes.length ? (
-          <div className="analysis-state" role="status">
-            {text.loading}
-          </div>
-        ) : loadError && !earthquakes.length ? (
+        {loadError && !earthquakes.length && !loading ? (
           <div className="analysis-state error" role="alert">
-            {text.loadError}
+            <p>{text.loadError}</p>
+            <button type="button" onClick={onRetryData}>{text.retryLimits}</button>
           </div>
+        ) : limitsError ? (
+          <div className="analysis-state error" role="alert">
+            <p>
+              {text.limitsLoadError}
+              {import.meta.env.DEV && limitsError?.message
+                ? ` ${limitsError.message}`
+                : ""}
+            </p>
+            <button type="button" onClick={() => setLimitsRetry((value) => value + 1)}>
+              {text.retryLimits}
+            </button>
+          </div>
+        ) : !isInitialized ? (
+          <AnalysisSkeleton text={text} />
         ) : (
           <>
             <AnalysisFilters
@@ -372,6 +552,8 @@ export default function AnalysisPage({
               errors={errors}
               onApply={apply}
               onReset={reset}
+              limitsByPolicy={limitsByPolicy}
+              limitsLoading={limitsLoading}
               text={text}
             />
             <p className="result-summary">{summary}</p>
@@ -387,7 +569,9 @@ export default function AnalysisPage({
                 <AnalysisCharts
                   analysis={analysis}
                   depthRecords={depthRecords}
-                  exportContext={exportContext}
+                  includeUnverified={
+                    filters.depthQuality === "include_unverified"
+                  }
                   text={text}
                 />
                 <ResultsTables
@@ -401,6 +585,15 @@ export default function AnalysisPage({
             )}
           </>
         )}
+        <footer className="analysis-footer">
+          <h2>{text.analysisNotes}</h2>
+          <p>{text.analysisNotesText}</p>
+          <p className="analysis-footer-sources">
+            <strong>{text.dataSources}</strong> MPGV <span aria-hidden="true">•</span> IMO <span aria-hidden="true">•</span> EPOS
+            <span className="analysis-footer-divider" aria-hidden="true">|</span>
+            <strong>{text.universityOfIceland}</strong>
+          </p>
+        </footer>
       </main>
       {showAbout && <About onClose={() => setShowAbout(false)} />}
     </div>
