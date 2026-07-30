@@ -13,6 +13,7 @@ import {
   validateFilters,
 } from "../analysis/analysisData";
 import { buildEarthquakesCsv } from "../analysis/analysisExport";
+import { parseBackendUtcDate } from "../utils/datetime";
 
 const rows = [
   {
@@ -246,5 +247,49 @@ describe("analysis transformations", () => {
       minDepth: 2.4,
       maxDepth: 40.7,
     });
+  });
+
+  it("preserves fractional UTC timestamps and orders all July 28 events", () => {
+    const july28 = [
+      {
+        "Date-time": "2026-07-28 05:36:37.500",
+        Latitude: 64.661186,
+        Longitude: -17.470501,
+        Depth: 3.5,
+        Mw_mean: 5.16,
+        status: "matched",
+      },
+      {
+        "Date-time": "2026-07-28 16:57:15.100",
+        Latitude: 64.136,
+        Longitude: -18.6,
+        Depth: 1.1,
+        Mw_mean: 3.0,
+        status: "v_only",
+      },
+      {
+        "Date-time": "2026-07-28 16:57:19.100",
+        Latitude: 63.994,
+        Longitude: -19.123,
+        Depth: 1.7,
+        Mw_mean: 3.01,
+        status: "v_only",
+      },
+    ];
+
+    expect(
+      parseBackendUtcDate("2026-07-28 05:36:37.500").toISOString(),
+    ).toBe("2026-07-28T05:36:37.500Z");
+    const normalized = normalizeEarthquakes(july28);
+    expect(normalized.every((item) => item.date.getUTCDate() === 28)).toBe(true);
+    expect(
+      buildAnalysis(normalized, normalized, "day").recentRows.map(
+        (item) => item["Date-time"],
+      ),
+    ).toEqual([
+      "2026-07-28 16:57:19.100",
+      "2026-07-28 16:57:15.100",
+      "2026-07-28 05:36:37.500",
+    ]);
   });
 });

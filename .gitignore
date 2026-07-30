@@ -2,24 +2,38 @@
 backend/venv/
 backend/__pycache__/
 backend/**/__pycache__/
-*.pyc
-*.pyo
-*.pyd
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
 
 # Database (runtime data — not source)
 backend/data/earthquakes.db
 backend/data/earthquakes.db-shm
 backend/data/earthquakes.db-wal
+*.db-shm
+*.db-wal
+*.db-journal
 
 # Node / Frontend
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+dist/
+.vite/
 
 # VS files
 .vs/
 .claude/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # OS
 .DS_Store
@@ -35,9 +49,25 @@ private.*.env
 .local/
 backend/runtime/
 runtime/
+logs/
 server.log
 server.pid
+*.log
+*.pid
 *.lock
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+temp/
+tmp/
+backups/
+
+# Generated diagnostic reports
+backend/reports/shakemap_audit.csv
 
 # Large binary assets (exceed GitHub's 100 MB limit)
 *.pmtiles

@@ -22,9 +22,22 @@ For backend-only use, activate a Python virtual environment, install `requiremen
 
 SQLite data is stored in `backend/data/earthquakes.db` by default. SQLAlchemy models hold MPGV source rows, IMO Quakes API rows, the reconciled catalogue, volcano metadata, and validated ShakeMap links. SQLite uses WAL mode because API reads and the scheduler can overlap with ingestion writes.
 
-The scheduler runs every three minutes unless `DISABLE_SCHEDULER` is set. It refreshes MPGV records, recent IMO Quakes API data, the one-to-one reconciled catalogue, and EPOS volcano metadata. Public catalogue responses include reconciled events at **M >= 3.0**.
+The scheduler runs every three minutes unless `DISABLE_SCHEDULER` parses as true. Values such as `0`, `false`, and `no` leave it enabled. A process-lifetime lock at `backend/runtime/scheduler-owner.lock` ensures that only one local process owns scheduled ingestion. The scheduler refreshes MPGV records, recent IMO Quakes API data, the one-to-one reconciled catalogue, and EPOS volcano metadata. Public catalogue responses include reconciled events at **M >= 3.0**.
 
 Matched catalogue rows use MPGV time and magnitude with IMO Quakes API location and depth. MPGV rows without a unique winning match remain `v_only`; their raw depths are retained and treated as unverified by Insights unless the user explicitly includes them.
+
+MPGV ingestion retains historical source revisions but marks only the latest authoritative row for each stable `source_id` as current. Reconciliation reads current MPGV rows and produces at most one merged row per MPGV source identity. This keeps revisions available for provenance without exposing duplicate catalogue events.
+
+For a controlled repair of MPGV revision metadata and the derived catalogue, use `cleanup_mpgv_revisions.py`. It is dry-run by default and operates on a temporary database copy. Applying it requires an explicit database and a new, non-existing backup path:
+
+```bash
+python cleanup_mpgv_revisions.py \
+  --database data/earthquakes.db \
+  --apply \
+  --backup ../backups/earthquakes.before-mpgv-cleanup.db
+```
+
+Do not run the applying form concurrently with scheduled ingestion. Verify the selected database path and retain the backup until the corrected catalogue has been validated.
 
 ## API
 

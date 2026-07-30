@@ -2,13 +2,18 @@
 # Match criteria: abs(dt) <= 2s, dist < DIST_LIMIT_KM, abs(dMw) < DM_LIMIT.
 # Exactly one one-to-one match -> 'matched' (S location/depth, V time/Mw);
 # no match, ambiguous V candidates, or losing duplicate-S candidates -> 'v_only'.
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from math import radians, sin, cos, asin, sqrt
+import logging
+
+from flask import has_app_context
 
 from app import app, db, Earthquake, EarthquakeMerged, EarthquakeSRaw
 
 DIST_LIMIT_KM = 10.0
 DM_LIMIT = 3.0
+TIME_LIMIT_SEC = 2.0
 
 DEPTH_POLICY = 's'         # use Quakes API depth when matched
 DEPTH_AVG_THR_KM = 5.0     # if using 'avg_if_close', average when |V-S| < 5 km
@@ -22,8 +27,14 @@ def haversine_km(lat1, lon1, lat2, lon2):
     a = sin(dphi/2)**2 + cos(p1)*cos(p2)*sin(dlmb/2)**2
     return 2 * R * asin(sqrt(a))
 
-def match_and_merge(start_utc, end_utc, min_mag=3.0):
-    with app.app_context():
+
+def parse_source_time(value):
+    """Parse MPGV/IMO database timestamps with optional fractional seconds."""
+    return datetime.fromisoformat(value.replace("T", " "))
+
+
+def match_and_merge(start_utc, end_utc, min_mag=3.0, *, commit=True):
+    with (nullcontext() if has_app_context() else app.app_context()):
         s_rows = EarthquakeSRaw.query.filter(
             EarthquakeSRaw.date_time >= start_utc,
             EarthquakeSRaw.date_time <= end_utc
@@ -35,15 +46,16 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
             s_by_sec.setdefault(s.date_time, []).append(s)
 
         v_rows = Earthquake.query.filter(
-            Earthquake.date_time >= start_utc,
-            Earthquake.date_time <= end_utc,
+            Earthquake.source_id >= start_utc,
+            Earthquake.source_id <= end_utc,
+            Earthquake.is_current.is_(True),
             Earthquake.mw_mean >= min_mag
         ).all()
 
         v_candidates = {}
         for v in v_rows:
-            vt = v.date_time
-            base = datetime.strptime(vt, "%Y-%m-%d %H:%M:%S")
+            vt = v.source_id
+            base = parse_source_time(vt)
             secs = [(base + timedelta(seconds=delta)).strftime("%Y-%m-%d %H:%M:%S") for delta in (-2, -1, 0, 1, 2)]
 
             candidates = []
@@ -55,7 +67,14 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                     dm = abs((v.mw_mean or 0.0) - (s.magnitude or v.mw_mean or 0.0))
                     if dm >= DM_LIMIT:
                         continue
-                    dt_abs = abs((datetime.strptime(vt, "%Y-%m-%d %H:%M:%S") - datetime.strptime(s.date_time, "%Y-%m-%d %H:%M:%S")).total_seconds())
+                    dt_abs = abs(
+                        (
+                            parse_source_time(vt)
+                            - parse_source_time(s.date_time)
+                        ).total_seconds()
+                    )
+                    if dt_abs > TIME_LIMIT_SEC:
+                        continue
                     score = (dt_abs, dist, dm, v.id or 0)
                     candidates.append((score, dist, dt_abs, dm, s))
 
@@ -82,12 +101,13 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
 
             if match is None:
                 m = EarthquakeMerged(
-                    date_time=v.date_time,
+                    date_time=v.source_id,
                     latitude=v.latitude,
                     longitude=v.longitude,
                     depth=v.depth,
                     mw_mean=v.mw_mean,
                     status="v_only",
+                    v_src_key=v.source_id,
                     s_event_id=None,
                     match_dt_sec=None,
                     match_dist_km=None,
@@ -115,13 +135,13 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                     depth_value = v.depth
 
                 m = EarthquakeMerged(
-                    date_time=v.date_time,
+                    date_time=v.source_id,
                     latitude=s_best.latitude,
                     longitude=s_best.longitude,
                     depth=depth_value,
                     mw_mean=v.mw_mean,
                     status="matched",
-                    v_src_key=f"{v.date_time}_{v.latitude}_{v.longitude}",
+                    v_src_key=v.source_id,
                     s_event_id=s_best.event_id,
                     match_dt_sec=dt_abs,
                     match_dist_km=dist,
@@ -131,21 +151,45 @@ def match_and_merge(start_utc, end_utc, min_mag=3.0):
                 inserted += 1
                 n_matched += 1
 
+        source_ids = [row.v_src_key for row in replacement_rows]
+        if any(source_id is None for source_id in source_ids):
+            raise ValueError("Every merged row must have an MPGV source identity")
+        if len(source_ids) != len(set(source_ids)):
+            raise ValueError("Reconciliation produced duplicate MPGV source identities")
+        assigned_s_ids = [
+            row.s_event_id for row in replacement_rows if row.s_event_id is not None
+        ]
+        if len(assigned_s_ids) != len(set(assigned_s_ids)):
+            raise ValueError("Reconciliation assigned one IMO event more than once")
+
         try:
             EarthquakeMerged.query.filter(
                 EarthquakeMerged.date_time >= start_utc,
                 EarthquakeMerged.date_time <= end_utc
             ).delete(synchronize_session=False)
             db.session.add_all(replacement_rows)
-            db.session.commit()
+            db.session.flush()
+            if commit:
+                db.session.commit()
         except Exception:
             db.session.rollback()
-            print("Reconcile failed; previous merged rows were preserved by rollback.")
+            logging.exception(
+                "Reconcile failed; previous merged rows were preserved by rollback."
+            )
             raise
 
-        print(f"Total: {inserted}")
-        print(f"  Matched: {n_matched}")
-        print(f"  V-only:  {n_v_only}")
+        logging.info(
+            "Reconciliation complete canonical_total=%s matched_total=%s "
+            "mpgv_only_total=%s",
+            inserted,
+            n_matched,
+            n_v_only,
+        )
+        return {
+            "total": inserted,
+            "matched": n_matched,
+            "v_only": n_v_only,
+        }
 
 if __name__ == "__main__":
     end = datetime.now(timezone.utc).replace(microsecond=0)

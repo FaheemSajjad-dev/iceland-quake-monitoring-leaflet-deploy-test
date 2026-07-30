@@ -9,6 +9,7 @@ import re
 import time
 import sqlite3
 import unicodedata
+import logging
 import requests
 
 BASE = "https://api.vedur.is/epos"
@@ -39,7 +40,7 @@ def _get_json(url, timeout=25):
             return r.json()
         except Exception as e:
             if i == 2:
-                print(f"GET {url} failed: {e}")
+                logging.warning("EPOS request failed url=%s error=%s", url, e)
                 return None
             time.sleep(0.7 * (i + 1))
     return None
@@ -119,19 +120,19 @@ def fetch_and_merge():
         })
 
     if merged:
-        print(f"Loaded {len(merged)} volcanoes from EPOS catalog.")
+        logging.info("EPOS volcano acquisition complete rows=%s", len(merged))
         return merged
 
-    print("EPOS catalog returned no usable volcano rows.")
+    logging.warning("EPOS catalog returned no usable volcano rows.")
     return []
 
 def save_volcanoes_to_db(volcanoes, db_path=None):
     if not volcanoes:
-        print("No volcano data to save, skipping update.")
+        logging.warning("No volcano data to save; update skipped.")
         return False
 
     if len(volcanoes) < MIN_VALID_VOLCANO_ROWS:
-        print("Too few volcano rows to safely replace existing data.")
+        logging.warning("Too few volcano rows to safely replace existing data.")
         return False
 
     if db_path is None:
@@ -187,17 +188,19 @@ def save_volcanoes_to_db(volcanoes, db_path=None):
         conn.commit()
     except Exception:
         conn.rollback()
-        print("Volcano replacement failed; previous rows were preserved by rollback.")
+        logging.exception(
+            "Volcano replacement failed; previous rows were preserved by rollback."
+        )
         raise
     finally:
         conn.close()
-    print(f"Saved {count} volcano rows.")
+    logging.info("EPOS volcano storage complete rows=%s", count)
     return count > 0
 
 def refresh_volcanoes(db_path=None):
     rows = fetch_and_merge()
     if not rows:
-        print("No volcanoes loaded.")
+        logging.warning("No volcanoes loaded.")
         return False
     return save_volcanoes_to_db(rows, db_path)
 

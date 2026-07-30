@@ -106,6 +106,9 @@ describe("AnalysisPage initialization lifecycle", () => {
     completeLimits();
     renderPage();
     const minimum = await screen.findByLabelText("Minimum magnitude");
+    await waitFor(() =>
+      expect(screen.queryByTestId("analysis-skeleton")).not.toBeInTheDocument(),
+    );
     fireEvent.change(minimum, { target: { value: "5" } });
     fireEvent.submit(screen.getByRole("button", { name: "Apply filters" }).closest("form"));
     expect(await screen.findByText("No earthquakes match these filters.")).toBeInTheDocument();

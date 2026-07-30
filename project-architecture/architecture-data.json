@@ -1,0 +1,3573 @@
+{
+  "project": {
+    "name": "MPGV Monitor",
+    "generated_by": "project-architecture/generate_architecture.py",
+    "analysed_files": 79,
+    "displayed_nodes": 63,
+    "displayed_important_files": 32,
+    "relationships": 89,
+    "entry_points": [
+      "frontend/index.html",
+      "frontend/src/main.jsx",
+      "frontend/src/App.jsx",
+      "backend/app.py",
+      "run-local.sh"
+    ],
+    "large_files": [
+      {
+        "path": "frontend/src/components/MapComponent.jsx",
+        "lines": 1477
+      },
+      {
+        "path": "backend/app.py",
+        "lines": 864
+      },
+      {
+        "path": "frontend/src/components/MapComponent.css",
+        "lines": 731
+      },
+      {
+        "path": "frontend/src/analysis/AnalysisPage.css",
+        "lines": 649
+      },
+      {
+        "path": "frontend/src/components/TimeWindowSlider.jsx",
+        "lines": 609
+      },
+      {
+        "path": "frontend/src/analysis/AnalysisPage.jsx",
+        "lines": 602
+      },
+      {
+        "path": "frontend/src/components/LeftPanel.css",
+        "lines": 523
+      },
+      {
+        "path": "frontend/src/analysis/AnalysisCharts.jsx",
+        "lines": 522
+      },
+      {
+        "path": "tools/generate_ch2_reference_report.py",
+        "lines": 478
+      },
+      {
+        "path": "frontend/src/components/TimeWindowSlider.css",
+        "lines": 441
+      },
+      {
+        "path": "frontend/src/components/MagnitudeScale.css",
+        "lines": 403
+      },
+      {
+        "path": "frontend/src/analysis/analysisData.js",
+        "lines": 396
+      }
+    ],
+    "excluded": [
+      "node_modules",
+      "virtual environments",
+      "frontend/dist",
+      "runtime databases and journals",
+      "logs and PID files",
+      "font/sprite binaries",
+      ".git",
+      "caches",
+      "architecture explorer output"
+    ],
+    "limitations": [
+      "Dynamic Python imports inside scheduled jobs are curated because AST import analysis cannot resolve runtime reloads.",
+      "HTTP endpoint relationships are curated from concrete URL strings and Flask route decorators.",
+      "Prop/state semantics and Recharts/MapLibre rendering relationships require curated explanations beyond import detection.",
+      "nginx configuration is documented but not stored in this repository, so it is represented only through deployment documentation and runtime nodes."
+    ]
+  },
+  "categories": [
+    "Backend API",
+    "Backend tests",
+    "Configuration",
+    "Data ingestion",
+    "Data reconciliation",
+    "Data validation",
+    "Database",
+    "Deployment",
+    "Documentation",
+    "External source",
+    "Frontend entry",
+    "Frontend orchestration",
+    "Frontend services",
+    "Frontend styles",
+    "Frontend tests",
+    "Insights frontend",
+    "Insights processing",
+    "Map frontend",
+    "Runtime",
+    "Shared frontend"
+  ],
+  "views": [
+    {
+      "id": "full",
+      "name": "Full project overview",
+      "categories": []
+    },
+    {
+      "id": "frontend",
+      "name": "Frontend architecture",
+      "categories": [
+        "Frontend entry",
+        "Frontend orchestration",
+        "Frontend services",
+        "Shared frontend",
+        "Map frontend",
+        "Insights frontend",
+        "Insights processing",
+        "Frontend styles",
+        "Runtime"
+      ]
+    },
+    {
+      "id": "backend",
+      "name": "Backend architecture",
+      "categories": [
+        "Backend API",
+        "Data ingestion",
+        "Data reconciliation",
+        "Data validation",
+        "Database",
+        "External source",
+        "Runtime"
+      ]
+    },
+    {
+      "id": "ingestion",
+      "name": "Data ingestion and reconciliation",
+      "node_ids": [
+        "backend/app.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "backend/reconcile.py",
+        "backend/volcano_scraper.py",
+        "system:sqlite",
+        "external:mpgv",
+        "external:quakes",
+        "external:epos"
+      ]
+    },
+    {
+      "id": "insights",
+      "name": "Insights / Analysis page flow",
+      "node_ids": [
+        "frontend/src/App.jsx",
+        "frontend/src/api.js",
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/AnalysisFilters.jsx",
+        "frontend/src/analysis/AnalysisCharts.jsx",
+        "frontend/src/analysis/SummaryCards.jsx",
+        "frontend/src/analysis/ResultsTables.jsx",
+        "frontend/src/analysis/analysisExport.js",
+        "backend/app.py",
+        "system:sqlite"
+      ]
+    },
+    {
+      "id": "map",
+      "name": "Map page flow",
+      "node_ids": [
+        "frontend/src/App.jsx",
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx",
+        "frontend/src/utils/datetime.js",
+        "frontend/src/components/MapComponent.jsx",
+        "frontend/src/components/LeftPanel.jsx",
+        "frontend/src/components/TimeWindowSlider.jsx",
+        "frontend/src/components/MagnitudeScale.jsx",
+        "frontend/src/components/MapTypeSelector.jsx",
+        "frontend/src/components/RightPanel.jsx",
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/public/map-style.json",
+        "backend/app.py",
+        "external:epos"
+      ]
+    },
+    {
+      "id": "database",
+      "name": "Database flow",
+      "node_ids": [
+        "system:sqlite",
+        "backend/app.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "backend/reconcile.py",
+        "backend/volcano_scraper.py",
+        "backend/shakemap_validator.py"
+      ]
+    },
+    {
+      "id": "deployment",
+      "name": "Deployment and configuration",
+      "categories": [
+        "Deployment",
+        "Configuration",
+        "Documentation",
+        "Runtime",
+        "Frontend entry",
+        "Backend API"
+      ]
+    },
+    {
+      "id": "testing",
+      "name": "Testing relationships",
+      "categories": [
+        "Backend tests",
+        "Frontend tests",
+        "Backend API",
+        "Data ingestion",
+        "Data reconciliation",
+        "Map frontend",
+        "Insights frontend",
+        "Insights processing",
+        "Frontend orchestration"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "ingestion",
+      "name": "Earthquake ingestion",
+      "steps": [
+        "external:mpgv",
+        "backend/scrape.py",
+        "system:sqlite",
+        "backend/skjalftalisa_client.py",
+        "backend/reconcile.py",
+        "backend/app.py",
+        "frontend/src/api.js",
+        "frontend/src/App.jsx",
+        "frontend/src/components/MapComponent.jsx"
+      ],
+      "note": "MPGV rows and Quakes API reference rows enter separate tables; reconciliation creates the catalogue served to the map."
+    },
+    {
+      "id": "map",
+      "name": "Map interaction",
+      "steps": [
+        "frontend/src/components/LeftPanel.jsx",
+        "frontend/src/App.jsx",
+        "frontend/src/components/MapComponent.jsx",
+        "frontend/src/api.js",
+        "backend/app.py",
+        "external:epos"
+      ],
+      "note": "Panel actions update App state; MapComponent redraws local layers and only calls Flask when a selected event needs ShakeMap lookup."
+    },
+    {
+      "id": "insights",
+      "name": "Insights analysis",
+      "steps": [
+        "frontend/src/analysis/AnalysisFilters.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/api.js",
+        "backend/app.py",
+        "system:sqlite",
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/AnalysisCharts.jsx",
+        "frontend/src/analysis/ResultsTables.jsx"
+      ],
+      "note": "Limits come from SQLite through Flask, while record filtering, aggregation, charting, and tables run in the browser over App's catalogue."
+    },
+    {
+      "id": "database",
+      "name": "Database and reconciliation",
+      "steps": [
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "system:sqlite",
+        "backend/reconcile.py",
+        "system:sqlite",
+        "backend/app.py"
+      ],
+      "note": "Two source tables remain auditable; a transactional replacement produces the merged display table and provenance diagnostics."
+    },
+    {
+      "id": "deployment",
+      "name": "Local/deployment path",
+      "steps": [
+        "run-local.sh",
+        "frontend/package.json",
+        "frontend/vite.config.js",
+        "frontend/src/main.jsx",
+        "backend/app.py",
+        "runtime:flask",
+        "runtime:browser"
+      ],
+      "note": "Local development runs Vite and Flask separately; production builds the frontend and lets Flask/Gunicorn serve it from one origin."
+    }
+  ],
+  "nodes": [
+    {
+      "category": "Backend API",
+      "importance": "Core",
+      "purpose": "Creates the Flask application, SQLAlchemy models, security/rate limits, scheduled ingestion, API routes, and built-frontend serving.",
+      "responsibilities": [
+        "Defines five database models and creates/migrates tables",
+        "Validates parameters, admin access, URLs, and response security headers",
+        "Schedules MPGV, Quakes API, reconciliation, and volcano refresh",
+        "Serves earthquake, volcano, Insights, CSV, ShakeMap, admin, health, and SPA routes",
+        "Caches the default earthquake response"
+      ],
+      "why": "It is the backend composition root and HTTP boundary.",
+      "breakage": "API contracts, database schema, ingestion scheduling, security, or production serving can break at once.",
+      "config": [
+        "ADMIN_TOKEN",
+        "ALLOW_DEV_LOCAL_ADMIN",
+        "APP_ENV",
+        "BACKEND_PORT",
+        "CSV_MAX_DAYS_WINDOW",
+        "CSV_MAX_ROWS",
+        "DISABLE_SCHEDULER",
+        "EARTHQUAKES_MAX_ROWS",
+        "FLASK_ENV",
+        "FRONTEND_PORT",
+        "MAX_DAYS_WINDOW",
+        "PORT",
+        "RATE_LIMIT_*",
+        "RATE_LIMIT_DEFAULT",
+        "RATE_LIMIT_ENABLED",
+        "RATE_LIMIT_STORAGE",
+        "RUNTIME_DIR",
+        "TRUSTED_PROXY_COUNT",
+        "WERKZEUG_RUN_MAIN"
+      ],
+      "id": "backend/app.py",
+      "path": "backend/app.py",
+      "node_type": "file",
+      "label": "app.py",
+      "lines": 864,
+      "imports": [
+        "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "backend/volcano_scraper.py"
+      ],
+      "symbols": [
+        "Earthquake",
+        "EarthquakeMerged",
+        "EarthquakeSRaw",
+        "IngestionLock",
+        "ShakeMapLink",
+        "Volcano",
+        "add_security_headers",
+        "bootstrap_missing_data",
+        "create_tables",
+        "ensure_background_services",
+        "frontend_assets",
+        "get_earthquake_data",
+        "get_earthquake_data_csv",
+        "get_insights_limits",
+        "get_volcano_data",
+        "handle_http_error",
+        "health",
+        "home",
+        "initialize_data",
+        "parse_bool",
+        "rate_limit",
+        "require_admin",
+        "run_reconcile",
+        "scheduled_scrape"
+      ],
+      "routes": [
+        "/",
+        "/<path:path>",
+        "/assets/<path:path>",
+        "/earthquakes",
+        "/earthquakes_csv",
+        "/health",
+        "/initialize-data",
+        "/insights/limits",
+        "/reconcile",
+        "/scrape-volcanoes",
+        "/shakemap/<dt>",
+        "/shakemap_lookup",
+        "/volcanoes"
+      ],
+      "communications": [],
+      "dependencies": [
+        "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "backend/volcano_scraper.py",
+        "external:epos",
+        "runtime:flask",
+        "system:sqlite"
+      ],
+      "dependents": [
+        "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/shakemap_validator.py",
+        "backend/skjalftalisa_client.py",
+        "backend/tests/conftest.py",
+        "backend/tests/test_insights_limits.py",
+        "backend/tests/test_reconcile.py",
+        "backend/tests/test_security_hardening.py",
+        "frontend/src/api.js",
+        "run-local.sh"
+      ],
+      "tests": [
+        "backend/tests/conftest.py",
+        "backend/tests/test_insights_limits.py",
+        "backend/tests/test_reconcile.py",
+        "backend/tests/test_security_hardening.py"
+      ]
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Creates an isolated Flask application and temporary SQLite database for backend tests.",
+      "responsibilities": [
+        "Disables the scheduler",
+        "Rebinds SQLAlchemy to a temporary database",
+        "Provides app and database fixtures"
+      ],
+      "why": "Backend tests must never touch the production/runtime database or start background ingestion.",
+      "breakage": "Tests may become nondeterministic or modify real data.",
+      "id": "backend/tests/conftest.py",
+      "path": "backend/tests/conftest.py",
+      "node_type": "file",
+      "label": "conftest.py",
+      "lines": 86,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "db_session",
+        "test_app"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers magnitude/depth catalogue limits for both depth-quality policies.",
+      "responsibilities": [
+        "Seeds merged rows",
+        "Checks reference-only versus unverified depth bounds",
+        "Rejects invalid query parameters"
+      ],
+      "why": "Frontend filters depend on exact server-side bounds.",
+      "breakage": "Insights initialization can expose invalid ranges.",
+      "id": "backend/tests/test_insights_limits.py",
+      "path": "backend/tests/test_insights_limits.py",
+      "node_type": "file",
+      "label": "test_insights_limits.py",
+      "lines": 51,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "add_earthquake",
+        "test_insights_limits_are_aggregated_by_depth_policy",
+        "test_insights_limits_reject_invalid_query_parameters",
+        "test_insights_limits_return_null_depths_when_policy_has_none"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers configurable endpoint rate limits and health exemption.",
+      "responsibilities": [
+        "Overrides rate-limit environment names",
+        "Exercises repeated public requests"
+      ],
+      "why": "Operational protections must remain configurable without blocking health checks.",
+      "breakage": "Public endpoints may become unprotected or health monitoring may be throttled.",
+      "id": "backend/tests/test_rate_limiting.py",
+      "path": "backend/tests/test_rate_limiting.py",
+      "node_type": "file",
+      "label": "test_rate_limiting.py",
+      "lines": 43,
+      "imports": [],
+      "symbols": [
+        "test_earthquakes_rate_limit_can_be_configured",
+        "test_health_endpoint_is_not_rate_limited",
+        "test_public_endpoint_specific_limits"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers reconciliation thresholds, ambiguity, provenance, depth policies, and idempotence.",
+      "responsibilities": [
+        "Builds source fixtures",
+        "Asserts matched/v_only decisions",
+        "Checks diagnostic fields and transactional reruns"
+      ],
+      "why": "Reconciliation is the most scientifically sensitive data transformation.",
+      "breakage": "Matching regressions may reach production undetected.",
+      "id": "backend/tests/test_reconcile.py",
+      "path": "backend/tests/test_reconcile.py",
+      "node_type": "file",
+      "label": "test_reconcile.py",
+      "lines": 238,
+      "imports": [
+        "backend/app.py",
+        "backend/reconcile.py"
+      ],
+      "symbols": [
+        "add_s",
+        "add_v",
+        "merged_rows",
+        "run_merge",
+        "test_ambiguous_two_s_candidates_gives_v_only",
+        "test_depth_policy_s_uses_quakes_api_depth",
+        "test_depth_policy_v_uses_mpgv_depth",
+        "test_idempotent_rerun",
+        "test_matched_diagnostics_recorded",
+        "test_matched_within_all_thresholds",
+        "test_multiple_v_events_each_produce_merged_row",
+        "test_one_quakes_api_event_is_used_once",
+        "test_v_below_min_mag_not_merged",
+        "test_v_only_distance_exceeds_threshold",
+        "test_v_only_magnitude_diff_exactly_at_limit",
+        "test_v_only_magnitude_diff_too_large",
+        "test_v_only_time_outside_window",
+        "test_v_only_when_no_s_events"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py",
+        "backend/reconcile.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers MPGV HTML parsing, magnitude filtering, timestamps, and malformed rows.",
+      "responsibilities": [
+        "Mocks monthly HTML responses",
+        "Checks accepted/rejected row shapes"
+      ],
+      "why": "External HTML is less stable than an API contract.",
+      "breakage": "Upstream markup changes may corrupt or halt ingestion unnoticed.",
+      "id": "backend/tests/test_scrape_parse.py",
+      "path": "backend/tests/test_scrape_parse.py",
+      "node_type": "file",
+      "label": "test_scrape_parse.py",
+      "lines": 177,
+      "imports": [
+        "backend/scrape.py"
+      ],
+      "symbols": [
+        "TestDatetimeParsing",
+        "TestEdgeCases",
+        "TestGetMonthlyDataParsing",
+        "TestMagnitudeFilter",
+        "test_above_threshold_included",
+        "test_below_threshold_excluded",
+        "test_correct_field_values",
+        "test_datetime_with_microseconds",
+        "test_datetime_without_microseconds",
+        "test_empty_table_returns_empty_list",
+        "test_exactly_at_threshold_included",
+        "test_mixed_magnitudes_filtered_correctly",
+        "test_multiple_rows_returned",
+        "test_no_table_returns_empty_list",
+        "test_returns_list_of_dicts",
+        "test_row_with_missing_mw_skipped",
+        "test_row_with_non_numeric_mw_skipped",
+        "test_url_format"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/scrape.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers admin authentication, input validation, URL validation, and transactional rollback safety.",
+      "responsibilities": [
+        "Tests protected routes",
+        "Rejects unsafe parameters and links",
+        "Verifies failed replacements preserve prior data"
+      ],
+      "why": "Security and data-loss controls need executable guarantees.",
+      "breakage": "Authentication, SSRF defenses, or rollback behavior may regress silently.",
+      "id": "backend/tests/test_security_hardening.py",
+      "path": "backend/tests/test_security_hardening.py",
+      "node_type": "file",
+      "label": "test_security_hardening.py",
+      "lines": 156,
+      "imports": [
+        "backend/app.py",
+        "backend/reconcile.py",
+        "backend/volcano_scraper.py"
+      ],
+      "symbols": [
+        "fail_bootstrap",
+        "failing_add_all",
+        "test_invalid_days_returns_400",
+        "test_invalid_shakemap_lookup_parameters_return_400",
+        "test_production_admin_routes_reject_missing_token_even_from_loopback",
+        "test_public_get_routes_do_not_bootstrap",
+        "test_reconcile_requires_x_admin_token_not_query_or_authorization",
+        "test_reconcile_rollback_preserves_previous_merged_rows",
+        "test_scrape_volcanoes_is_post_only_and_authenticated",
+        "test_shakemap_stored_url_validation",
+        "test_volcano_replacement_rollback_preserves_existing_rows"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py",
+        "backend/reconcile.py",
+        "backend/volcano_scraper.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers Quakes API request parameters, GeoJSON normalization, cutoff behavior, and malformed features.",
+      "responsibilities": [
+        "Mocks API responses",
+        "Checks coordinate/time conversion",
+        "Verifies pre-cutoff requests are skipped"
+      ],
+      "why": "The reference-data client defines reconciliation input quality.",
+      "breakage": "Bad Quakes API records may enter the raw table.",
+      "id": "backend/tests/test_skjalftalisa_client.py",
+      "path": "backend/tests/test_skjalftalisa_client.py",
+      "node_type": "file",
+      "label": "test_skjalftalisa_client.py",
+      "lines": 93,
+      "imports": [
+        "backend/skjalftalisa_client.py"
+      ],
+      "symbols": [
+        "test_fetch_before_cutoff_returns_empty_without_request",
+        "test_fetch_skips_malformed_features",
+        "test_fetch_uses_quakes_api_events_endpoint_and_query_params"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/skjalftalisa_client.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Backend tests",
+      "importance": "Test",
+      "purpose": "Covers current/fallback EPOS endpoints and payload normalization.",
+      "responsibilities": [
+        "Mocks endpoint responses",
+        "Checks fallback and empty behavior"
+      ],
+      "why": "The volcano scraper supports multiple upstream schemas.",
+      "breakage": "A schema or endpoint change may remove volcano data unnoticed.",
+      "id": "backend/tests/test_volcano_scraper.py",
+      "path": "backend/tests/test_volcano_scraper.py",
+      "node_type": "file",
+      "label": "test_volcano_scraper.py",
+      "lines": 70,
+      "imports": [
+        "backend/volcano_scraper.py"
+      ],
+      "symbols": [
+        "fake_get",
+        "test_fetch_and_merge_falls_back_to_v1_and_handles_wrapped_payload",
+        "test_fetch_and_merge_returns_empty_when_api_returns_nothing",
+        "test_fetch_and_merge_uses_documented_epos_catalog_url_first"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/volcano_scraper.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Configuration",
+      "importance": "Important",
+      "purpose": "Pins the Python packages required by Flask, SQLAlchemy, scraping, scheduling, rate limiting, production serving, and tests.",
+      "responsibilities": [
+        "Defines backend install inputs",
+        "Keeps deployment and local environments reproducible"
+      ],
+      "why": "Backend scripts and deploy tooling install from one dependency list.",
+      "breakage": "Installs can become non-reproducible or runtime imports can fail.",
+      "id": "backend/requirements.txt",
+      "path": "backend/requirements.txt",
+      "node_type": "file",
+      "label": "requirements.txt",
+      "lines": 163,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Configuration",
+      "importance": "Important",
+      "purpose": "Defines frontend dependencies and dev, test, lint, build, and preview scripts.",
+      "responsibilities": [
+        "Declares React, MapLibre, deck.gl, Recharts, Axios, and test tooling",
+        "Provides the frontend command interface"
+      ],
+      "why": "Local development, CI-like validation, and production builds share these commands.",
+      "breakage": "The frontend may not install, test, lint, or build consistently.",
+      "id": "frontend/package.json",
+      "path": "frontend/package.json",
+      "node_type": "file",
+      "label": "package.json",
+      "lines": 46,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/vite.config.js"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/MapArchitecture.test.js",
+        "run-local.sh"
+      ],
+      "tests": [
+        "frontend/src/__tests__/MapArchitecture.test.js"
+      ]
+    },
+    {
+      "category": "Configuration",
+      "importance": "Important",
+      "purpose": "Provides the local MapLibre style document and tile/font/sprite references.",
+      "responsibilities": [
+        "Defines base map sources",
+        "Defines style layers consumed and patched by MapComponent"
+      ],
+      "why": "The map needs a deployable style that MapComponent can adapt for roadmap rendering.",
+      "breakage": "Base tiles, labels, fonts, or sprites may disappear.",
+      "id": "frontend/public/map-style.json",
+      "path": "frontend/public/map-style.json",
+      "node_type": "file",
+      "label": "map-style.json",
+      "lines": 1,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/components/MapComponent.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Configuration",
+      "importance": "Important",
+      "purpose": "Configures React/Vite build base path, local server, esnext target, and Vitest environment.",
+      "responsibilities": [
+        "Loads VITE_BASE_PATH",
+        "Registers the React plugin",
+        "Sets port 5174",
+        "Configures jsdom and test setup"
+      ],
+      "why": "The same toolchain serves development, builds production assets, and runs frontend tests.",
+      "breakage": "Deployments may use broken asset paths or tests may run in the wrong environment.",
+      "config": [
+        "VITE_BASE_PATH"
+      ],
+      "id": "frontend/vite.config.js",
+      "path": "frontend/vite.config.js",
+      "node_type": "file",
+      "label": "vite.config.js",
+      "lines": 30,
+      "imports": [],
+      "symbols": [
+        "env"
+      ],
+      "routes": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/main.jsx"
+      ],
+      "dependents": [
+        "frontend/package.json"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Data ingestion",
+      "importance": "Core",
+      "purpose": "Scrapes MPGV monthly HTML tables and stores magnitude-3+ source records.",
+      "responsibilities": [
+        "Discovers available years and months",
+        "Parses MPGV HTML rows",
+        "Filters invalid and low-magnitude records",
+        "Upserts through SQLAlchemy or a standalone SQLite fallback"
+      ],
+      "why": "MPGV supplies the authoritative magnitude/time series used as the V source in reconciliation.",
+      "breakage": "New MPGV earthquakes may stop entering the database or duplicate rows may appear.",
+      "communications": [
+        "http://hraun.vedur.is/ja/Mpgv/",
+        "earthquake table"
+      ],
+      "id": "backend/scrape.py",
+      "path": "backend/scrape.py",
+      "node_type": "file",
+      "label": "scrape.py",
+      "lines": 166,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "get_monthly_data",
+        "scrape_all_earthquake_data"
+      ],
+      "routes": [],
+      "config": [],
+      "dependencies": [
+        "backend/app.py",
+        "external:mpgv",
+        "system:sqlite"
+      ],
+      "dependents": [
+        "backend/app.py",
+        "backend/tests/test_scrape_parse.py"
+      ],
+      "tests": [
+        "backend/tests/test_scrape_parse.py"
+      ]
+    },
+    {
+      "category": "Data ingestion",
+      "importance": "Core",
+      "purpose": "Fetches IMO Quakes API GeoJSON and upserts raw reference events.",
+      "responsibilities": [
+        "Builds UTC query windows",
+        "Retries Quakes API requests",
+        "Normalizes GeoJSON coordinates and timestamps",
+        "Upserts records by event_id",
+        "Supports historical backfill"
+      ],
+      "why": "Reference locations and depths are needed to validate/enrich MPGV events.",
+      "breakage": "Matched events lose reference coordinates/depths and reconciliation produces more v_only rows.",
+      "communications": [
+        "https://api.vedur.is/quakes/events",
+        "earthquake_s_raw table"
+      ],
+      "id": "backend/skjalftalisa_client.py",
+      "path": "backend/skjalftalisa_client.py",
+      "node_type": "file",
+      "label": "skjalftalisa_client.py",
+      "lines": 211,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "backfill_skjalftalisa_since_2020",
+        "fetch_last_n_days",
+        "fetch_skjalftalisa",
+        "store_skjalftalisa_rows"
+      ],
+      "routes": [],
+      "config": [],
+      "dependencies": [
+        "backend/app.py",
+        "external:quakes",
+        "system:sqlite"
+      ],
+      "dependents": [
+        "backend/app.py",
+        "backend/tests/test_skjalftalisa_client.py"
+      ],
+      "tests": [
+        "backend/tests/test_skjalftalisa_client.py"
+      ]
+    },
+    {
+      "category": "Data ingestion",
+      "importance": "Important",
+      "purpose": "Fetches, normalizes, validates, and transactionally replaces EPOS volcano metadata.",
+      "responsibilities": [
+        "Tries current and legacy EPOS catalogue endpoints",
+        "Normalizes response schemas",
+        "Rejects suspiciously small or invalid datasets",
+        "Replaces the volcano table in a transaction"
+      ],
+      "why": "Volcano overlays need a stable local catalogue despite upstream schema differences.",
+      "breakage": "The map may show stale/no volcanoes or unsafe replacement could erase good data.",
+      "communications": [
+        "https://api.vedur.is/epos",
+        "volcano table"
+      ],
+      "config": [
+        "MIN_VALID_VOLCANO_ROWS"
+      ],
+      "id": "backend/volcano_scraper.py",
+      "path": "backend/volcano_scraper.py",
+      "node_type": "file",
+      "label": "volcano_scraper.py",
+      "lines": 206,
+      "imports": [],
+      "symbols": [
+        "fetch_and_merge",
+        "refresh_volcanoes",
+        "save_volcanoes_to_db"
+      ],
+      "routes": [],
+      "dependencies": [
+        "external:epos",
+        "system:sqlite"
+      ],
+      "dependents": [
+        "backend/app.py",
+        "backend/tests/test_security_hardening.py",
+        "backend/tests/test_volcano_scraper.py"
+      ],
+      "tests": [
+        "backend/tests/test_security_hardening.py",
+        "backend/tests/test_volcano_scraper.py"
+      ]
+    },
+    {
+      "category": "Data reconciliation",
+      "importance": "Core",
+      "purpose": "Matches MPGV and Quakes API events and atomically rebuilds the merged display table.",
+      "responsibilities": [
+        "Matches within time, distance, and magnitude thresholds",
+        "Enforces one-to-one unambiguous assignment",
+        "Chooses depth according to DEPTH_POLICY",
+        "Records match diagnostics and provenance",
+        "Replaces a requested time window in one transaction"
+      ],
+      "why": "The frontend reads one catalogue that combines MPGV magnitude/time with better reference location/depth when a safe match exists.",
+      "breakage": "Displayed coordinates/depths and matched/v_only provenance may become incorrect or rows may be lost.",
+      "communications": [
+        "earthquake table",
+        "earthquake_s_raw table",
+        "earthquake_merged table"
+      ],
+      "id": "backend/reconcile.py",
+      "path": "backend/reconcile.py",
+      "node_type": "file",
+      "label": "reconcile.py",
+      "lines": 156,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "haversine_km",
+        "match_and_merge"
+      ],
+      "routes": [],
+      "config": [],
+      "dependencies": [
+        "backend/app.py",
+        "system:sqlite"
+      ],
+      "dependents": [
+        "backend/app.py",
+        "backend/tests/test_reconcile.py",
+        "backend/tests/test_security_hardening.py"
+      ],
+      "tests": [
+        "backend/tests/test_reconcile.py",
+        "backend/tests/test_security_hardening.py"
+      ]
+    },
+    {
+      "category": "Data validation",
+      "importance": "Supporting",
+      "purpose": "Audits merged earthquakes against EPOS ShakeMap candidates and stores validated links.",
+      "responsibilities": [
+        "Fetches ShakeMaps in an event window",
+        "Scores time, distance, and magnitude differences",
+        "Writes validation status and diagnostics",
+        "Produces an audit report"
+      ],
+      "why": "Stored ShakeMap links can be prevalidated independently of live lookup.",
+      "breakage": "ShakeMap availability may be stale or incorrectly matched.",
+      "id": "backend/shakemap_validator.py",
+      "path": "backend/shakemap_validator.py",
+      "node_type": "file",
+      "label": "shakemap_validator.py",
+      "lines": 166,
+      "imports": [
+        "backend/app.py"
+      ],
+      "symbols": [
+        "audit_all",
+        "ensure_table",
+        "fetch_shakemaps_window",
+        "hav_km",
+        "parse_dt",
+        "pick_best_shakemap",
+        "within_limits"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Database",
+      "importance": "Core",
+      "purpose": "Runtime SQLite catalogue at backend/data/earthquakes.db (contents intentionally excluded).",
+      "responsibilities": [
+        "Stores MPGV source rows",
+        "Stores Quakes API raw rows",
+        "Stores merged display rows",
+        "Stores volcanoes and validated ShakeMap links"
+      ],
+      "why": "One local database supports ingestion, reconciliation, API queries, and deployment health checks.",
+      "breakage": "Schema or transaction mistakes can affect every data-serving path.",
+      "node_type": "system",
+      "label": "SQLite catalogue",
+      "symbols": [
+        "earthquake",
+        "earthquake_merged",
+        "earthquake_s_raw",
+        "shakemap_links",
+        "volcano"
+      ],
+      "id": "system:sqlite",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "backend/app.py",
+        "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
+        "backend/volcano_scraper.py"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Deployment",
+      "importance": "Important",
+      "purpose": "Creates/uses the backend virtual environment and launches Flask plus Vite for local development.",
+      "responsibilities": [
+        "Installs missing dependencies",
+        "Starts Flask on the configured backend port",
+        "Starts Vite on the configured frontend port",
+        "Tracks and cleans the backend PID"
+      ],
+      "why": "It offers one command for the two-process local application.",
+      "breakage": "Local startup, port coordination, or shutdown cleanup can fail.",
+      "config": [
+        "BACKEND_PORT",
+        "DISABLE_SCHEDULER",
+        "FRONTEND_PORT",
+        "RATE_LIMIT_ENABLED"
+      ],
+      "id": "run-local.sh",
+      "path": "run-local.sh",
+      "node_type": "file",
+      "label": "run-local.sh",
+      "lines": 83,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "communications": [],
+      "dependencies": [
+        "backend/app.py",
+        "frontend/package.json"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Deployment",
+      "importance": "Supporting",
+      "purpose": "Stops the local backend process recorded by run-local.sh.",
+      "responsibilities": [
+        "Reads .local/backend.pid",
+        "Stops a live process",
+        "Removes the PID file"
+      ],
+      "why": "It cleans up a backend left running outside the foreground Vite process.",
+      "breakage": "A stale local backend may remain or the wrong PID workflow may be used.",
+      "id": "stop-local.sh",
+      "path": "stop-local.sh",
+      "node_type": "file",
+      "label": "stop-local.sh",
+      "lines": 21,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Documentation",
+      "importance": "Important",
+      "purpose": "Documents the Pluto deployment topology, update flow, runtime files, health checks, and HTTPS responsibility.",
+      "responsibilities": [
+        "Records paths, port, and public base URL",
+        "Explains deploy/restart steps",
+        "Separates private configuration from source"
+      ],
+      "why": "Deployment knowledge otherwise lives outside application code.",
+      "breakage": "Future maintainers may deploy the wrong repository, path, port, or security configuration.",
+      "id": "DEPLOYMENT_OVERVIEW.md",
+      "path": "DEPLOYMENT_OVERVIEW.md",
+      "node_type": "file",
+      "label": "DEPLOYMENT_OVERVIEW.md",
+      "lines": 94,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "runtime:flask"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Documentation",
+      "importance": "Important",
+      "purpose": "Introduces the project, local setup, architecture, deployment, tests, APIs, and data sources.",
+      "responsibilities": [
+        "Provides the primary onboarding path",
+        "Lists operational commands and routes",
+        "Explains mapping and data provenance"
+      ],
+      "why": "It is the first reference for developers and supervisors.",
+      "breakage": "Onboarding and operations may follow outdated assumptions.",
+      "id": "README.md",
+      "path": "README.md",
+      "node_type": "file",
+      "label": "README.md",
+      "lines": 270,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Documentation",
+      "importance": "Supporting",
+      "purpose": "Documents security controls, deployment expectations, and reporting guidance.",
+      "responsibilities": [
+        "Explains admin-token handling",
+        "Documents rate limiting and proxy considerations"
+      ],
+      "why": "Security-sensitive operational choices need explicit guidance.",
+      "breakage": "Tokens, proxy headers, or public endpoints may be configured unsafely.",
+      "id": "SECURITY.md",
+      "path": "SECURITY.md",
+      "node_type": "file",
+      "label": "SECURITY.md",
+      "lines": 165,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "External source",
+      "importance": "Important",
+      "purpose": "EPOS/IMO volcano and ShakeMap APIs.",
+      "responsibilities": [
+        "Provides volcano metadata",
+        "Provides candidate ShakeMap products"
+      ],
+      "why": "The map augments earthquakes with volcanic context and validated ground-motion products.",
+      "breakage": "Volcano or ShakeMap features may become stale/unavailable.",
+      "node_type": "external",
+      "label": "EPOS APIs",
+      "id": "external:epos",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "backend/app.py",
+        "backend/volcano_scraper.py"
+      ],
+      "tests": []
+    },
+    {
+      "category": "External source",
+      "importance": "Important",
+      "purpose": "IMO MPGV monthly HTML catalogue.",
+      "responsibilities": [
+        "Provides event time, MPGV coordinates/depth, and Mw_mean"
+      ],
+      "why": "It is the magnitude/time source used by the monitor.",
+      "breakage": "MPGV ingestion stops when its pages or schema change.",
+      "node_type": "external",
+      "label": "MPGV HTML source",
+      "id": "external:mpgv",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "backend/scrape.py"
+      ],
+      "tests": []
+    },
+    {
+      "category": "External source",
+      "importance": "Important",
+      "purpose": "IMO Quakes API GeoJSON events endpoint.",
+      "responsibilities": [
+        "Provides event IDs, reference coordinates, depths, and magnitude values"
+      ],
+      "why": "It supplies the reference observations used for safe reconciliation.",
+      "breakage": "Reference enrichment and matched depth analysis degrade when unavailable.",
+      "node_type": "external",
+      "label": "IMO Quakes API",
+      "id": "external:quakes",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "backend/skjalftalisa_client.py"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend entry",
+      "importance": "Core",
+      "purpose": "Bootstraps React and the language context.",
+      "responsibilities": [
+        "Creates the React root",
+        "Enables StrictMode checks",
+        "Wraps App in LangProvider"
+      ],
+      "why": "It is the single runtime entry point for the client application.",
+      "breakage": "Nothing in the React application will render, or translations may lose their provider.",
+      "id": "frontend/src/main.jsx",
+      "path": "frontend/src/main.jsx",
+      "node_type": "file",
+      "label": "main.jsx",
+      "lines": 13,
+      "imports": [
+        "frontend/src/App.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/App.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/index.html",
+        "frontend/vite.config.js"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend entry",
+      "importance": "Important",
+      "purpose": "Hosts the React mount point and loads the Vite entry module.",
+      "responsibilities": [
+        "Provides the #root element",
+        "Declares page metadata",
+        "Starts frontend/src/main.jsx through a module script"
+      ],
+      "why": "The browser needs a stable HTML shell before React can render either route.",
+      "breakage": "The application may fail to mount, or deployment base-path metadata may become incorrect.",
+      "id": "frontend/index.html",
+      "path": "frontend/index.html",
+      "node_type": "file",
+      "label": "index.html",
+      "lines": 16,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/main.jsx"
+      ],
+      "dependents": [
+        "runtime:browser"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend orchestration",
+      "importance": "Core",
+      "purpose": "Owns application-wide map data, route state, filtering, selection state, and component composition.",
+      "responsibilities": [
+        "Fetches earthquake and volcano records in parallel and refreshes every three minutes",
+        "Filters earthquakes by date and magnitude",
+        "Coordinates map, panels, dialogs, recent selections, and Insights navigation",
+        "Keeps responsive panel state and map selection state"
+      ],
+      "why": "It is the composition root that turns backend records and user actions into the two main application routes.",
+      "breakage": "Map and Insights navigation, polling, filtering, selection, or responsive behavior can break together.",
+      "communications": [
+        "GET /earthquakes",
+        "GET /volcanoes"
+      ],
+      "id": "frontend/src/App.jsx",
+      "path": "frontend/src/App.jsx",
+      "node_type": "file",
+      "label": "App.jsx",
+      "lines": 370,
+      "imports": [
+        "frontend/src/App.css",
+        "frontend/src/api.js",
+        "frontend/src/components/About.jsx",
+        "frontend/src/components/LeftPanel.jsx",
+        "frontend/src/components/MapComponent.jsx",
+        "frontend/src/components/MapTypeSelector.jsx",
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/src/components/RightPanel.jsx",
+        "frontend/src/utils/datetime.js"
+      ],
+      "symbols": [
+        "AnalysisPage",
+        "App",
+        "MIN_MAGNITUDE",
+        "analysisPath",
+        "base",
+        "controller",
+        "controllers",
+        "currentDay",
+        "currentMonth",
+        "currentYear",
+        "desktopCollapsedRef",
+        "earthquakesRequest",
+        "emptyVolcanoes",
+        "ev",
+        "filtered",
+        "handleFilterChange",
+        "handleMagnitudeFilterChange",
+        "handleMapTypeChange",
+        "hasDay",
+        "interval",
+        "key",
+        "loadData",
+        "mag",
+        "mags"
+      ],
+      "routes": [],
+      "config": [
+        "BASE_URL"
+      ],
+      "dependencies": [
+        "frontend/src/App.css",
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/api.js",
+        "frontend/src/components/About.jsx",
+        "frontend/src/components/LeftPanel.jsx",
+        "frontend/src/components/MapComponent.jsx",
+        "frontend/src/components/MapTypeSelector.jsx",
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/src/components/RightPanel.jsx",
+        "frontend/src/utils/datetime.js"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/AppInitialRequests.test.jsx",
+        "frontend/src/main.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AppInitialRequests.test.jsx"
+      ]
+    },
+    {
+      "category": "Frontend services",
+      "importance": "Core",
+      "purpose": "Centralizes browser-to-Flask requests and validates the Insights limits contract.",
+      "responsibilities": [
+        "Selects local-development or deployed API base URL",
+        "Fetches earthquakes, volcanoes, Insights limits, and ShakeMap matches",
+        "Normalizes and validates limits responses",
+        "Defines depth-quality policy identifiers"
+      ],
+      "why": "Components should not duplicate URL construction, cancellation, or response-contract checks.",
+      "breakage": "Both routes can lose data, target the wrong base path, or accept malformed backend responses.",
+      "communications": [
+        "GET /earthquakes",
+        "GET /volcanoes",
+        "GET /insights/limits",
+        "GET /shakemap_lookup"
+      ],
+      "config": [
+        "BASE_URL",
+        "import.meta.env.BASE_URL"
+      ],
+      "id": "frontend/src/api.js",
+      "path": "frontend/src/api.js",
+      "node_type": "file",
+      "label": "api.js",
+      "lines": 99,
+      "imports": [],
+      "symbols": [
+        "API_URL",
+        "DEPTH_POLICIES",
+        "base",
+        "contentType",
+        "contractError",
+        "data",
+        "depth",
+        "fetchEarthquakeData",
+        "fetchInsightsLimits",
+        "fetchShakeMapValidated",
+        "fetchVolcanoData",
+        "isLocalDev",
+        "magnitude",
+        "noEligibleDepths",
+        "normalizeLimitsResponse",
+        "params",
+        "res",
+        "response",
+        "validDepths"
+      ],
+      "routes": [],
+      "dependencies": [
+        "backend/app.py"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx",
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+        "frontend/src/__tests__/AppInitialRequests.test.jsx",
+        "frontend/src/analysis/AnalysisFilters.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/components/About.jsx",
+        "frontend/src/components/MapComponent.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+        "frontend/src/__tests__/AppInitialRequests.test.jsx"
+      ]
+    },
+    {
+      "category": "Frontend services",
+      "importance": "Important",
+      "purpose": "Provides English/Icelandic translation state and lookup hooks.",
+      "responsibilities": [
+        "Stores the active language",
+        "Exposes useLang and useT",
+        "Contains map-interface translation keys"
+      ],
+      "why": "Map controls and information cards share one language source.",
+      "breakage": "Labels can disappear, use stale keys, or stop switching languages.",
+      "id": "frontend/src/i18n.jsx",
+      "path": "frontend/src/i18n.jsx",
+      "node_type": "file",
+      "label": "i18n.jsx",
+      "lines": 153,
+      "imports": [],
+      "symbols": [
+        "LangContext",
+        "LangProvider",
+        "T",
+        "toggleLang",
+        "useLang",
+        "useT"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+        "frontend/src/__tests__/RecentSelections.test.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/components/About.jsx",
+        "frontend/src/components/LeftPanel.jsx",
+        "frontend/src/components/MapComponent.jsx",
+        "frontend/src/components/MapTypeSelector.jsx",
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/src/components/RightPanel.jsx",
+        "frontend/src/components/TimeWindowSlider.jsx",
+        "frontend/src/main.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+        "frontend/src/__tests__/RecentSelections.test.jsx"
+      ]
+    },
+    {
+      "category": "Frontend services",
+      "importance": "Important",
+      "purpose": "Parses backend UTC timestamp strings consistently.",
+      "responsibilities": [
+        "Normalizes backend date strings",
+        "Creates UTC Date objects without browser-local ambiguity"
+      ],
+      "why": "Map coloring, date filters, and Insights normalization must interpret the same timestamp identically.",
+      "breakage": "Events can be placed in the wrong period or filtered incorrectly around date boundaries.",
+      "id": "frontend/src/utils/datetime.js",
+      "path": "frontend/src/utils/datetime.js",
+      "node_type": "file",
+      "label": "datetime.js",
+      "lines": 12,
+      "imports": [],
+      "symbols": [
+        "date",
+        "parseBackendUtcDate",
+        "parsed"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/App.jsx",
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/components/MapComponent.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend styles",
+      "importance": "Supporting",
+      "purpose": "Defines global map-page layout, action-rail variables, title placement, and responsive behavior.",
+      "responsibilities": [
+        "Positions global controls",
+        "Defines shared map layout tokens",
+        "Adapts the map shell below 768 px"
+      ],
+      "why": "Several independently rendered components share these layout variables.",
+      "breakage": "Floating controls and information cards can overlap or shift, especially on mobile.",
+      "id": "frontend/src/App.css",
+      "path": "frontend/src/App.css",
+      "node_type": "file",
+      "label": "App.css",
+      "lines": 340,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/App.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend styles",
+      "importance": "Supporting",
+      "purpose": "Styles the responsive Insights route, filters, summaries, charts, tables, and loading states.",
+      "responsibilities": [
+        "Defines analysis page layout",
+        "Supports mobile filter and chart reflow",
+        "Styles skeleton and errors"
+      ],
+      "why": "The analytical route has a denser layout than the map.",
+      "breakage": "Charts, filters, or tables may clip and responsive behavior may regress.",
+      "id": "frontend/src/analysis/AnalysisPage.css",
+      "path": "frontend/src/analysis/AnalysisPage.css",
+      "node_type": "file",
+      "label": "AnalysisPage.css",
+      "lines": 649,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend styles",
+      "importance": "Supporting",
+      "purpose": "Defines drawer, range controls, action rail, and responsive panel presentation.",
+      "responsibilities": [
+        "Positions fixed map actions",
+        "Sizes desktop/mobile filter controls",
+        "Styles the selected-event mobile summary"
+      ],
+      "why": "The left panel has complex desktop and mobile geometry.",
+      "breakage": "Filters may become inaccessible or overlap the map.",
+      "id": "frontend/src/components/LeftPanel.css",
+      "path": "frontend/src/components/LeftPanel.css",
+      "node_type": "file",
+      "label": "LeftPanel.css",
+      "lines": 523,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/components/LeftPanel.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Frontend styles",
+      "importance": "Supporting",
+      "purpose": "Styles map overlays, information cards, MapLibre controls, legends, and mobile map behavior.",
+      "responsibilities": [
+        "Positions information cards",
+        "Styles legends and overlays",
+        "Adapts map controls for mobile"
+      ],
+      "why": "MapLibre elements and React overlays require a shared visual layer.",
+      "breakage": "Controls may overlap, become unreadable, or appear behind the map.",
+      "id": "frontend/src/components/MapComponent.css",
+      "path": "frontend/src/components/MapComponent.css",
+      "node_type": "file",
+      "label": "MapComponent.css",
+      "lines": 731,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Covers numeric extremes, clamping, equal endpoints, and depth-policy transitions.",
+      "responsibilities": [
+        "Submits filter forms",
+        "Checks exact catalogue boundaries",
+        "Checks unavailable-depth handling"
+      ],
+      "why": "Browser input behavior must match analysis validation rules.",
+      "breakage": "Valid events can be excluded or invalid filters accepted.",
+      "id": "frontend/src/__tests__/AnalysisFilters.test.jsx",
+      "path": "frontend/src/__tests__/AnalysisFilters.test.jsx",
+      "node_type": "file",
+      "label": "AnalysisFilters.test.jsx",
+      "lines": 167,
+      "imports": [
+        "frontend/src/analysis/AnalysisFilters.jsx"
+      ],
+      "symbols": [
+        "exactMaximum",
+        "filters",
+        "limitsByPolicy",
+        "maximumDepth",
+        "minimumMagnitude",
+        "onApply",
+        "renderFilters",
+        "text"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/analysis/AnalysisFilters.jsx"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Verifies coordinated earthquake/limit loading, error recovery, and filter initialization.",
+      "responsibilities": [
+        "Mocks charts, tables, and API limits",
+        "Checks skeleton/error states",
+        "Checks filters mount only with valid bounds"
+      ],
+      "why": "Insights has two asynchronous prerequisites that must agree.",
+      "breakage": "Users may see invalid empty filters or lose retry behavior.",
+      "id": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+      "path": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+      "node_type": "file",
+      "label": "AnalysisPageLimits.test.jsx",
+      "lines": 142,
+      "imports": [
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "actual",
+        "all",
+        "completeLimits",
+        "deferred",
+        "earthquake",
+        "matched",
+        "minimum",
+        "promise",
+        "renderPage",
+        "response",
+        "retry"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/analysis/AnalysisPage.jsx",
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Covers chart range labels, brush state, locale, and reset behavior.",
+      "responsibilities": [
+        "Mocks Recharts",
+        "Exercises range changes",
+        "Checks accessible labels"
+      ],
+      "why": "Interactive chart navigation must remain understandable across locales.",
+      "breakage": "Range labels and chart accessibility may drift.",
+      "id": "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
+      "path": "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
+      "node_type": "file",
+      "label": "AnalysisTimeRange.test.jsx",
+      "lines": 122,
+      "imports": [
+        "frontend/src/analysis/AnalysisCharts.jsx"
+      ],
+      "symbols": [
+        "Brush",
+        "Container",
+        "Empty",
+        "data",
+        "filtered",
+        "text"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/analysis/AnalysisCharts.jsx"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Verifies parallel initial requests and StrictMode stale-request protection.",
+      "responsibilities": [
+        "Mocks API functions",
+        "Renders App under StrictMode",
+        "Checks request coordination"
+      ],
+      "why": "App polling and cancellation are easy to duplicate under development StrictMode.",
+      "breakage": "Initial data may be fetched twice or stale responses may overwrite current state.",
+      "id": "frontend/src/__tests__/AppInitialRequests.test.jsx",
+      "path": "frontend/src/__tests__/AppInitialRequests.test.jsx",
+      "node_type": "file",
+      "label": "AppInitialRequests.test.jsx",
+      "lines": 68,
+      "imports": [
+        "frontend/src/App.jsx",
+        "frontend/src/api.js"
+      ],
+      "symbols": [
+        "deferred",
+        "earthquakeRuns",
+        "promise",
+        "volcanoRuns"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/App.jsx",
+        "frontend/src/api.js"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Guards the active MapLibre/deck.gl architecture and mobile action-rail positioning.",
+      "responsibilities": [
+        "Rejects legacy Leaflet dependencies",
+        "Checks map implementation markers",
+        "Checks six-button rail geometry"
+      ],
+      "why": "Architectural regressions and a known mobile overlap need explicit protection.",
+      "breakage": "Legacy dependencies or the recent-selection overlap may return.",
+      "id": "frontend/src/__tests__/MapArchitecture.test.js",
+      "path": "frontend/src/__tests__/MapArchitecture.test.js",
+      "node_type": "file",
+      "label": "MapArchitecture.test.js",
+      "lines": 48,
+      "imports": [
+        "frontend/package.json"
+      ],
+      "symbols": [
+        "REMOVED_LEAFLET_PACKAGES",
+        "appStyles",
+        "dependencies",
+        "mapStyles",
+        "packageName"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/package.json"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Covers recent-selection details, map restoration, clearing, and Escape close.",
+      "responsibilities": [
+        "Renders the dialog",
+        "Invokes callbacks",
+        "Checks empty state"
+      ],
+      "why": "The session-history dialog connects back to map selection.",
+      "breakage": "Users may not be able to restore or clear recent events.",
+      "id": "frontend/src/__tests__/RecentSelections.test.jsx",
+      "path": "frontend/src/__tests__/RecentSelections.test.jsx",
+      "node_type": "file",
+      "label": "RecentSelections.test.jsx",
+      "lines": 52,
+      "imports": [
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "onClear",
+        "onClose",
+        "onView",
+        "quake",
+        "renderPanel"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/components/RecentSelections.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Covers map time-slider render, zoom modes, labels, and filter callbacks.",
+      "responsibilities": [
+        "Exercises year/month mode transitions",
+        "Checks computed date ranges"
+      ],
+      "why": "The custom time navigation has many boundary calculations.",
+      "breakage": "Map filtering may select unexpected date ranges.",
+      "id": "frontend/src/__tests__/TimeWindowSlider.test.jsx",
+      "path": "frontend/src/__tests__/TimeWindowSlider.test.jsx",
+      "node_type": "file",
+      "label": "TimeWindowSlider.test.jsx",
+      "lines": 167,
+      "imports": [
+        "frontend/src/components/TimeWindowSlider.jsx"
+      ],
+      "symbols": [
+        "firstCall",
+        "hasYYFormat",
+        "inMonthMode",
+        "indicator",
+        "label",
+        "label2020",
+        "leftPct",
+        "leftStyle",
+        "onFilterChange",
+        "rangeEl",
+        "renderSlider",
+        "result",
+        "track",
+        "year",
+        "yyLabels"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/components/TimeWindowSlider.jsx"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Frontend tests",
+      "importance": "Test",
+      "purpose": "Covers Insights normalization, filtering, bounds, aggregation, depth provenance, validation, and CSV output.",
+      "responsibilities": [
+        "Exercises pure analysis transformations",
+        "Checks edge-case catalogue bounds",
+        "Checks export context"
+      ],
+      "why": "Most analytical correctness lives in pure functions.",
+      "breakage": "Charts and exports may silently report wrong results.",
+      "id": "frontend/src/__tests__/analysisData.test.js",
+      "path": "frontend/src/__tests__/analysisData.test.js",
+      "node_type": "file",
+      "label": "analysisData.test.js",
+      "lines": 251,
+      "imports": [
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/analysisExport.js"
+      ],
+      "symbols": [
+        "bins",
+        "bounds",
+        "csv",
+        "defaults",
+        "errors",
+        "filtered",
+        "high",
+        "normalized",
+        "reference",
+        "rows",
+        "selected",
+        "series"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/analysisExport.js"
+      ],
+      "dependents": [],
+      "tests": []
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Core",
+      "purpose": "Coordinates Insights initialization, filters, derived analysis, charts, tables, export, and map navigation.",
+      "responsibilities": [
+        "Normalizes earthquake props",
+        "Fetches policy-specific catalogue limits",
+        "Builds and validates filter state",
+        "Computes filtered/depth-eligible datasets and analysis results",
+        "Composes filters, summaries, charts, tables, and CSV export"
+      ],
+      "why": "It is the orchestration boundary for the analytical route while App remains the source of earthquake records.",
+      "breakage": "The Insights route can show incorrect limits, stale analysis, broken exports, or unusable loading/error states.",
+      "communications": [
+        "GET /insights/limits"
+      ],
+      "id": "frontend/src/analysis/AnalysisPage.jsx",
+      "path": "frontend/src/analysis/AnalysisPage.jsx",
+      "node_type": "file",
+      "label": "AnalysisPage.jsx",
+      "lines": 602,
+      "imports": [
+        "frontend/src/analysis/AnalysisCharts.jsx",
+        "frontend/src/analysis/AnalysisFilters.jsx",
+        "frontend/src/analysis/AnalysisPage.css",
+        "frontend/src/analysis/ResultsTables.jsx",
+        "frontend/src/analysis/SummaryCards.jsx",
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/analysisExport.js",
+        "frontend/src/api.js",
+        "frontend/src/components/About.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "AnalysisPage",
+        "AnalysisSkeleton",
+        "COPY",
+        "SkeletonBlock",
+        "analysis",
+        "apply",
+        "bounds",
+        "boundsForPolicy",
+        "controller",
+        "dateBounds",
+        "defaultBounds",
+        "defaults",
+        "depth",
+        "depthRecords",
+        "depthSummary",
+        "earthquakeDataReady",
+        "exportContext",
+        "filtered",
+        "hasDepthLimits",
+        "isInitialized",
+        "limitsReady",
+        "magnitude",
+        "metadata",
+        "next"
+      ],
+      "routes": [],
+      "config": [
+        "DEV"
+      ],
+      "dependencies": [
+        "frontend/src/analysis/AnalysisCharts.jsx",
+        "frontend/src/analysis/AnalysisFilters.jsx",
+        "frontend/src/analysis/AnalysisPage.css",
+        "frontend/src/analysis/ResultsTables.jsx",
+        "frontend/src/analysis/SummaryCards.jsx",
+        "frontend/src/analysis/analysisData.js",
+        "frontend/src/analysis/analysisExport.js",
+        "frontend/src/api.js",
+        "frontend/src/components/About.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx",
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AnalysisPageLimits.test.jsx"
+      ]
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Important",
+      "purpose": "Renders Recharts time, distribution, category, depth, and scatter visualizations.",
+      "responsibilities": [
+        "Builds accessible chart tooltips",
+        "Supports time-range brushing",
+        "Distinguishes matched and unverified records",
+        "Adapts pointer interactions for touch devices"
+      ],
+      "why": "The processed analysis model needs coordinated visual explanations.",
+      "breakage": "Charts may mislabel periods, hide categories, or become inaccessible on touch devices.",
+      "id": "frontend/src/analysis/AnalysisCharts.jsx",
+      "path": "frontend/src/analysis/AnalysisCharts.jsx",
+      "node_type": "file",
+      "label": "AnalysisCharts.jsx",
+      "lines": 522,
+      "imports": [
+        "frontend/src/analysis/ChartCard.jsx"
+      ],
+      "symbols": [
+        "AnalysisCharts",
+        "BinTooltip",
+        "COLORS",
+        "CategoryTimeChart",
+        "DepthBinTooltip",
+        "ScatterPoint",
+        "ScatterTooltip",
+        "TOUCH_POINTER_QUERY",
+        "TimeChart",
+        "TimeRangeLabels",
+        "TimeTooltip",
+        "accessiblePeriodLabel",
+        "brushAriaLabel",
+        "depthRecordsById",
+        "end",
+        "highest",
+        "isTouchPointer",
+        "mediaQuery",
+        "onChange",
+        "periodLabel",
+        "point",
+        "range",
+        "record",
+        "resetZoom"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/analysis/ChartCard.jsx"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AnalysisTimeRange.test.jsx"
+      ]
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Important",
+      "purpose": "Renders and validates date, magnitude, depth-quality, depth-range, category, and grouping controls.",
+      "responsibilities": [
+        "Maintains draft filter inputs",
+        "Clamps values to catalogue bounds",
+        "Disables unavailable depth fields",
+        "Submits validated filters to AnalysisPage"
+      ],
+      "why": "Users need an explicit editable boundary between draft controls and applied analysis.",
+      "breakage": "Invalid ranges may reach analysis logic or valid catalogue extremes may become unreachable.",
+      "id": "frontend/src/analysis/AnalysisFilters.jsx",
+      "path": "frontend/src/analysis/AnalysisFilters.jsx",
+      "node_type": "file",
+      "label": "AnalysisFilters.jsx",
+      "lines": 247,
+      "imports": [
+        "frontend/src/api.js"
+      ],
+      "symbols": [
+        "AnalysisFilters",
+        "NumberField",
+        "blur",
+        "change",
+        "clamp",
+        "clampPair",
+        "depthLimits",
+        "hasDepthLimits",
+        "hasMagnitudeLimits",
+        "magnitudeLimits",
+        "next",
+        "normalizeDraft",
+        "normalized",
+        "numberOr",
+        "reset"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/api.js"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/AnalysisFilters.test.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/AnalysisFilters.test.jsx"
+      ]
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Important",
+      "purpose": "Renders paginated strongest, deepest, shallowest, and recent event tables.",
+      "responsibilities": [
+        "Formats event values",
+        "Paginates result sets",
+        "Sends selected rows back to the map"
+      ],
+      "why": "Exact events complement aggregate charts and provide a path back to spatial context.",
+      "breakage": "Rows can show incorrect values or fail to focus the corresponding map marker.",
+      "id": "frontend/src/analysis/ResultsTables.jsx",
+      "path": "frontend/src/analysis/ResultsTables.jsx",
+      "node_type": "file",
+      "label": "ResultsTables.jsx",
+      "lines": 141,
+      "imports": [],
+      "symbols": [
+        "PAGE_SIZE",
+        "ResultsTable",
+        "ResultsTables",
+        "currentPage",
+        "format",
+        "sorted",
+        "totalPages",
+        "visible"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Important",
+      "purpose": "Renders key catalogue and depth-quality summary metrics.",
+      "responsibilities": [
+        "Formats counts and averages",
+        "Explains matched versus unverified depth coverage"
+      ],
+      "why": "It gives fast context before detailed charts and tables.",
+      "breakage": "Headline numbers may contradict the underlying analysis.",
+      "id": "frontend/src/analysis/SummaryCards.jsx",
+      "path": "frontend/src/analysis/SummaryCards.jsx",
+      "node_type": "file",
+      "label": "SummaryCards.jsx",
+      "lines": 50,
+      "imports": [],
+      "symbols": [
+        "SummaryCards",
+        "cards",
+        "number",
+        "percentage"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Insights frontend",
+      "importance": "Supporting",
+      "purpose": "Provides the shared title, description, and body wrapper used by Insights charts.",
+      "responsibilities": [
+        "Standardizes chart headings",
+        "Hosts chart children"
+      ],
+      "why": "Charts need consistent semantic framing.",
+      "breakage": "Chart layout and accessible headings may become inconsistent.",
+      "id": "frontend/src/analysis/ChartCard.jsx",
+      "path": "frontend/src/analysis/ChartCard.jsx",
+      "node_type": "file",
+      "label": "ChartCard.jsx",
+      "lines": 19,
+      "imports": [],
+      "symbols": [
+        "ChartCard"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/analysis/AnalysisCharts.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Insights processing",
+      "importance": "Core",
+      "purpose": "Contains pure normalization, validation, filtering, aggregation, histogram, and summary functions.",
+      "responsibilities": [
+        "Normalizes backend rows",
+        "Separates matched depth records from unverified MPGV depths",
+        "Validates and clamps filter ranges",
+        "Aggregates time series and distributions",
+        "Builds the complete analysis model"
+      ],
+      "why": "Pure transformations make analytical rules testable without rendering React.",
+      "breakage": "Charts, tables, summaries, and exports may disagree or misclassify depth provenance.",
+      "id": "frontend/src/analysis/analysisData.js",
+      "path": "frontend/src/analysis/analysisData.js",
+      "node_type": "file",
+      "label": "analysisData.js",
+      "lines": 396,
+      "imports": [
+        "frontend/src/utils/datetime.js"
+      ],
+      "symbols": [
+        "DEPTH_QUALITY",
+        "MIN_CATALOGUE_MAGNITUDE",
+        "aggregateByTime",
+        "binCount",
+        "binSize",
+        "bins",
+        "bucket",
+        "bucketKey",
+        "buckets",
+        "buildAnalysis",
+        "buildDepthHistogram",
+        "categoryOf",
+        "clamp",
+        "clampFiltersToBounds",
+        "count",
+        "date",
+        "dates",
+        "day",
+        "depth",
+        "depthLabel",
+        "depthProvenanceOf",
+        "depths",
+        "displayMax",
+        "displayMin"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/utils/datetime.js"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/analysisData.test.js",
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/analysisData.test.js"
+      ]
+    },
+    {
+      "category": "Insights processing",
+      "importance": "Important",
+      "purpose": "Builds and downloads a CSV for the active analysis selection.",
+      "responsibilities": [
+        "Escapes CSV cells",
+        "Adds filter and depth-policy metadata",
+        "Creates and revokes the browser download URL"
+      ],
+      "why": "Exported data must retain enough context to interpret depth provenance and filters.",
+      "breakage": "Downloads may be malformed, ambiguous, or omit the active policy.",
+      "id": "frontend/src/analysis/analysisExport.js",
+      "path": "frontend/src/analysis/analysisExport.js",
+      "node_type": "file",
+      "label": "analysisExport.js",
+      "lines": 67,
+      "imports": [],
+      "symbols": [
+        "buildEarthquakesCsv",
+        "csvCell",
+        "download",
+        "exportEarthquakesCsv",
+        "header",
+        "lines",
+        "link",
+        "metadataLines",
+        "url"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/__tests__/analysisData.test.js",
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/analysisData.test.js"
+      ]
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Core",
+      "purpose": "Renders the interactive MapLibre/deck.gl map and all spatial overlays.",
+      "responsibilities": [
+        "Builds and patches MapLibre styles",
+        "Renders earthquake points with deck.gl",
+        "Renders heatmap, volcano, fault, grid, glacier-label, legend, and scale layers",
+        "Coordinates marker selection, camera focus, map resets, and ShakeMap lookup",
+        "Displays earthquake and volcano information cards"
+      ],
+      "why": "It is the spatial rendering boundary for all map modes and selected-event behavior.",
+      "breakage": "Map modes, markers, overlays, hit testing, selection, or map performance can regress.",
+      "communications": [
+        "GET /shakemap_lookup",
+        "External EGDI/HIKE WFS",
+        "Map tile/style providers"
+      ],
+      "id": "frontend/src/components/MapComponent.jsx",
+      "path": "frontend/src/components/MapComponent.jsx",
+      "node_type": "file",
+      "label": "MapComponent.jsx",
+      "lines": 1477,
+      "imports": [
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx",
+        "frontend/src/utils/datetime.js"
+      ],
+      "symbols": [
+        "C0",
+        "C1",
+        "COMPACT_ATTRIBUTIONS",
+        "GLACIER_FILTER",
+        "GLACIER_ICE_LAYER_TOKEN",
+        "GLACIER_LABELS",
+        "GLACIER_LABELS_GEOJSON",
+        "GRID_ZOOM_LEVELS",
+        "HIDDEN_HEATMAP_LAYERS",
+        "HIDDEN_ROADMAP_LAYERS",
+        "HIKE_METADATA_URL",
+        "ICELAND_BOUNDS_LNG_LAT",
+        "ICELAND_CENTER",
+        "ICELAND_VIEW",
+        "IS_NAME_EXPR",
+        "LABEL_THEMES",
+        "LATITUDE_LABEL_CONTROL_GAP",
+        "LATITUDE_LABEL_TOP_GAP",
+        "LATITUDE_LABEL_WIDTH",
+        "MAG_PALETTE_STOPS",
+        "MAPLIBRE_RASTER_SOURCES",
+        "MAPLIBRE_STYLES",
+        "MIN_MAG",
+        "ML_HIKE_WFS_URL"
+      ],
+      "routes": [],
+      "config": [],
+      "dependencies": [
+        "frontend/public/map-style.json",
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx",
+        "frontend/src/utils/datetime.js"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Renders map filters, layer switches, compact selected-event details, and the floating action rail.",
+      "responsibilities": [
+        "Composes time and magnitude controls",
+        "Changes layer and color-mode options",
+        "Provides navigation, reset, language, About, and recent-selection actions",
+        "Shows selected-earthquake details inside the open mobile drawer"
+      ],
+      "why": "It groups the main user inputs that drive App and MapComponent state.",
+      "breakage": "Users may lose filtering, layer toggles, navigation, or mobile event details.",
+      "id": "frontend/src/components/LeftPanel.jsx",
+      "path": "frontend/src/components/LeftPanel.jsx",
+      "node_type": "file",
+      "label": "LeftPanel.jsx",
+      "lines": 212,
+      "imports": [
+        "frontend/src/components/LeftPanel.css",
+        "frontend/src/components/MagnitudeScale.jsx",
+        "frontend/src/components/TimeWindowSlider.jsx",
+        "frontend/src/components/VolcanoIcon.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "LeftPanel",
+        "id",
+        "t"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/components/LeftPanel.css",
+        "frontend/src/components/MagnitudeScale.jsx",
+        "frontend/src/components/TimeWindowSlider.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Displays magnitude encoding and provides the minimum-magnitude filter.",
+      "responsibilities": [
+        "Maps magnitudes to scale positions",
+        "Supports pointer and keyboard adjustment",
+        "Adapts to map color ownership and layout"
+      ],
+      "why": "It connects the visual marker-size legend with an active catalogue filter.",
+      "breakage": "Marker interpretation and magnitude filtering can diverge.",
+      "id": "frontend/src/components/MagnitudeScale.jsx",
+      "path": "frontend/src/components/MagnitudeScale.jsx",
+      "node_type": "file",
+      "label": "MagnitudeScale.jsx",
+      "lines": 136,
+      "imports": [
+        "frontend/src/components/MagnitudeScale.css"
+      ],
+      "symbols": [
+        "MagnitudeScale",
+        "barClass",
+        "clampMagnitude",
+        "element",
+        "getFilterBoxPosition",
+        "getMagnitudeTickPosition",
+        "handleSliderChange",
+        "length",
+        "magnitudeLabels",
+        "nextLength",
+        "nextValue",
+        "observer",
+        "px",
+        "range",
+        "rect",
+        "roundMagnitude",
+        "scaleContainerRef",
+        "sliderDisplayValue",
+        "thumbRadius",
+        "updateTrackLength",
+        "value",
+        "valueRatio"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [],
+      "dependents": [
+        "frontend/src/components/LeftPanel.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Selects roadmap, dark, satellite, and heatmap modes.",
+      "responsibilities": [
+        "Renders the map-mode menu",
+        "Reports selected map type to App",
+        "Uses translated labels"
+      ],
+      "why": "Map styling and layer constraints are coordinated from one explicit selection.",
+      "breakage": "Map styles may fail to switch or incompatible controls may remain enabled.",
+      "id": "frontend/src/components/MapTypeSelector.jsx",
+      "path": "frontend/src/components/MapTypeSelector.jsx",
+      "node_type": "file",
+      "label": "MapTypeSelector.jsx",
+      "lines": 73,
+      "imports": [
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "MapTypeSelector",
+        "getDisplayName",
+        "handleTypeChange",
+        "t"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Shows up to ten recently selected earthquakes and restores one to the map.",
+      "responsibilities": [
+        "Renders earthquake history",
+        "Clears history",
+        "Returns a selected event to App",
+        "Implements dialog close and Escape handling"
+      ],
+      "why": "Recent map investigations need a lightweight session history without persistence.",
+      "breakage": "Users can lose selection history or fail to return to an event.",
+      "id": "frontend/src/components/RecentSelections.jsx",
+      "path": "frontend/src/components/RecentSelections.jsx",
+      "node_type": "file",
+      "label": "RecentSelections.jsx",
+      "lines": 81,
+      "imports": [
+        "frontend/src/components/About.css",
+        "frontend/src/components/RecentSelections.css",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "RecentSelections",
+        "closeButtonRef",
+        "formatNumber",
+        "key",
+        "number",
+        "onKeyDown",
+        "t"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx",
+        "frontend/src/__tests__/RecentSelections.test.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/RecentSelections.test.jsx"
+      ]
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Lists volcanoes and controls desktop volcano selection/visibility.",
+      "responsibilities": [
+        "Sorts volcano names",
+        "Highlights the selected volcano",
+        "Calls App selection callbacks"
+      ],
+      "why": "Volcano metadata needs a browseable companion to map markers.",
+      "breakage": "Volcano browsing and marker/list selection synchronization can break.",
+      "id": "frontend/src/components/RightPanel.jsx",
+      "path": "frontend/src/components/RightPanel.jsx",
+      "node_type": "file",
+      "label": "RightPanel.jsx",
+      "lines": 48,
+      "imports": [
+        "frontend/src/components/RightPanel.css",
+        "frontend/src/components/VolcanoIcon.jsx",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "RightPanel",
+        "collapsed",
+        "handleItemClick",
+        "sorted",
+        "t"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Map frontend",
+      "importance": "Important",
+      "purpose": "Implements zoomable and draggable year, month, week, and day time-window selection.",
+      "responsibilities": [
+        "Converts pointer and wheel interactions to date ranges",
+        "Switches time resolution by zoom level",
+        "Calls onFilterChange with normalized boundaries",
+        "Supports horizontal and vertical layouts"
+      ],
+      "why": "The map needs an efficient way to navigate a multi-year catalogue.",
+      "breakage": "Date filtering can select incorrect periods or become unusable with touch input.",
+      "id": "frontend/src/components/TimeWindowSlider.jsx",
+      "path": "frontend/src/components/TimeWindowSlider.jsx",
+      "node_type": "file",
+      "label": "TimeWindowSlider.jsx",
+      "lines": 609,
+      "imports": [
+        "frontend/src/components/TimeWindowSlider.css",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "IS_MONTH_SHORT",
+        "Mnew",
+        "Mold",
+        "N",
+        "TimeWindowSlider",
+        "ZOOM_TEXT",
+        "absolutePoint",
+        "applyZoom",
+        "base",
+        "boundaryDate",
+        "boundaryIndex",
+        "calculateVisibleRange",
+        "clamped",
+        "currentDate",
+        "cursorRatio",
+        "dateRangeDisplay",
+        "dayOffset",
+        "days",
+        "daysToShow",
+        "delta",
+        "deltaRatio",
+        "dividerDate",
+        "dividerPos",
+        "dividers"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/__tests__/TimeWindowSlider.test.jsx",
+        "frontend/src/components/LeftPanel.jsx"
+      ],
+      "tests": [
+        "frontend/src/__tests__/TimeWindowSlider.test.jsx"
+      ]
+    },
+    {
+      "category": "Runtime",
+      "importance": "Important",
+      "purpose": "Browser runtime hosting React, MapLibre, deck.gl, and Recharts.",
+      "responsibilities": [
+        "Runs both application routes",
+        "Requests Flask JSON",
+        "Renders maps and analysis"
+      ],
+      "why": "It is the interactive client boundary.",
+      "breakage": "Unsupported browser APIs or asset failures stop the UI.",
+      "node_type": "runtime",
+      "label": "Browser",
+      "id": "runtime:browser",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/index.html"
+      ],
+      "dependents": [
+        "runtime:flask"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Runtime",
+      "importance": "Important",
+      "purpose": "Flask/Gunicorn HTTP service behind the Pluto /mpgv/ proxy.",
+      "responsibilities": [
+        "Serves built frontend assets",
+        "Exposes JSON/admin routes",
+        "Runs scheduled ingestion"
+      ],
+      "why": "One same-origin service simplifies deployment and API access.",
+      "breakage": "The public application and APIs become unavailable.",
+      "node_type": "runtime",
+      "label": "Flask / Gunicorn",
+      "id": "runtime:flask",
+      "path": "Runtime / external system",
+      "lines": null,
+      "imports": [],
+      "symbols": [],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "runtime:browser"
+      ],
+      "dependents": [
+        "DEPLOYMENT_OVERVIEW.md",
+        "backend/app.py"
+      ],
+      "tests": []
+    },
+    {
+      "category": "Shared frontend",
+      "importance": "Supporting",
+      "purpose": "Displays project context and backend API links in a modal dialog.",
+      "responsibilities": [
+        "Provides bilingual About content",
+        "Builds an API link from API_URL",
+        "Manages initial focus and Escape closing"
+      ],
+      "why": "Both routes need project and data-source context.",
+      "breakage": "Documentation links or modal accessibility can regress.",
+      "id": "frontend/src/components/About.jsx",
+      "path": "frontend/src/components/About.jsx",
+      "node_type": "file",
+      "label": "About.jsx",
+      "lines": 219,
+      "imports": [
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx"
+      ],
+      "symbols": [
+        "About",
+        "Copy",
+        "DATA_CADENCE",
+        "InfoGrid",
+        "MAP_LAYERS",
+        "SOURCES",
+        "VERSION",
+        "closeBtnRef",
+        "dialogRef",
+        "onBackdropClick",
+        "onKey",
+        "t"
+      ],
+      "routes": [],
+      "config": [],
+      "communications": [],
+      "dependencies": [
+        "frontend/src/api.js",
+        "frontend/src/i18n.jsx"
+      ],
+      "dependents": [
+        "frontend/src/App.jsx",
+        "frontend/src/analysis/AnalysisPage.jsx"
+      ],
+      "tests": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "DEPLOYMENT_OVERVIEW.md",
+      "target": "runtime:flask",
+      "type": "Deployment dependency",
+      "reason": "The deployment guide records how the built frontend and Gunicorn service are exposed on Pluto.",
+      "detected": false
+    },
+    {
+      "id": "e2",
+      "source": "backend/app.py",
+      "target": "backend/reconcile.py",
+      "type": "Data reconciliation flow",
+      "reason": "Scheduled and admin workflows rebuild merged events after source ingestion.",
+      "detected": false
+    },
+    {
+      "id": "e3",
+      "source": "backend/app.py",
+      "target": "backend/scrape.py",
+      "type": "Script execution",
+      "reason": "The scheduler and protected initialization invoke MPGV scraping.",
+      "detected": false
+    },
+    {
+      "id": "e4",
+      "source": "backend/app.py",
+      "target": "backend/skjalftalisa_client.py",
+      "type": "Data ingestion flow",
+      "reason": "The scheduler fetches and stores the latest seven days of Quakes API events.",
+      "detected": false
+    },
+    {
+      "id": "e5",
+      "source": "backend/app.py",
+      "target": "backend/volcano_scraper.py",
+      "type": "Data ingestion flow",
+      "reason": "Scheduled and protected workflows refresh the volcano table.",
+      "detected": false
+    },
+    {
+      "id": "e6",
+      "source": "backend/app.py",
+      "target": "external:epos",
+      "type": "API request",
+      "reason": "The live ShakeMap lookup fetches candidates and validates the returned view URL.",
+      "detected": false
+    },
+    {
+      "id": "e7",
+      "source": "backend/app.py",
+      "target": "runtime:flask",
+      "type": "Deployment dependency",
+      "reason": "Gunicorn imports app:app and serves its routes.",
+      "detected": false
+    },
+    {
+      "id": "e8",
+      "source": "backend/app.py",
+      "target": "system:sqlite",
+      "type": "Database access",
+      "reason": "SQLAlchemy models query and update all five runtime tables.",
+      "detected": false
+    },
+    {
+      "id": "e9",
+      "source": "backend/reconcile.py",
+      "target": "backend/app.py",
+      "type": "Imports",
+      "reason": "backend/reconcile.py imports backend/app.py to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e10",
+      "source": "backend/reconcile.py",
+      "target": "system:sqlite",
+      "type": "Data reconciliation flow",
+      "reason": "The reconciler reads both source tables and atomically replaces earthquake_merged rows.",
+      "detected": false
+    },
+    {
+      "id": "e11",
+      "source": "backend/scrape.py",
+      "target": "backend/app.py",
+      "type": "Imports",
+      "reason": "backend/scrape.py imports backend/app.py to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e12",
+      "source": "backend/scrape.py",
+      "target": "external:mpgv",
+      "type": "Data ingestion flow",
+      "reason": "The scraper downloads year/month HTML pages and parses earthquake rows.",
+      "detected": false
+    },
+    {
+      "id": "e13",
+      "source": "backend/scrape.py",
+      "target": "system:sqlite",
+      "type": "Database access",
+      "reason": "Parsed MPGV events are inserted into the earthquake source table.",
+      "detected": false
+    },
+    {
+      "id": "e14",
+      "source": "backend/shakemap_validator.py",
+      "target": "backend/app.py",
+      "type": "Imports",
+      "reason": "backend/shakemap_validator.py imports backend/app.py to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e15",
+      "source": "backend/skjalftalisa_client.py",
+      "target": "backend/app.py",
+      "type": "Imports",
+      "reason": "backend/skjalftalisa_client.py imports backend/app.py to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e16",
+      "source": "backend/skjalftalisa_client.py",
+      "target": "external:quakes",
+      "type": "Data ingestion flow",
+      "reason": "The client requests GeoJSON events for a UTC time window.",
+      "detected": false
+    },
+    {
+      "id": "e17",
+      "source": "backend/skjalftalisa_client.py",
+      "target": "system:sqlite",
+      "type": "Database access",
+      "reason": "Normalized reference events are upserted into earthquake_s_raw by event_id.",
+      "detected": false
+    },
+    {
+      "id": "e18",
+      "source": "backend/tests/conftest.py",
+      "target": "backend/app.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/conftest.py imports and exercises behavior from backend/app.py.",
+      "detected": true
+    },
+    {
+      "id": "e19",
+      "source": "backend/tests/test_insights_limits.py",
+      "target": "backend/app.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_insights_limits.py imports and exercises behavior from backend/app.py.",
+      "detected": true
+    },
+    {
+      "id": "e20",
+      "source": "backend/tests/test_reconcile.py",
+      "target": "backend/app.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_reconcile.py imports and exercises behavior from backend/app.py.",
+      "detected": true
+    },
+    {
+      "id": "e21",
+      "source": "backend/tests/test_reconcile.py",
+      "target": "backend/reconcile.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_reconcile.py imports and exercises behavior from backend/reconcile.py.",
+      "detected": true
+    },
+    {
+      "id": "e22",
+      "source": "backend/tests/test_scrape_parse.py",
+      "target": "backend/scrape.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_scrape_parse.py imports and exercises behavior from backend/scrape.py.",
+      "detected": true
+    },
+    {
+      "id": "e23",
+      "source": "backend/tests/test_security_hardening.py",
+      "target": "backend/app.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_security_hardening.py imports and exercises behavior from backend/app.py.",
+      "detected": true
+    },
+    {
+      "id": "e24",
+      "source": "backend/tests/test_security_hardening.py",
+      "target": "backend/reconcile.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_security_hardening.py imports and exercises behavior from backend/reconcile.py.",
+      "detected": true
+    },
+    {
+      "id": "e25",
+      "source": "backend/tests/test_security_hardening.py",
+      "target": "backend/volcano_scraper.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_security_hardening.py imports and exercises behavior from backend/volcano_scraper.py.",
+      "detected": true
+    },
+    {
+      "id": "e26",
+      "source": "backend/tests/test_skjalftalisa_client.py",
+      "target": "backend/skjalftalisa_client.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_skjalftalisa_client.py imports and exercises behavior from backend/skjalftalisa_client.py.",
+      "detected": true
+    },
+    {
+      "id": "e27",
+      "source": "backend/tests/test_volcano_scraper.py",
+      "target": "backend/volcano_scraper.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_volcano_scraper.py imports and exercises behavior from backend/volcano_scraper.py.",
+      "detected": true
+    },
+    {
+      "id": "e28",
+      "source": "backend/volcano_scraper.py",
+      "target": "external:epos",
+      "type": "Data ingestion flow",
+      "reason": "The scraper tries current and fallback EPOS volcano endpoints.",
+      "detected": false
+    },
+    {
+      "id": "e29",
+      "source": "backend/volcano_scraper.py",
+      "target": "system:sqlite",
+      "type": "Database access",
+      "reason": "A validated volcano snapshot replaces the volcano table transactionally.",
+      "detected": false
+    },
+    {
+      "id": "e30",
+      "source": "frontend/index.html",
+      "target": "frontend/src/main.jsx",
+      "type": "Script execution",
+      "reason": "The module script loads the React entry point.",
+      "detected": false
+    },
+    {
+      "id": "e31",
+      "source": "frontend/package.json",
+      "target": "frontend/vite.config.js",
+      "type": "Configuration loading",
+      "reason": "Vite and Vitest commands load their shared configuration.",
+      "detected": false
+    },
+    {
+      "id": "e32",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/App.css",
+      "type": "Stylesheet usage",
+      "reason": "frontend/src/App.jsx imports frontend/src/App.css to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e33",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/analysis/AnalysisPage.jsx",
+      "type": "Navigation between pages",
+      "reason": "App lazy-loads the Insights route and passes the already-fetched earthquake catalogue.",
+      "detected": false
+    },
+    {
+      "id": "e34",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/api.js",
+      "type": "Function calls",
+      "reason": "App calls centralized earthquake and volcano request helpers during polling.",
+      "detected": false
+    },
+    {
+      "id": "e35",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/About.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/App.jsx imports frontend/src/components/About.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e36",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/LeftPanel.jsx",
+      "type": "Shared state / props",
+      "reason": "LeftPanel edits the date, magnitude, layer, language, navigation, and panel state owned by App.",
+      "detected": false
+    },
+    {
+      "id": "e37",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/MapComponent.jsx",
+      "type": "Component rendering",
+      "reason": "App passes filtered events, layer state, selections, and map callbacks to MapComponent.",
+      "detected": false
+    },
+    {
+      "id": "e38",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/MapTypeSelector.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/App.jsx imports frontend/src/components/MapTypeSelector.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e39",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/RecentSelections.jsx",
+      "type": "Component rendering",
+      "reason": "App owns the selection history and lets the dialog refocus a stored event.",
+      "detected": false
+    },
+    {
+      "id": "e40",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/components/RightPanel.jsx",
+      "type": "Shared state / props",
+      "reason": "App shares volcano visibility and selection with the desktop list.",
+      "detected": false
+    },
+    {
+      "id": "e41",
+      "source": "frontend/src/App.jsx",
+      "target": "frontend/src/utils/datetime.js",
+      "type": "Imports",
+      "reason": "frontend/src/App.jsx imports frontend/src/utils/datetime.js to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e42",
+      "source": "frontend/src/__tests__/AnalysisFilters.test.jsx",
+      "target": "frontend/src/analysis/AnalysisFilters.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AnalysisFilters.test.jsx imports and exercises behavior from frontend/src/analysis/AnalysisFilters.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e43",
+      "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+      "target": "frontend/src/analysis/AnalysisPage.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AnalysisPageLimits.test.jsx imports and exercises behavior from frontend/src/analysis/AnalysisPage.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e44",
+      "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+      "target": "frontend/src/api.js",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AnalysisPageLimits.test.jsx imports and exercises behavior from frontend/src/api.js.",
+      "detected": true
+    },
+    {
+      "id": "e45",
+      "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AnalysisPageLimits.test.jsx imports and exercises behavior from frontend/src/i18n.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e46",
+      "source": "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
+      "target": "frontend/src/analysis/AnalysisCharts.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AnalysisTimeRange.test.jsx imports and exercises behavior from frontend/src/analysis/AnalysisCharts.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e47",
+      "source": "frontend/src/__tests__/AppInitialRequests.test.jsx",
+      "target": "frontend/src/App.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AppInitialRequests.test.jsx imports and exercises behavior from frontend/src/App.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e48",
+      "source": "frontend/src/__tests__/AppInitialRequests.test.jsx",
+      "target": "frontend/src/api.js",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/AppInitialRequests.test.jsx imports and exercises behavior from frontend/src/api.js.",
+      "detected": true
+    },
+    {
+      "id": "e49",
+      "source": "frontend/src/__tests__/MapArchitecture.test.js",
+      "target": "frontend/package.json",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/MapArchitecture.test.js imports and exercises behavior from frontend/package.json.",
+      "detected": true
+    },
+    {
+      "id": "e50",
+      "source": "frontend/src/__tests__/RecentSelections.test.jsx",
+      "target": "frontend/src/components/RecentSelections.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/RecentSelections.test.jsx imports and exercises behavior from frontend/src/components/RecentSelections.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e51",
+      "source": "frontend/src/__tests__/RecentSelections.test.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/RecentSelections.test.jsx imports and exercises behavior from frontend/src/i18n.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e52",
+      "source": "frontend/src/__tests__/TimeWindowSlider.test.jsx",
+      "target": "frontend/src/components/TimeWindowSlider.jsx",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/TimeWindowSlider.test.jsx imports and exercises behavior from frontend/src/components/TimeWindowSlider.jsx.",
+      "detected": true
+    },
+    {
+      "id": "e53",
+      "source": "frontend/src/__tests__/analysisData.test.js",
+      "target": "frontend/src/analysis/analysisData.js",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/analysisData.test.js imports and exercises behavior from frontend/src/analysis/analysisData.js.",
+      "detected": true
+    },
+    {
+      "id": "e54",
+      "source": "frontend/src/__tests__/analysisData.test.js",
+      "target": "frontend/src/analysis/analysisExport.js",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/analysisData.test.js imports and exercises behavior from frontend/src/analysis/analysisExport.js.",
+      "detected": true
+    },
+    {
+      "id": "e55",
+      "source": "frontend/src/analysis/AnalysisCharts.jsx",
+      "target": "frontend/src/analysis/ChartCard.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/analysis/AnalysisCharts.jsx imports frontend/src/analysis/ChartCard.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e56",
+      "source": "frontend/src/analysis/AnalysisFilters.jsx",
+      "target": "frontend/src/api.js",
+      "type": "Imports",
+      "reason": "frontend/src/analysis/AnalysisFilters.jsx imports frontend/src/api.js to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e57",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/AnalysisCharts.jsx",
+      "type": "Component rendering",
+      "reason": "The page passes the computed analysis model to Recharts visualizations.",
+      "detected": false
+    },
+    {
+      "id": "e58",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/AnalysisFilters.jsx",
+      "type": "Shared state / props",
+      "reason": "Draft/applied filters and catalogue bounds flow between the page and filter form.",
+      "detected": false
+    },
+    {
+      "id": "e59",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/AnalysisPage.css",
+      "type": "Stylesheet usage",
+      "reason": "frontend/src/analysis/AnalysisPage.jsx imports frontend/src/analysis/AnalysisPage.css to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e60",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/ResultsTables.jsx",
+      "type": "Component rendering",
+      "reason": "Filtered strongest/deepest/recent rows are rendered with map-navigation callbacks.",
+      "detected": false
+    },
+    {
+      "id": "e61",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/SummaryCards.jsx",
+      "type": "Component rendering",
+      "reason": "Summary metrics are rendered from the same computed analysis model.",
+      "detected": false
+    },
+    {
+      "id": "e62",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/analysisData.js",
+      "type": "Function calls",
+      "reason": "AnalysisPage normalizes, filters, validates, and aggregates records through pure analysis helpers.",
+      "detected": false
+    },
+    {
+      "id": "e63",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/analysis/analysisExport.js",
+      "type": "Generated output",
+      "reason": "The page exports the active filtered rows and policy metadata as CSV.",
+      "detected": false
+    },
+    {
+      "id": "e64",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/api.js",
+      "type": "API request",
+      "reason": "The page fetches server-calculated magnitude and depth limits for the selected depth policy.",
+      "detected": false
+    },
+    {
+      "id": "e65",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/components/About.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/analysis/AnalysisPage.jsx imports frontend/src/components/About.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e66",
+      "source": "frontend/src/analysis/AnalysisPage.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/analysis/AnalysisPage.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e67",
+      "source": "frontend/src/analysis/analysisData.js",
+      "target": "frontend/src/utils/datetime.js",
+      "type": "Imports",
+      "reason": "frontend/src/analysis/analysisData.js imports frontend/src/utils/datetime.js to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e68",
+      "source": "frontend/src/api.js",
+      "target": "backend/app.py",
+      "type": "API request",
+      "reason": "API helpers call Flask earthquake, volcano, limits, and ShakeMap endpoints using the deployed base path.",
+      "detected": false
+    },
+    {
+      "id": "e69",
+      "source": "frontend/src/components/About.jsx",
+      "target": "frontend/src/api.js",
+      "type": "Imports",
+      "reason": "frontend/src/components/About.jsx imports frontend/src/api.js to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e70",
+      "source": "frontend/src/components/About.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/About.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e71",
+      "source": "frontend/src/components/LeftPanel.jsx",
+      "target": "frontend/src/components/LeftPanel.css",
+      "type": "Stylesheet usage",
+      "reason": "frontend/src/components/LeftPanel.jsx imports frontend/src/components/LeftPanel.css to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e72",
+      "source": "frontend/src/components/LeftPanel.jsx",
+      "target": "frontend/src/components/MagnitudeScale.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/LeftPanel.jsx imports frontend/src/components/MagnitudeScale.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e73",
+      "source": "frontend/src/components/LeftPanel.jsx",
+      "target": "frontend/src/components/TimeWindowSlider.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/LeftPanel.jsx imports frontend/src/components/TimeWindowSlider.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e74",
+      "source": "frontend/src/components/LeftPanel.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/LeftPanel.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e75",
+      "source": "frontend/src/components/MapComponent.jsx",
+      "target": "frontend/public/map-style.json",
+      "type": "Configuration loading",
+      "reason": "Roadmap mode loads and patches the local MapLibre style document.",
+      "detected": false
+    },
+    {
+      "id": "e76",
+      "source": "frontend/src/components/MapComponent.jsx",
+      "target": "frontend/src/api.js",
+      "type": "API request",
+      "reason": "A selected earthquake triggers fetchShakeMapValidated for a nearby live ShakeMap.",
+      "detected": false
+    },
+    {
+      "id": "e77",
+      "source": "frontend/src/components/MapComponent.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/MapComponent.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e78",
+      "source": "frontend/src/components/MapComponent.jsx",
+      "target": "frontend/src/utils/datetime.js",
+      "type": "Imports",
+      "reason": "frontend/src/components/MapComponent.jsx imports frontend/src/utils/datetime.js to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e79",
+      "source": "frontend/src/components/MapTypeSelector.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/MapTypeSelector.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e80",
+      "source": "frontend/src/components/RecentSelections.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/RecentSelections.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e81",
+      "source": "frontend/src/components/RightPanel.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/RightPanel.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e82",
+      "source": "frontend/src/components/TimeWindowSlider.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/components/TimeWindowSlider.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e83",
+      "source": "frontend/src/main.jsx",
+      "target": "frontend/src/App.jsx",
+      "type": "Component rendering",
+      "reason": "main.jsx renders App inside StrictMode and LangProvider.",
+      "detected": false
+    },
+    {
+      "id": "e84",
+      "source": "frontend/src/main.jsx",
+      "target": "frontend/src/i18n.jsx",
+      "type": "Imports",
+      "reason": "frontend/src/main.jsx imports frontend/src/i18n.jsx to use its exported code or styles.",
+      "detected": true
+    },
+    {
+      "id": "e85",
+      "source": "frontend/vite.config.js",
+      "target": "frontend/src/main.jsx",
+      "type": "Generated output",
+      "reason": "Vite bundles the React entry and its dependency graph into frontend/dist.",
+      "detected": false
+    },
+    {
+      "id": "e86",
+      "source": "run-local.sh",
+      "target": "backend/app.py",
+      "type": "Script execution",
+      "reason": "The local launcher starts the Flask backend with scheduler/rate-limit development settings.",
+      "detected": false
+    },
+    {
+      "id": "e87",
+      "source": "run-local.sh",
+      "target": "frontend/package.json",
+      "type": "Script execution",
+      "reason": "The launcher runs the Vite dev script on port 5174.",
+      "detected": false
+    },
+    {
+      "id": "e88",
+      "source": "runtime:browser",
+      "target": "frontend/index.html",
+      "type": "Loads",
+      "reason": "The browser requests the HTML shell before any React module runs.",
+      "detected": false
+    },
+    {
+      "id": "e89",
+      "source": "runtime:flask",
+      "target": "runtime:browser",
+      "type": "API response",
+      "reason": "Flask serves the SPA and same-origin JSON responses under the deployment base path.",
+      "detected": false
+    }
+  ]
+}

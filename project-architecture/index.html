@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive architecture explorer for the MPGV Monitor project">
+  <title>MPGV Monitor — Project Architecture</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d5f88'/%3E%3Cpath d='M15 46V18h8l9 15 9-15h8v28h-8V31l-9 14-9-14v15z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+  <a class="skip-link" href="#graph-panel">Skip to architecture graph</a>
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">M</div>
+      <div>
+        <p class="eyebrow">MPGV Monitor</p>
+        <h1>Project architecture explorer</h1>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="dataset-summary" class="dataset-summary" aria-live="polite">Loading architecture…</span>
+      <button id="theme-toggle" class="button button-quiet" type="button" aria-pressed="false">Dark mode</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="toolbar" aria-label="Architecture controls">
+      <label class="control control-search">
+        <span>Find a file</span>
+        <input id="search-input" type="search" placeholder="App.jsx, reconcile.py, /earthquakes…" autocomplete="off">
+      </label>
+      <label class="control">
+        <span>Architecture view</span>
+        <select id="view-select"></select>
+      </label>
+      <div class="button-group" aria-label="Graph viewport controls">
+        <button id="fit-button" class="button" type="button">Fit to screen</button>
+        <button id="reset-button" class="button" type="button">Reset graph</button>
+      </div>
+    </section>
+
+    <section class="filter-bar" aria-label="Graph filters">
+      <fieldset>
+        <legend>Importance</legend>
+        <label><input class="importance-filter" type="checkbox" value="Core" checked> Core</label>
+        <label><input class="importance-filter" type="checkbox" value="Important" checked> Important</label>
+        <label><input class="importance-filter" type="checkbox" value="Supporting"> Supporting</label>
+        <label><input class="importance-filter" type="checkbox" value="Test"> Tests</label>
+      </fieldset>
+      <fieldset>
+        <legend>Selection highlighting</legend>
+        <label><input id="direct-toggle" type="checkbox" checked> Direct dependencies</label>
+        <label><input id="incoming-toggle" type="checkbox" checked> Incoming dependents</label>
+      </fieldset>
+      <details class="category-menu">
+        <summary>Categories</summary>
+        <div id="category-filters" class="category-filters"></div>
+      </details>
+    </section>
+
+    <div class="workspace">
+      <section id="graph-panel" class="graph-panel" aria-labelledby="graph-heading">
+        <div class="graph-heading-row">
+          <div>
+            <p class="eyebrow">Directional relationships</p>
+            <h2 id="graph-heading">Full project overview</h2>
+          </div>
+          <p id="graph-count" class="graph-count"></p>
+        </div>
+        <div id="graph-wrap" class="graph-wrap">
+          <svg id="architecture-graph" role="img" aria-labelledby="graph-title graph-description">
+            <title id="graph-title">MPGV Monitor file architecture graph</title>
+            <desc id="graph-description">Directional file and runtime relationships. Select a node to inspect dependencies and dependents.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z"></path>
+              </marker>
+            </defs>
+            <g id="viewport">
+              <g id="clusters"></g>
+              <g id="edges"></g>
+              <g id="nodes"></g>
+            </g>
+          </svg>
+          <div id="edge-tooltip" class="edge-tooltip" role="status" hidden></div>
+          <div id="graph-empty" class="graph-empty" hidden>No files match the current view and filters.</div>
+        </div>
+        <div id="legend" class="legend" aria-label="Graph legend"></div>
+      </section>
+
+      <aside id="details-panel" class="details-panel" aria-labelledby="details-title">
+        <div class="details-placeholder" id="details-placeholder">
+          <p class="eyebrow">File details</p>
+          <h2 id="details-title">Select a node</h2>
+          <p>Choose a file or system to see its responsibilities, relationships, routes, configuration, tests, and change risk.</p>
+        </div>
+        <div id="details-content" hidden></div>
+      </aside>
+    </div>
+
+    <section class="flow-section" aria-labelledby="flow-title">
+      <div class="flow-header">
+        <div>
+          <p class="eyebrow">Trace a main operation</p>
+          <h2 id="flow-title">Earthquake ingestion</h2>
+        </div>
+        <label class="control flow-control">
+          <span>Data flow</span>
+          <select id="flow-select"></select>
+        </label>
+      </div>
+      <div id="flow-diagram" class="flow-diagram"></div>
+      <p id="flow-note" class="flow-note"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p id="generation-note"></p>
+    <a href="PROJECT_FILE_GUIDE.md">Read the complete project file guide</a>
+  </footer>
+
+  <script src="app.js?v=1" defer></script>
+</body>
+</html>

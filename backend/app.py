@@ -5,6 +5,7 @@ import sys
 import logging
 import hmac
 import threading
+import atexit
 from pathlib import Path
 
 import csv
@@ -16,18 +17,11 @@ import requests
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-# When the app is launched with a global Python instead of backend/venv,
-# make the local virtualenv's site-packages importable as a fallback.
 CURRENT_FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-LOCAL_VENV = Path(CURRENT_FILE_PATH) / "venv"
-if LOCAL_VENV.exists():
-    # Windows: Lib/site-packages; Linux: lib/python3.x/site-packages
-    venv_site_packages = next(
-        (p for p in [*LOCAL_VENV.glob("Lib/site-packages"), *LOCAL_VENV.glob("lib/*/site-packages")] if p.exists()),
-        None,
-    )
-    if venv_site_packages and str(venv_site_packages) not in sys.path:
-        sys.path.insert(0, str(venv_site_packages))
+# Helper modules use ``from app import ...``. When this file is launched
+# directly, make that name resolve to the already-running ``__main__`` module
+# instead of constructing a second Flask/SQLAlchemy application.
+sys.modules.setdefault("app", sys.modules[__name__])
 
 from flask import Flask, jsonify, request, make_response, send_from_directory
 from flask_limiter import Limiter
@@ -36,6 +30,15 @@ from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+logging.basicConfig(
+    level=getattr(
+        logging,
+        os.environ.get("LOG_LEVEL", "INFO").strip().upper(),
+        logging.INFO,
+    ),
+    format="%(asctime)s level=%(levelname)s logger=%(name)s message=%(message)s",
+)
 
 # Enable gzip if the optional Flask-Compress package is installed.
 try:
@@ -179,8 +182,12 @@ def require_admin(func):
 
 DB_DIR = os.path.join(CURRENT_FILE_PATH, "data")
 os.makedirs(DB_DIR, exist_ok=True)
-DB_PATH = os.path.join(DB_DIR, "earthquakes.db")
-logging.info("Using configured SQLite database.")
+DB_PATH = str(
+    Path(
+        os.environ.get("MPGV_DATABASE_PATH", os.path.join(DB_DIR, "earthquakes.db"))
+    ).resolve()
+)
+logging.info("SQLite database path=%s pid=%s", DB_PATH, os.getpid())
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -205,8 +212,16 @@ class Earthquake(db.Model):
     longitude = db.Column(db.Float, nullable=False)
     depth = db.Column(db.Float, nullable=False)
     mw_mean = db.Column(db.Float, nullable=False)
+    source_id = db.Column(db.String, index=True)
+    is_current = db.Column(db.Boolean, nullable=False, default=True)
     __table_args__ = (
         db.UniqueConstraint("date_time", "latitude", "longitude", name="unique_earthquake_entry"),
+        db.Index(
+            "uq_earthquake_current_source_id",
+            "source_id",
+            unique=True,
+            sqlite_where=db.text("is_current = 1 AND source_id IS NOT NULL"),
+        ),
     )
 
 
@@ -252,7 +267,7 @@ class EarthquakeMerged(db.Model):
 
     # Match provenance for auditing and CSV/API diagnostics.
     status = db.Column(db.String, nullable=False)   # 'matched' | 'v_only'
-    v_src_key = db.Column(db.String)                # optional for diagnostics
+    v_src_key = db.Column(db.String, unique=True)   # canonical MPGV source identity
     s_event_id = db.Column(db.String)
     match_dt_sec = db.Column(db.Float)
     match_dist_km = db.Column(db.Float)
@@ -287,12 +302,40 @@ def create_tables() -> None:
             if "last_eruption" not in existing:
                 conn.execute(db.text("ALTER TABLE volcano ADD COLUMN last_eruption TEXT"))
                 conn.commit()
+            earthquake_columns = {
+                row[1] for row in conn.execute(db.text("PRAGMA table_info(earthquake)"))
+            }
+            if "source_id" not in earthquake_columns:
+                conn.execute(db.text("ALTER TABLE earthquake ADD COLUMN source_id VARCHAR"))
+            if "is_current" not in earthquake_columns:
+                conn.execute(
+                    db.text(
+                        "ALTER TABLE earthquake "
+                        "ADD COLUMN is_current BOOLEAN NOT NULL DEFAULT 1"
+                    )
+                )
+            conn.execute(
+                db.text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS "
+                    "uq_earthquake_current_source_id ON earthquake(source_id) "
+                    "WHERE is_current = 1 AND source_id IS NOT NULL"
+                )
+            )
+            conn.execute(
+                db.text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS "
+                    "uq_earthquake_merged_v_src_key ON earthquake_merged(v_src_key) "
+                    "WHERE v_src_key IS NOT NULL"
+                )
+            )
+            conn.commit()
 
 create_tables()
 
 _scheduler = None
 _scheduler_lock = threading.Lock()
 _scheduler_started = False
+_scheduler_owner_lock = None
 _bootstrap_lock = threading.Lock()
 _bootstrap_started = False
 _ingestion_thread_lock = threading.Lock()
@@ -300,6 +343,10 @@ _ingestion_thread_lock = threading.Lock()
 # Cache the default /earthquakes response between frontend polling intervals.
 _eq_cache: dict = {"data": None, "ts": 0.0}
 _EQ_CACHE_TTL = 60
+
+
+class IngestionBusyError(RuntimeError):
+    pass
 
 
 class IngestionLock:
@@ -312,12 +359,27 @@ class IngestionLock:
 
     def __enter__(self):
         if not _ingestion_thread_lock.acquire(blocking=False):
-            raise RuntimeError("ingestion busy")
+            raise IngestionBusyError("ingestion busy in current process")
         try:
-            now = time.time()
-            if self.path.exists() and now - self.path.stat().st_mtime > self.stale_seconds:
-                self.path.unlink(missing_ok=True)
-            self.fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            try:
+                self.fd = os.open(
+                    str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                )
+            except FileExistsError:
+                owner_pid = _read_lock_pid(self.path)
+                if owner_pid is None or _pid_is_alive(owner_pid):
+                    raise IngestionBusyError(
+                        f"ingestion busy lock={self.path} owner_pid={owner_pid}"
+                    )
+                logging.warning(
+                    "Recovering ingestion lock from dead owner lock=%s owner_pid=%s",
+                    self.path,
+                    owner_pid,
+                )
+                self.path.unlink()
+                self.fd = os.open(
+                    str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                )
             os.write(self.fd, f"{os.getpid()}\n".encode("ascii"))
             return self
         except Exception:
@@ -328,9 +390,88 @@ class IngestionLock:
         try:
             if self.fd is not None:
                 os.close(self.fd)
-            self.path.unlink(missing_ok=True)
+            if _read_lock_pid(self.path) == os.getpid():
+                self.path.unlink(missing_ok=True)
         finally:
             _ingestion_thread_lock.release()
+
+
+def _read_lock_pid(path: Path) -> int | None:
+    try:
+        value = path.read_text(encoding="ascii").strip()
+        pid = int(value)
+        return pid if pid > 0 else None
+    except (OSError, TypeError, ValueError):
+        return None
+
+
+def _pid_is_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if pid == os.getpid():
+        return True
+    if os.name == "nt":
+        import ctypes
+
+        process = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+        if not process:
+            return False
+        ctypes.windll.kernel32.CloseHandle(process)
+        return True
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+class SchedulerOwnership:
+    """A process-lifetime file lock that elects one scheduler owner."""
+
+    def __init__(self):
+        runtime_dir = Path(
+            os.environ.get("RUNTIME_DIR", Path(CURRENT_FILE_PATH) / "runtime")
+        )
+        runtime_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.path = runtime_dir / "scheduler-owner.lock"
+        self.fd = None
+
+    def acquire(self) -> bool:
+        for _attempt in range(2):
+            try:
+                self.fd = os.open(
+                    str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                )
+                os.write(self.fd, f"{os.getpid()}\n".encode("ascii"))
+                return True
+            except FileExistsError:
+                owner_pid = _read_lock_pid(self.path)
+                if owner_pid is None or _pid_is_alive(owner_pid):
+                    logging.info(
+                        "Scheduler owner already active lock=%s owner_pid=%s",
+                        self.path,
+                        owner_pid,
+                    )
+                    return False
+                logging.warning(
+                    "Recovering scheduler lock from dead owner lock=%s owner_pid=%s",
+                    self.path,
+                    owner_pid,
+                )
+                try:
+                    self.path.unlink()
+                except FileNotFoundError:
+                    pass
+        return False
+
+    def release(self) -> None:
+        if self.fd is not None:
+            os.close(self.fd)
+            self.fd = None
+        if _read_lock_pid(self.path) == os.getpid():
+            self.path.unlink(missing_ok=True)
 
 
 def _invalid_parameter(name: str):
@@ -404,11 +545,9 @@ def handle_http_error(error):
 
 def _refresh_derived_data() -> None:
     """Fetch secondary sources and rebuild derived tables."""
-    sys.path.append(CURRENT_FILE_PATH)
-    import importlib
-    import reconcile as _reconcile; importlib.reload(_reconcile)
-    import skjalftalisa_client as _sk; importlib.reload(_sk)
-    import volcano_scraper as _volcanoes; importlib.reload(_volcanoes)
+    import reconcile as _reconcile
+    import skjalftalisa_client as _sk
+    import volcano_scraper as _volcanoes
 
     match_and_merge = _reconcile.match_and_merge
     fetch_last_n_days = _sk.fetch_last_n_days
@@ -419,18 +558,72 @@ def _refresh_derived_data() -> None:
         rows = fetch_last_n_days(7, size_min=3.0)
         store_skjalftalisa_rows(rows)
     except Exception as e:
-        print(f"Quakes API fetch failed: {e}")
+        logging.warning(
+            "Quakes API acquisition failed; reconciling with stored data: %s",
+            e,
+        )
 
     try:
         refresh_volcanoes(DB_PATH)
     except Exception as e:
-        print(f"Volcano refresh failed: {e}")
+        logging.warning("EPOS volcano refresh failed: %s", e)
 
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     start = "2020-06-01 00:00:00"
     match_and_merge(start, end, min_mag=3.0)
 
     _eq_cache["data"] = None
+
+
+def _catalogue_invariant_summary() -> dict:
+    current_source_values = [
+        value
+        for (value,) in db.session.query(Earthquake.source_id).filter(
+            Earthquake.is_current.is_(True),
+            Earthquake.mw_mean >= 3.0,
+        )
+    ]
+    current_ids = [value for value in current_source_values if value is not None]
+    canonical_rows = EarthquakeMerged.query.all()
+    canonical_ids = [row.v_src_key for row in canonical_rows]
+    matched = sum(row.status == "matched" for row in canonical_rows)
+    v_only = sum(row.status == "v_only" for row in canonical_rows)
+    assigned_s_ids = [
+        row.s_event_id for row in canonical_rows if row.s_event_id is not None
+    ]
+    missing = set(current_ids) - set(canonical_ids)
+    violations = {
+        "missing_current_identities": len(missing)
+        + sum(value is None for value in current_source_values),
+        "duplicate_canonical_identities": len(canonical_ids)
+        - len(set(canonical_ids)),
+        "canonical_without_v_src_key": sum(
+            value is None for value in canonical_ids
+        ),
+        "repeated_imo_assignments": len(assigned_s_ids)
+        - len(set(assigned_s_ids)),
+    }
+    current = len(current_source_values)
+    canonical = len(canonical_rows)
+    if (
+        current != canonical
+        or canonical != matched + v_only
+        or any(violations.values())
+    ):
+        raise RuntimeError(
+            "Canonical catalogue invariant failed "
+            f"current={current} canonical={canonical} matched={matched} "
+            f"v_only={v_only} violations={violations}"
+        )
+    return {
+        "current": current,
+        "canonical": canonical,
+        "matched": matched,
+        "v_only": v_only,
+        "newest_current_identity": max(current_ids, default=None),
+        "newest_canonical_identity": max(canonical_ids, default=None),
+        **violations,
+    }
 
 
 def scheduled_scrape() -> None:
@@ -441,41 +634,95 @@ def scheduled_scrape() -> None:
       3) Reconcile (write EarthquakeMerged)
     """
     with app.app_context():
+        started_at = time.monotonic()
+        started_utc = datetime.now(timezone.utc)
+        logging.info(
+            "Scheduler ingestion started pid=%s db_path=%s started_utc=%s",
+            os.getpid(),
+            DB_PATH,
+            started_utc.isoformat(),
+        )
         try:
             with IngestionLock():
                 # Imports stay inside the job so app.py can define models before helpers load.
-                sys.path.append(CURRENT_FILE_PATH)
-                import importlib
-                import scrape as _scrape; importlib.reload(_scrape)
-                import reconcile as _reconcile; importlib.reload(_reconcile)
-                import skjalftalisa_client as _sk; importlib.reload(_sk)
-                import volcano_scraper as _volcano; importlib.reload(_volcano)
+                import scrape as _scrape
+                import reconcile as _reconcile
+                import skjalftalisa_client as _sk
+                import volcano_scraper as _volcano
                 scrape_all_earthquake_data = _scrape.scrape_all_earthquake_data
                 match_and_merge = _reconcile.match_and_merge
                 fetch_last_n_days = _sk.fetch_last_n_days
                 store_skjalftalisa_rows = _sk.store_skjalftalisa_rows
                 refresh_volcanoes = _volcano.refresh_volcanoes
 
-                scrape_all_earthquake_data()
+                try:
+                    mpgv_summary = scrape_all_earthquake_data()
+                except Exception:
+                    logging.exception(
+                        "MPGV acquisition rejected; preserving the previous "
+                        "current and canonical catalogues."
+                    )
+                    return
 
+                quakes_fetched = 0
+                quakes_stored = 0
                 try:
                     rows = fetch_last_n_days(7, size_min=3.0)
-                    store_skjalftalisa_rows(rows)
+                    quakes_fetched = len(rows)
+                    quakes_summary = store_skjalftalisa_rows(rows)
+                    quakes_stored = quakes_summary["stored"]
                 except Exception as e:
-                    print(f"Quakes API fetch failed: {e}")
+                    logging.warning(
+                        "Quakes API acquisition failed; reconciling with stored data: %s",
+                        e,
+                    )
 
                 end = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                 start = "2020-06-01 00:00:00"
-                match_and_merge(start, end, min_mag=3.0)
+                try:
+                    match_and_merge(start, end, min_mag=3.0)
+                    invariant = _catalogue_invariant_summary()
+                except Exception:
+                    logging.exception(
+                        "Reconciliation failed; preserving the previous "
+                        "canonical catalogue and API cache."
+                    )
+                    return
 
                 try:
                     refresh_volcanoes(DB_PATH)
                 except Exception as e:
-                    print(f"EPOS volcano refresh failed: {e}")
+                    logging.warning("EPOS volcano refresh failed: %s", e)
 
+                cache_had_value = _eq_cache["data"] is not None
                 _eq_cache["data"] = None
-        except RuntimeError:
-            logging.warning("Scheduler skipped ingestion because another writer is active.")
+                finished_utc = datetime.now(timezone.utc)
+                logging.info(
+                    "Scheduler ingestion completed started_utc=%s finished_utc=%s "
+                    "db_path=%s mpgv_candidate_count=%s new_current_events=%s "
+                    "retained_inactive_revisions=%s quakes_fetched=%s "
+                    "quakes_stored=%s canonical_total=%s matched_total=%s "
+                    "mpgv_only_total=%s newest_current_identity=%s "
+                    "newest_canonical_identity=%s cache_invalidated=true "
+                    "cache_had_value=%s duration_seconds=%.3f",
+                    started_utc.isoformat(),
+                    finished_utc.isoformat(),
+                    DB_PATH,
+                    mpgv_summary["source_current"],
+                    mpgv_summary["new_current_events"],
+                    mpgv_summary["retained_inactive_revisions"],
+                    quakes_fetched,
+                    quakes_stored,
+                    invariant["canonical"],
+                    invariant["matched"],
+                    invariant["v_only"],
+                    invariant["newest_current_identity"],
+                    invariant["newest_canonical_identity"],
+                    str(cache_had_value).lower(),
+                    time.monotonic() - started_at,
+                )
+        except IngestionBusyError as exc:
+            logging.warning("Scheduler skipped ingestion: %s", exc)
 
 
 def bootstrap_missing_data() -> None:
@@ -492,28 +739,59 @@ def bootstrap_missing_data() -> None:
             return
 
         if Earthquake.query.count() == 0:
-            sys.path.append(CURRENT_FILE_PATH)
-            import importlib
-            import scrape as _scrape; importlib.reload(_scrape)
+            import scrape as _scrape
             _scrape.scrape_all_earthquake_data()
 
         _refresh_derived_data()
 
 
 def start_background_services() -> None:
-    global _scheduler, _scheduler_started
+    global _scheduler, _scheduler_started, _scheduler_owner_lock
 
-    if os.environ.get("DISABLE_SCHEDULER") or _scheduler_started:
+    if parse_bool(os.environ.get("DISABLE_SCHEDULER")) or _scheduler_started:
         return
 
     with _scheduler_lock:
         if _scheduler_started:
             return
 
-        _scheduler = BackgroundScheduler(coalesce=True, misfire_grace_time=60)
-        _scheduler.add_job(scheduled_scrape, "interval", minutes=3, max_instances=1)
+        owner_lock = SchedulerOwnership()
+        if not owner_lock.acquire():
+            return
+
+        _scheduler_owner_lock = owner_lock
+        _scheduler = BackgroundScheduler(coalesce=True, misfire_grace_time=300)
+        _scheduler.add_job(
+            scheduled_scrape,
+            "interval",
+            minutes=3,
+            max_instances=1,
+            id="mpgv-ingestion",
+            replace_existing=True,
+        )
         _scheduler.start()
         _scheduler_started = True
+        logging.info(
+            "Scheduler started pid=%s owner_lock=%s",
+            os.getpid(),
+            owner_lock.path,
+        )
+
+
+def stop_background_services() -> None:
+    global _scheduler, _scheduler_started, _scheduler_owner_lock
+
+    with _scheduler_lock:
+        if _scheduler is not None and _scheduler.running:
+            _scheduler.shutdown(wait=False)
+        _scheduler = None
+        _scheduler_started = False
+        if _scheduler_owner_lock is not None:
+            _scheduler_owner_lock.release()
+            _scheduler_owner_lock = None
+
+
+atexit.register(stop_background_services)
 
 
 @app.before_request
@@ -580,7 +858,8 @@ def get_earthquake_data():
                 "Longitude": r.longitude,
                 "Depth":     r.depth,
                 "Mw_mean":   r.mw_mean,
-                "status":    r.status
+                "status":    r.status,
+                "mpgv_source_id": r.v_src_key,
             } for r in rows
         ])
 
@@ -682,7 +961,6 @@ def get_earthquake_data_csv():
 def scrape_volcanoes():
     """Fetch and save live volcano data from EPOS Iceland API (admin only)."""
     try:
-        sys.path.append(CURRENT_FILE_PATH)
         from volcano_scraper import refresh_volcanoes
         with IngestionLock():
             ok = refresh_volcanoes(DB_PATH)
@@ -858,6 +1136,5 @@ def shakemap(dt):
 
 
 if __name__ == "__main__":
-    print(f"Starting server with database at: {DB_PATH}")
     start_background_services()
     app.run(debug=False, port=BACKEND_PORT)

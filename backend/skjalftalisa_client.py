@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import logging
 import time as _time
 import requests
 from app import app, db, EarthquakeSRaw
@@ -138,16 +139,18 @@ def fetch_last_n_days(n_days=30, size_min=DEFAULT_MIN_MAG):
 def store_skjalftalisa_rows(rows):
     """Upsert Quakes API rows by event_id."""
     if not rows:
-        return
+        return {"received": 0, "stored": 0, "inserted": 0, "updated": 0}
 
     inserted = 0
     updated = 0
+    stored = 0
 
     with app.app_context():
         for r in rows:
             ev_id = str(r.get("event_id") or "").strip()
             if not ev_id:
                 continue
+            stored += 1
 
             rec = EarthquakeSRaw.query.filter_by(event_id=ev_id).first()
             if rec:
@@ -178,8 +181,19 @@ def store_skjalftalisa_rows(rows):
 
         db.session.commit()
 
-    if inserted > 0 or updated > 0:
-        print(f"Inserted {inserted} | Updated {updated} Quakes API rows.")
+    logging.info(
+        "Quakes API storage complete received=%s stored=%s inserted=%s updated=%s",
+        len(rows),
+        stored,
+        inserted,
+        updated,
+    )
+    return {
+        "received": len(rows),
+        "stored": stored,
+        "inserted": inserted,
+        "updated": updated,
+    }
 
 
 def backfill_skjalftalisa_since_2020(size_min=2.0):

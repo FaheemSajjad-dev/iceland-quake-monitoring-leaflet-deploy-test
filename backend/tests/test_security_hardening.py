@@ -1,9 +1,16 @@
 import sqlite3
+import importlib
+import os
+import sys
 
 import pytest
+import requests
 
 import app as app_module
 import reconcile as rec
+import scrape
+import skjalftalisa_client
+import volcano_scraper
 from app import Earthquake, EarthquakeMerged, EarthquakeSRaw, ShakeMapLink, Volcano, db
 
 
@@ -98,8 +105,24 @@ def test_shakemap_stored_url_validation(test_app, db_session):
 
 
 def test_reconcile_rollback_preserves_previous_merged_rows(db_session, monkeypatch):
-    db.session.add(EarthquakeMerged(date_time="2023-06-15 12:00:00", latitude=64, longitude=-22, depth=5, mw_mean=3.5, status="v_only"))
-    db.session.add(Earthquake(date_time="2023-06-15 12:00:00", latitude=64, longitude=-22, depth=5, mw_mean=3.5))
+    db.session.add(EarthquakeMerged(
+        date_time="2023-06-15 12:00:00",
+        latitude=64,
+        longitude=-22,
+        depth=5,
+        mw_mean=3.5,
+        status="v_only",
+        v_src_key="2023-06-15 12:00:00",
+    ))
+    db.session.add(Earthquake(
+        date_time="2023-06-15 12:00:00",
+        source_id="2023-06-15 12:00:00",
+        is_current=True,
+        latitude=64,
+        longitude=-22,
+        depth=5,
+        mw_mean=3.5,
+    ))
     db.session.add(EarthquakeSRaw(event_id="s1", date_time="2023-06-15 12:00:01", latitude=64, longitude=-22, depth=5, magnitude=3.5))
     db.session.commit()
 
@@ -117,6 +140,241 @@ def test_reconcile_rollback_preserves_previous_merged_rows(db_session, monkeypat
     rows = EarthquakeMerged.query.all()
     assert len(rows) == 1
     assert rows[0].date_time == "2023-06-15 12:00:00"
+
+
+def test_scheduler_rejected_acquisition_preserves_canonical_and_cache(
+    db_session,
+    monkeypatch,
+):
+    db.session.add(EarthquakeMerged(
+        date_time="2026-07-28 16:57:15.100",
+        latitude=64.136,
+        longitude=-18.600,
+        depth=1.1,
+        mw_mean=3.0,
+        status="v_only",
+        v_src_key="2026-07-28 16:57:15.100",
+    ))
+    db.session.commit()
+    sentinel = object()
+    app_module._eq_cache["data"] = sentinel
+    called = {"quakes": False, "reconcile": False}
+
+    monkeypatch.setattr(app_module, "IngestionLock", _NoopLock)
+    monkeypatch.setattr(importlib, "reload", lambda module: module)
+    monkeypatch.setattr(
+        scrape,
+        "scrape_all_earthquake_data",
+        lambda: (_ for _ in ()).throw(
+            scrape.CatalogueValidationError("partial catalogue")
+        ),
+    )
+    monkeypatch.setattr(
+        skjalftalisa_client,
+        "fetch_last_n_days",
+        lambda *args, **kwargs: called.__setitem__("quakes", True),
+    )
+    monkeypatch.setattr(
+        rec,
+        "match_and_merge",
+        lambda *args, **kwargs: called.__setitem__("reconcile", True),
+    )
+
+    app_module.scheduled_scrape()
+
+    assert EarthquakeMerged.query.count() == 1
+    assert app_module._eq_cache["data"] is sentinel
+    assert called == {"quakes": False, "reconcile": False}
+    app_module._eq_cache["data"] = None
+
+
+def test_scheduler_reconciliation_failure_preserves_cache(
+    db_session,
+    monkeypatch,
+):
+    sentinel = object()
+    app_module._eq_cache["data"] = sentinel
+
+    monkeypatch.setattr(app_module, "IngestionLock", _NoopLock)
+    monkeypatch.setattr(importlib, "reload", lambda module: module)
+    monkeypatch.setattr(scrape, "scrape_all_earthquake_data", lambda: {})
+    monkeypatch.setattr(
+        skjalftalisa_client, "fetch_last_n_days", lambda *args, **kwargs: []
+    )
+    monkeypatch.setattr(
+        skjalftalisa_client, "store_skjalftalisa_rows", lambda rows: None
+    )
+    monkeypatch.setattr(
+        rec,
+        "match_and_merge",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            RuntimeError("forced reconciliation failure")
+        ),
+    )
+    monkeypatch.setattr(volcano_scraper, "refresh_volcanoes", lambda path: True)
+
+    app_module.scheduled_scrape()
+
+    assert app_module._eq_cache["data"] is sentinel
+    app_module._eq_cache["data"] = None
+
+
+def test_scheduler_invalidates_cache_only_after_successful_reconciliation(
+    db_session,
+    monkeypatch,
+):
+    sentinel = object()
+    app_module._eq_cache["data"] = sentinel
+    calls = []
+
+    monkeypatch.setattr(app_module, "IngestionLock", _NoopLock)
+    monkeypatch.setattr(importlib, "reload", lambda module: module)
+    monkeypatch.setattr(
+        scrape,
+        "scrape_all_earthquake_data",
+        lambda: calls.append("mpgv") or {
+            "source_current": 0,
+            "new_current_events": 0,
+            "retained_inactive_revisions": 0,
+        },
+    )
+    monkeypatch.setattr(
+        skjalftalisa_client,
+        "fetch_last_n_days",
+        lambda *args, **kwargs: calls.append("quakes_fetch") or [],
+    )
+    monkeypatch.setattr(
+        skjalftalisa_client,
+        "store_skjalftalisa_rows",
+        lambda rows: calls.append("quakes_store") or {"stored": 0},
+    )
+    monkeypatch.setattr(
+        rec,
+        "match_and_merge",
+        lambda *args, **kwargs: calls.append("reconcile"),
+    )
+    monkeypatch.setattr(
+        volcano_scraper,
+        "refresh_volcanoes",
+        lambda path: calls.append("volcano"),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "_catalogue_invariant_summary",
+        lambda: {
+            "canonical": 0,
+            "matched": 0,
+            "v_only": 0,
+            "newest_current_identity": None,
+            "newest_canonical_identity": None,
+        },
+    )
+
+    app_module.scheduled_scrape()
+
+    assert calls == [
+        "mpgv",
+        "quakes_fetch",
+        "quakes_store",
+        "reconcile",
+        "volcano",
+    ]
+    assert app_module._eq_cache["data"] is None
+
+
+def test_quakes_failure_still_runs_mpgv_anchored_reconciliation(
+    db_session,
+    monkeypatch,
+):
+    calls = []
+    monkeypatch.setattr(app_module, "IngestionLock", _NoopLock)
+    monkeypatch.setattr(
+        scrape,
+        "scrape_all_earthquake_data",
+        lambda: {
+            "source_current": 3,
+            "new_current_events": 0,
+            "retained_inactive_revisions": 0,
+        },
+    )
+    monkeypatch.setattr(
+        skjalftalisa_client,
+        "fetch_last_n_days",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            requests.RequestException("offline")
+        ),
+    )
+    monkeypatch.setattr(
+        rec,
+        "match_and_merge",
+        lambda *args, **kwargs: calls.append("reconcile"),
+    )
+    monkeypatch.setattr(volcano_scraper, "refresh_volcanoes", lambda path: True)
+    monkeypatch.setattr(
+        app_module,
+        "_catalogue_invariant_summary",
+        lambda: {
+            "canonical": 3,
+            "matched": 1,
+            "v_only": 2,
+            "newest_current_identity": "2026-07-28 16:57:19.100",
+            "newest_canonical_identity": "2026-07-28 16:57:19.100",
+        },
+    )
+
+    app_module.scheduled_scrape()
+
+    assert calls == ["reconcile"]
+
+
+def test_concurrent_scheduler_attempt_does_not_interrupt_owner(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv("RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        scrape,
+        "scrape_all_earthquake_data",
+        lambda: pytest.fail("concurrent job entered acquisition"),
+    )
+
+    with app_module.IngestionLock():
+        app_module.scheduled_scrape()
+        lock_path = tmp_path / "ingestion.lock"
+        assert lock_path.read_text(encoding="ascii").strip() == str(os.getpid())
+
+
+def test_earthquakes_endpoint_returns_all_three_july_28_identities(
+    test_app,
+    db_session,
+):
+    identities = [
+        ("2026-07-28 05:36:37.500", "matched"),
+        ("2026-07-28 16:57:15.100", "v_only"),
+        ("2026-07-28 16:57:19.100", "v_only"),
+    ]
+    db.session.add_all([
+        EarthquakeMerged(
+            date_time=identity,
+            latitude=64.0,
+            longitude=-18.0,
+            depth=2.0,
+            mw_mean=3.1,
+            status=status,
+            v_src_key=identity,
+        )
+        for identity, status in identities
+    ])
+    db.session.commit()
+    app_module._eq_cache["data"] = None
+
+    response = test_app.test_client().get("/earthquakes")
+
+    assert response.status_code == 200
+    assert [
+        row["mpgv_source_id"] for row in reversed(response.get_json())
+    ] == [identity for identity, _status in identities]
+    app_module._eq_cache["data"] = None
 
 
 def test_volcano_replacement_rollback_preserves_existing_rows(tmp_path, monkeypatch):
@@ -153,3 +411,50 @@ class _NoopLock:
 
     def __exit__(self, exc_type, exc, tb):
         return False
+
+
+def test_disable_scheduler_zero_means_enabled(monkeypatch):
+    monkeypatch.setenv("DISABLE_SCHEDULER", "0")
+    assert app_module.parse_bool(os.environ.get("DISABLE_SCHEDULER")) is False
+
+
+def test_app_has_one_canonical_module_identity():
+    assert sys.modules["app"] is app_module
+    assert rec.app is app_module.app
+    assert rec.db is app_module.db
+
+
+def test_ingestion_lock_never_recovers_a_live_owner(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNTIME_DIR", str(tmp_path))
+    lock_path = tmp_path / "ingestion.lock"
+    lock_path.write_text(f"{os.getpid()}\n", encoding="ascii")
+
+    with pytest.raises(RuntimeError, match=f"owner_pid={os.getpid()}"):
+        with app_module.IngestionLock(stale_seconds=0):
+            pass
+
+    assert lock_path.read_text(encoding="ascii").strip() == str(os.getpid())
+
+
+def test_ingestion_lock_recovers_only_after_owner_is_dead(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNTIME_DIR", str(tmp_path))
+    lock_path = tmp_path / "ingestion.lock"
+    lock_path.write_text("99999999\n", encoding="ascii")
+    monkeypatch.setattr(app_module, "_pid_is_alive", lambda pid: False)
+
+    with app_module.IngestionLock(stale_seconds=0):
+        assert lock_path.read_text(encoding="ascii").strip() == str(os.getpid())
+
+    assert not lock_path.exists()
+
+
+def test_scheduler_ownership_allows_only_one_live_process(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNTIME_DIR", str(tmp_path))
+    first = app_module.SchedulerOwnership()
+    second = app_module.SchedulerOwnership()
+
+    assert first.acquire() is True
+    assert second.acquire() is False
+    first.release()
+    assert second.acquire() is True
+    second.release()

@@ -22,7 +22,15 @@ END   = "2023-06-15 23:59:59"
 
 def add_v(dt="2023-06-15 12:00:00", lat=64.0, lon=-22.0, depth=5.0, mw=3.5):
     """Insert one MPGV (V) event and return it."""
-    v = Earthquake(date_time=dt, latitude=lat, longitude=lon, depth=depth, mw_mean=mw)
+    v = Earthquake(
+        date_time=dt,
+        source_id=dt,
+        is_current=True,
+        latitude=lat,
+        longitude=lon,
+        depth=depth,
+        mw_mean=mw,
+    )
     db.session.add(v)
     db.session.commit()
     return v
@@ -53,6 +61,7 @@ def test_v_only_when_no_s_events(db_session):
     rows = merged_rows()
     assert len(rows) == 1
     assert rows[0].status == "v_only"
+    assert rows[0].v_src_key == "2023-06-15 12:00:00"
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +146,7 @@ def test_ambiguous_two_s_candidates_gives_v_only(db_session):
     rows = merged_rows()
     assert len(rows) == 1
     assert rows[0].status == "v_only"
+    assert rows[0].v_src_key == "2023-06-15 12:00:00"
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +220,7 @@ def test_idempotent_rerun(db_session):
     run_merge()  # second run
     rows = merged_rows()
     assert len(rows) == 1  # no duplicates
+    assert rows[0].v_src_key == "2023-06-15 12:00:00"
 
 
 # ---------------------------------------------------------------------------
@@ -235,3 +246,154 @@ def test_multiple_v_events_each_produce_merged_row(db_session):
     run_merge()
     rows = merged_rows()
     assert len(rows) == 2
+
+
+def test_v_only_is_replaced_when_api_match_arrives(db_session):
+    add_v()
+    run_merge()
+    assert [(row.status, row.s_event_id) for row in merged_rows()] == [
+        ("v_only", None)
+    ]
+
+    add_s("late-api-match")
+    run_merge()
+
+    rows = merged_rows()
+    assert len(rows) == 1
+    assert rows[0].status == "matched"
+    assert rows[0].s_event_id == "late-api-match"
+
+
+def test_api_only_event_is_excluded(db_session):
+    add_s("api-only")
+    run_merge()
+    assert merged_rows() == []
+
+
+def test_changed_enrichment_keeps_one_mpgv_identity(db_session):
+    add_v(dt="2023-06-15 12:00:00.400")
+    add_s(
+        "updated-api",
+        dt="2023-06-15 12:00:00",
+        lat=64.005,
+        lon=-22.005,
+        depth=6.0,
+    )
+    run_merge()
+
+    api_row = EarthquakeSRaw.query.filter_by(event_id="updated-api").one()
+    api_row.latitude = 64.006
+    api_row.longitude = -22.006
+    api_row.depth = 7.0
+    db.session.commit()
+    run_merge()
+
+    rows = merged_rows()
+    assert len(rows) == 1
+    assert rows[0].v_src_key == "2023-06-15 12:00:00.400"
+    assert rows[0].latitude == pytest.approx(64.006)
+    assert rows[0].depth == pytest.approx(7.0)
+
+
+def test_27_july_regression_preserves_fractional_source_identity(db_session):
+    add_v(
+        dt="2026-07-27 00:36:17.400",
+        lat=64.119,
+        lon=-21.288,
+        depth=3.0,
+        mw=3.95,
+    )
+    add_s(
+        "IMO2026oqanlz",
+        dt="2026-07-27 00:36:17",
+        lat=64.11338,
+        lon=-21.268175,
+        depth=7.161,
+        mag=4.122684,
+    )
+
+    rec.match_and_merge(
+        "2026-07-27 00:00:00",
+        "2026-07-27 23:59:59",
+        min_mag=3.0,
+    )
+
+    rows = merged_rows()
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.status == "matched"
+    assert row.v_src_key == "2026-07-27 00:36:17.400"
+    assert row.date_time == "2026-07-27 00:36:17.400"
+    assert row.match_dt_sec == pytest.approx(0.4)
+    assert row.match_dist_km == pytest.approx(1.1474418623)
+    assert row.match_dm == pytest.approx(0.172684)
+
+
+def test_28_july_events_and_full_mpgv_anchored_invariant(db_session):
+    add_v(
+        dt="2026-07-28 05:36:37.500",
+        lat=64.669,
+        lon=-17.459,
+        depth=1.1,
+        mw=5.16,
+    )
+    add_v(
+        dt="2026-07-28 16:57:15.100",
+        lat=64.136,
+        lon=-18.600,
+        depth=1.1,
+        mw=3.00,
+    )
+    add_v(
+        dt="2026-07-28 16:57:19.100",
+        lat=63.994,
+        lon=-19.123,
+        depth=1.7,
+        mw=3.01,
+    )
+    add_s(
+        "IMO2026osgfdh",
+        dt="2026-07-28 05:36:38",
+        lat=64.661186,
+        lon=-17.470501,
+        depth=3.5,
+        mag=5.209244,
+    )
+    add_s(
+        "IMO2026otctsd",
+        dt="2026-07-28 16:57:19",
+        lat=63.99086,
+        lon=-19.119976,
+        depth=2.780046,
+        mag=3.022272,
+    )
+
+    rec.match_and_merge(
+        "2026-07-28 00:00:00",
+        "2026-07-28 23:59:59",
+        min_mag=3.0,
+    )
+
+    rows = sorted(merged_rows(), key=lambda row: row.v_src_key)
+    assert len(rows) == 3
+    assert [row.v_src_key for row in rows] == [
+        "2026-07-28 05:36:37.500",
+        "2026-07-28 16:57:15.100",
+        "2026-07-28 16:57:19.100",
+    ]
+    assert [row.status for row in rows] == ["matched", "v_only", "matched"]
+    assert rows[0].depth == pytest.approx(3.5)
+    assert rows[1].depth == pytest.approx(1.1)
+    assert rows[2].depth == pytest.approx(2.780046)
+
+    eligible = Earthquake.query.filter(
+        Earthquake.is_current.is_(True),
+        Earthquake.mw_mean >= 3.0,
+    ).count()
+    matched = EarthquakeMerged.query.filter_by(status="matched").count()
+    v_only = EarthquakeMerged.query.filter_by(status="v_only").count()
+    assert eligible == len(rows) == matched + v_only
+    assert len({row.v_src_key for row in rows}) == len(rows)
+    assert len({
+        row.s_event_id for row in rows if row.s_event_id is not None
+    }) == matched
