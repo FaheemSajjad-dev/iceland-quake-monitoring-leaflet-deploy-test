@@ -1,3 +1,5 @@
+import { formatMagnitude } from "../utils/magnitude";
+
 const number = (value, digits = 1) =>
   value == null
     ? "—"
@@ -15,7 +17,7 @@ export default function SummaryCards({ analysis, text }) {
     [
       text.strongest,
       analysis.strongest
-        ? `M ${number(analysis.strongest.magnitude)} · ${analysis.strongest.date.toLocaleDateString()}`
+        ? `M ${formatMagnitude(analysis.strongest.magnitude)} · ${analysis.strongest.date.toLocaleDateString()}`
         : "—",
     ],
     [text.averageMagnitude, number(analysis.averageMagnitude, 2)],
