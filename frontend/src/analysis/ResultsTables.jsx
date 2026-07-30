@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { formatMagnitude } from "../utils/magnitude";
 
 const PAGE_SIZE = 5;
 const format = (value, digits = 1) => Number(value).toFixed(digits);
@@ -63,7 +64,7 @@ function ResultsTable({ title, rows, text, onViewMap, recent }) {
             {visible.map((item) => (
               <tr key={item.id}>
                 <td>{item.date.toLocaleString()}</td>
-                <td>M {format(item.magnitude)}</td>
+                <td>M {formatMagnitude(item.magnitude)}</td>
                 <td
                   title={
                     item.hasDepth

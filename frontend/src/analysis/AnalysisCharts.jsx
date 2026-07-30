@@ -17,6 +17,7 @@ import {
   ZAxis,
 } from "recharts";
 import ChartCard from "./ChartCard";
+import { formatMagnitude } from "../utils/magnitude";
 
 const COLORS = {
   blue: "#1368aa",
@@ -73,7 +74,7 @@ const TimeTooltip = ({ active, payload, text }) => {
         {text.count}: {row.count}
       </span>
       <span>
-        {text.highestMagnitude}: {row.highestMagnitude.toFixed(1)}
+        {text.highestMagnitude}: {formatMagnitude(row.highestMagnitude)}
       </span>
       <span>
         {text.averageMagnitude}: {row.averageMagnitude.toFixed(2)}
@@ -97,7 +98,7 @@ const BinTooltip = ({ active, payload, text }) =>
         {text.percentage}: {payload[0].payload.percentage.toFixed(1)}%
       </span>
       <span>
-        {text.maximum}: {payload[0].payload.maximum.toFixed(1)}
+        {text.maximum}: {formatMagnitude(payload[0].payload.maximum)}
       </span>
     </div>
   ) : null;
@@ -105,7 +106,7 @@ const ScatterTooltip = ({ active, payload, text }) => {
   const row = payload?.[0]?.payload;
   return active && row ? (
     <div className="analysis-tooltip">
-      <strong>M {row.magnitude.toFixed(1)}</strong>
+      <strong>M {formatMagnitude(row.magnitude)}</strong>
       <span>
         {text.depth}: {row.depth.toFixed(1)} km
       </span>

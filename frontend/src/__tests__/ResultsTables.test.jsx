@@ -74,7 +74,10 @@ describe("ResultsTables", () => {
     const bodyRows = within(card).getAllByRole("row").slice(1);
     expect(bodyRows).toHaveLength(3);
     expect(bodyRows[0]).toHaveTextContent("63.9940, -19.1230");
+    expect(bodyRows[0]).toHaveTextContent("M 3.01");
     expect(bodyRows[1]).toHaveTextContent("64.1360, -18.6000");
+    expect(bodyRows[1]).toHaveTextContent("M 3.0");
     expect(bodyRows[2]).toHaveTextContent("64.6612, -17.4705");
+    expect(bodyRows[2]).toHaveTextContent("M 5.16");
   });
 });
