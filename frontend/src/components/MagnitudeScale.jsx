@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import './MagnitudeScale.css';
 
+const roundMagnitude = (value) => Math.round(value * 10) / 10;
+
 const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, colorOwner, isHeatmap, vertical = true }) => {
 
   const [filterValue, setFilterValue] = useState(minMagnitude);
@@ -10,11 +12,12 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
     (value) => Math.min(Math.max(value, minMagnitude), maxMagnitude),
     [minMagnitude, maxMagnitude]
   );
-  const roundMagnitude = (value) => Math.round(value * 10) / 10;
-
   useEffect(() => {
-    setFilterValue(prev => clampMagnitude(prev));
-  }, [clampMagnitude, minMagnitude, maxMagnitude]);
+    const nextValue = clampMagnitude(filterValue);
+    if (nextValue === filterValue) return;
+    setFilterValue(nextValue);
+    onMagnitudeFilterChange?.(roundMagnitude(nextValue));
+  }, [clampMagnitude, filterValue, onMagnitudeFilterChange]);
 
   useEffect(() => {
     const element = scaleContainerRef.current;
@@ -64,11 +67,31 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
     return (px / length) * 100;
   };
 
+  const handleKeyDown = (event) => {
+    const increaseKeys = ["ArrowUp", "ArrowRight"];
+    const decreaseKeys = ["ArrowDown", "ArrowLeft"];
+    if (
+      !vertical ||
+      ![...increaseKeys, ...decreaseKeys, "Home", "End"].includes(event.key)
+    ) return;
+    event.preventDefault();
+    const nextValue = event.key === "Home"
+      ? minMagnitude
+      : event.key === "End"
+        ? maxMagnitude
+        : clampMagnitude(filterValue + (increaseKeys.includes(event.key) ? 0.1 : -0.1));
+    const roundedValue = roundMagnitude(nextValue);
+    setFilterValue(roundedValue);
+    onMagnitudeFilterChange?.(roundedValue);
+  };
+
   const barClass = colorOwner === 'magnitude' ? 'scale-bar-colored' : 'scale-bar-gray';
+  const firstWholeMagnitude = Math.ceil(minMagnitude);
   const magnitudeLabels = vertical
-    ? [maxMagnitude, 5.0, 4.0, minMagnitude].filter((value, index, values) => (
-        value >= minMagnitude && value <= maxMagnitude && values.indexOf(value) === index
-      ))
+    ? Array.from(
+        { length: Math.max(0, Math.floor(maxMagnitude) - firstWholeMagnitude + 1) },
+        (_, index) => firstWholeMagnitude + index,
+      ).reverse()
     : [];
 
   return (
@@ -96,6 +119,13 @@ const MagnitudeScale = ({ minMagnitude, maxMagnitude, onMagnitudeFilterChange, c
             value={sliderDisplayValue}
             onChange={handleSliderChange}
             onInput={handleSliderChange}
+            onKeyDown={handleKeyDown}
+            aria-label="Minimum earthquake magnitude"
+            aria-orientation={vertical ? "vertical" : "horizontal"}
+            aria-valuemin={minMagnitude}
+            aria-valuemax={maxMagnitude}
+            aria-valuenow={roundMagnitude(filterValue)}
+            aria-valuetext={`${roundMagnitude(filterValue).toFixed(1)} minimum magnitude`}
             className="magnitude-slider"
             style={{
               position: "absolute",

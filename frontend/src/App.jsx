@@ -7,6 +7,7 @@ import About from "./components/About";
 import RecentSelections from "./components/RecentSelections";
 import { fetchEarthquakeData, fetchVolcanoData } from "./api";
 import { parseBackendUtcDate } from "./utils/datetime";
+import { getCatalogueDisplayMagnitudeMaximum } from "./utils/magnitude";
 import "./App.css";
 
 const MIN_MAGNITUDE = 3.0;
@@ -23,7 +24,10 @@ const App = () => {
     const [filteredData, setFilteredData] = useState([]);
     const [allData, setAllData] = useState([]);
     const [volcanoData, setVolcanoData] = useState([]);
-    const [maxMagnitude, setMaxMagnitude] = useState(MIN_MAGNITUDE);
+    const maxMagnitude = useMemo(
+        () => getCatalogueDisplayMagnitudeMaximum(allData),
+        [allData],
+    );
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showVolcanoes, setShowVolcanoes] = useState(false);
     const [magnitudeFilter, setMagnitudeFilter] = useState(MIN_MAGNITUDE);
@@ -161,12 +165,6 @@ const App = () => {
             controllers.clear();
         };
     }, [dataRetry, loadData]);
-
-    useEffect(() => {
-        if (allData.length === 0) return;
-        const mags = allData.map(q => parseFloat(q.Mw_mean)).filter(n => !isNaN(n));
-        setMaxMagnitude(mags.length ? mags.reduce((a, b) => a > b ? a : b, 3.0) : 5.8);
-    }, [allData]);
 
     useEffect(() => {
         if (allData.length === 0) return;
