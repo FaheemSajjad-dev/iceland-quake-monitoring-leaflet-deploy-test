@@ -81,6 +81,9 @@ def test_invalid_days_returns_400(test_app, value):
     ("query", "parameter"),
     [
         ("dt=2026-01-01T00:00:00junk&lat=64&lon=-22", "dt"),
+        ("dt=2026-01-01T00:00:00.100junk&lat=64&lon=-22", "dt"),
+        ("dt=2026-01-01T00:00:00.&lat=64&lon=-22", "dt"),
+        ("dt=2026-01-01T00:00:00.1234567&lat=64&lon=-22", "dt"),
         ("dt=2026-01-01T00:00:00&lat=nan&lon=-22", "lat"),
         ("dt=2026-01-01T00:00:00&lat=91&lon=-22", "lat"),
         ("dt=2026-01-01T00:00:00&lat=64&lon=inf", "lon"),
@@ -92,6 +95,50 @@ def test_invalid_shakemap_lookup_parameters_return_400(test_app, query, paramete
 
     assert response.status_code == 400
     assert response.get_json() == {"error": f"Invalid parameter: {parameter}"}
+
+
+@pytest.mark.parametrize(
+    ("value", "microsecond"),
+    [
+        ("2026-01-01 00:00:00", 0),
+        ("2026-01-01T00:00:00", 0),
+        ("2026-01-01 00:00:00.1", 100000),
+        ("2026-01-01 00:00:00.100", 100000),
+        ("2026-01-01T00:00:00.123456", 123456),
+    ],
+)
+def test_event_datetime_accepts_optional_fractional_seconds(value, microsecond):
+    parsed, error = app_module._parse_event_datetime(value)
+
+    assert error is None
+    assert parsed.microsecond == microsecond
+    assert parsed.tzinfo is not None
+
+
+def test_shakemap_lookup_accepts_catalogue_milliseconds(test_app, monkeypatch):
+    class EmptyShakeMapResponse:
+        headers = {"Content-Type": "application/json"}
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            return []
+
+    monkeypatch.setattr(
+        app_module.requests,
+        "get",
+        lambda *args, **kwargs: EmptyShakeMapResponse(),
+    )
+
+    response = test_app.test_client().get(
+        "/shakemap_lookup?dt=2024-01-14+04:48:41.100&lat=64.65&lon=-24.213"
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {"found": False}
 
 
 def test_shakemap_stored_url_validation(test_app, db_session):

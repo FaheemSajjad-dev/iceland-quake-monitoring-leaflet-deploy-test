@@ -42,7 +42,7 @@ logging.basicConfig(
 
 # Enable gzip if the optional Flask-Compress package is installed.
 try:
-    from flask_compress import Compress
+    from flask_compress import Compress  # pyright: ignore[reportMissingImports]
 except Exception:  # noqa: BLE001
     Compress = None
 
@@ -511,11 +511,13 @@ def _parse_event_datetime(value: str, name: str = "dt"):
     if not value or len(value) > 32:
         return None, _invalid_parameter(name)
     normalized = value.replace("T", " ")
-    try:
-        parsed = datetime.strptime(normalized, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    except ValueError:
-        return None, _invalid_parameter(name)
-    return parsed, None
+    for date_format in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+        try:
+            parsed = datetime.strptime(normalized, date_format)
+            return parsed.replace(tzinfo=timezone.utc), None
+        except ValueError:
+            continue
+    return None, _invalid_parameter(name)
 
 
 def _validate_shakemap_url(url: str) -> str | None:
