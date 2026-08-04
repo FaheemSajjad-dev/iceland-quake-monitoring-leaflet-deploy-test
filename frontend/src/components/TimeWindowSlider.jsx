@@ -3,6 +3,7 @@ import { useLang } from '../i18n';
 import './TimeWindowSlider.css';
 
 const IS_MONTH_SHORT = ['jan', 'feb', 'mar', 'apr', 'maí', 'jún', 'júl', 'ágú', 'sep', 'okt', 'nóv', 'des'];
+const EN_MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ZOOM_TEXT = {
   en: {
     day: 'Day view',
@@ -53,6 +54,12 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
   const isDayViewMode = zoomLevel < 0.01;
   const isWeekMode    = !isDayViewMode && zoomLevel < 0.02;
   const isYearMode    = zoomLevel >= 0.95;
+  const isMonthMode   = !isDayViewMode && !isWeekMode && !isYearMode;
+
+  const formatShortMonth = useCallback(
+    (month) => (lang === 'is' ? IS_MONTH_SHORT : EN_MONTH_SHORT)[month],
+    [lang]
+  );
 
   const sliderRef = useRef(null);
   const trackRef = useRef(null);
@@ -142,10 +149,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
   const formatDateRangeDisplay = () => {
 		const range = calculateVisibleRange();
 		const { firstVisibleDate, lastVisibleDate } = range;
-    const formatMonth = (date) =>
-      lang === 'is'
-        ? IS_MONTH_SHORT[date.getMonth()]
-        : date.toLocaleString("default", { month: "short" });
+    const formatMonth = (date) => formatShortMonth(date.getMonth());
 
 		const fmtDay = (date) =>
 			`${date.getDate()} ${formatMonth(date)} ${date.getFullYear()}`;
@@ -380,15 +384,18 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 
 				const isYearBoundary =
 					dividerDate.getMonth() === 0 && dividerDate.getDate() === 1;
+				const isMonthBoundary = dividerDate.getDate() === 1;
 
 				dividers.push(
 					<div
 						key={`day-divider-${dividerDate.toISOString()}`}
-						className={
+						className={`divider ${
 							isYearBoundary
-								? "divider divider-year"
-								: "divider divider-day"
-						}
+								? "divider-year"
+								: isMonthBoundary
+									? "divider-month"
+									: "divider-day"
+						}`}
 						style={{ left: `${dividerPos}%`, height: "100%", top: 0 }}
 					/>
 				);
@@ -419,6 +426,20 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 					);
 				}
 
+				// In week/day views, keep the short month name on its boundary so
+				// the day numbers retain calendar context.
+				if (isMonthBoundary) {
+					labels.push(
+						<div
+							key={`month-label-${dividerDate.getFullYear()}-${dividerDate.getMonth() + 1}`}
+							className="month-label"
+							style={{ left: `${dividerPos}%` }}
+						>
+							{formatShortMonth(dividerDate.getMonth())}
+						</div>
+					);
+				}
+
 				dividerDate.setDate(dividerDate.getDate() + 1);
 			}
 
@@ -439,6 +460,12 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 		if (!visibleMonths) return { dividers, labels };
 
 		const segments = visibleMonths;
+		// Keep broad month views readable, then reveal every month as the user
+		// zooms in. Intervals remain aligned to calendar quarters/half-years.
+		const monthLabelInterval =
+			segments <= 12 ? 1 :
+			segments <= 24 ? 2 :
+			segments <= 36 ? 3 : 6;
 
 		// For year mode: collect boundary positions then place labels at midpoints
 		const yearBoundaryPositions = [];
@@ -496,6 +523,19 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 						</div>
 					);
 				}
+
+				if (i < segments && month % monthLabelInterval === 0) {
+					const labelPos = ((i + 0.5) / segments) * 100;
+					labels.push(
+						<div
+							key={`month-label-${year}-${month + 1}`}
+							className="month-label"
+							style={{ left: `${labelPos}%` }}
+						>
+							{formatShortMonth(month)}
+						</div>
+					);
+				}
 			}
 		}
 
@@ -544,7 +584,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 		}
 
 		return { dividers, labels };
-	}, [calculateVisibleRange, currentDate, startDate]);
+	}, [calculateVisibleRange, currentDate, formatShortMonth, startDate]);
 
 
 
@@ -553,7 +593,7 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 
   return (
     <>
-      <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
+      <div className={`time-window-slider-container ${isDayViewMode ? "day-view" : isWeekMode ? "week-view" : isMonthMode ? "month-view" : ""} ${vertical ? "vertical" : ""} ${vertical && isHeatmap ? "heatmap-mode" : ""}`}>
         {vertical && <span className="vertical-letter-label">T</span>}
         {vertical && (
           <div className="timeline-zoom-buttons" aria-label="Timeline zoom controls">

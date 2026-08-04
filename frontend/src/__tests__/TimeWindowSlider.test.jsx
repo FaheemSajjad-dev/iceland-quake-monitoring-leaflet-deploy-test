@@ -163,4 +163,43 @@ describe('TimeWindowSlider – month mode labels', () => {
       expect(hasYYFormat).toBe(true);
     }
   });
+
+  it('shows short month names centered in visible month bands', () => {
+    renderSlider({ vertical: true });
+    const zoomIn = screen.getByRole('button', { name: /zoom timeline in/i });
+
+    // Reach a close month view where every visible month receives a label.
+    for (let i = 0; i < 6; i++) fireEvent.click(zoomIn);
+
+    expect(screen.getByText(/Month view/i)).toBeInTheDocument();
+    const monthLabels = Array.from(document.querySelectorAll('.month-label'));
+    expect(monthLabels.length).toBeGreaterThan(0);
+    expect(monthLabels.every((label) =>
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(label.textContent.trim())
+    )).toBe(true);
+
+    // Month-view names sit inside their bands rather than on the left edge.
+    expect(parseFloat(monthLabels[0].style.left)).toBeGreaterThan(0);
+  });
+
+  it('shows a short month name on the month divider in week view', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 4, 12));
+
+    try {
+      renderSlider({ vertical: true });
+      const zoomIn = screen.getByRole('button', { name: /zoom timeline in/i });
+
+      for (let i = 0; i < 22; i++) fireEvent.click(zoomIn);
+
+      expect(screen.getByText(/Week view/i)).toBeInTheDocument();
+      const monthLabel = document.querySelector('.month-label');
+      const monthDivider = document.querySelector('.divider-month');
+      expect(monthLabel).toBeInTheDocument();
+      expect(monthDivider).toBeInTheDocument();
+      expect(monthLabel.style.left).toBe(monthDivider.style.left);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
