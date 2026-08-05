@@ -61,7 +61,8 @@
 
 /* Day divider: solid line, matching month thickness */
 .divider.divider-day {
-  background-color: rgba(15, 50, 90, 0.35);
+  background-color: rgba(235, 247, 255, 0.58);
+  box-shadow: 1px 0 0 rgba(7, 24, 44, 0.14);
   width: 1px;
   height: 100%;
   top: 0;
@@ -69,7 +70,8 @@
 
 /* Month divider: solid, slightly thicker */
 .divider.divider-month {
-  background-color: rgba(15, 50, 90, 0.55);
+  background-color: rgba(235, 247, 255, 0.78);
+  box-shadow: 1px 0 0 rgba(7, 24, 44, 0.18);
   width: 1px;
   height: 100%;
   top: 0;
@@ -77,7 +79,8 @@
 
 /* Year divider: bold 2px line */
 .divider.divider-year {
-  background-color: rgba(10, 35, 70, 0.85);
+  background-color: rgba(245, 251, 255, 0.95);
+  box-shadow: 1px 0 0 rgba(7, 24, 44, 0.22);
   width: 2px;
   height: 100%;
   top: 0;
