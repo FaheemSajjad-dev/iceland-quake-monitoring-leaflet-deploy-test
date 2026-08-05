@@ -835,7 +835,7 @@ const MapLibreEarthquakeMap = ({
   const [styledMapStyle, setStyledMapStyle] = useState(null);
   const [darkHeatmapStyle, setDarkHeatmapStyle] = useState(null);
   const isMobileAttribution = useMobileAttribution();
-  const initialViewState = useMemo(() => getDefaultMapLibreView(), []);
+  const cameraRef = useRef(getDefaultMapLibreView());
 
   if (!deckOverlayRef.current) {
     deckOverlayRef.current = new MapboxOverlay({
@@ -865,6 +865,7 @@ const MapLibreEarthquakeMap = ({
   const applyDefaultView = useCallback((map, duration = 0) => {
     if (!map) return;
     const view = getDefaultMapLibreView();
+    cameraRef.current = view;
     const options = {
       center: [view.longitude, view.latitude],
       zoom: view.zoom,
@@ -1127,10 +1128,9 @@ const MapLibreEarthquakeMap = ({
   const handleMapLoad = useCallback((event) => {
     const map = event.target;
     attachDeckOverlay(map);
-    applyDefaultView(map, 0);
     updateGrid();
     onReady();
-  }, [applyDefaultView, attachDeckOverlay, onReady, updateGrid]);
+  }, [attachDeckOverlay, onReady, updateGrid]);
 
   const handleMapClick = useCallback(() => {
     setTimeout(() => {
@@ -1158,7 +1158,7 @@ const MapLibreEarthquakeMap = ({
     <MapLibreMap
       key={mapType}
       ref={mapRef}
-      initialViewState={initialViewState}
+      initialViewState={cameraRef.current}
       style={{ width: "100%", height: "100%" }}
       mapStyle={activeMapStyle}
       maxBounds={ICELAND_BOUNDS_LNG_LAT}
@@ -1172,7 +1172,11 @@ const MapLibreEarthquakeMap = ({
             customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
           }}
       onLoad={handleMapLoad}
-      onMove={(event) => setViewZoom(event.viewState.zoom)}
+      onMove={(event) => {
+        const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
+        cameraRef.current = { longitude, latitude, zoom, bearing, pitch };
+        setViewZoom(zoom);
+      }}
       onMoveEnd={updateGrid}
       onZoomEnd={updateGrid}
       onClick={handleMapClick}
