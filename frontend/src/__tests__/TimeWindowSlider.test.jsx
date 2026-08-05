@@ -182,7 +182,7 @@ describe('TimeWindowSlider – month mode labels', () => {
     expect(parseFloat(monthLabels[0].style.left)).toBeGreaterThan(0);
   });
 
-  it('shows a short month name on the month divider in week view', () => {
+  it('combines each visible day and month in week view without separate month labels', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 4, 12));
 
@@ -193,11 +193,30 @@ describe('TimeWindowSlider – month mode labels', () => {
       for (let i = 0; i < 22; i++) fireEvent.click(zoomIn);
 
       expect(screen.getByText(/Week view/i)).toBeInTheDocument();
-      const monthLabel = document.querySelector('.month-label');
-      const monthDivider = document.querySelector('.divider-month');
-      expect(monthLabel).toBeInTheDocument();
-      expect(monthDivider).toBeInTheDocument();
-      expect(monthLabel.style.left).toBe(monthDivider.style.left);
+      const dayLabels = Array.from(document.querySelectorAll('.day-label'));
+      expect(dayLabels.length).toBeGreaterThan(0);
+      expect(dayLabels.every((label) => /^\d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(label.textContent.trim()))).toBe(true);
+      expect(document.querySelectorAll('.month-label')).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('combines the day and month in day view without separate month labels', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 4, 12));
+
+    try {
+      renderSlider({ vertical: true });
+      const zoomIn = screen.getByRole('button', { name: /zoom timeline in/i });
+
+      for (let i = 0; i < 32; i++) fireEvent.click(zoomIn);
+
+      expect(screen.getByText(/Day view/i)).toBeInTheDocument();
+      const dayLabels = Array.from(document.querySelectorAll('.day-label'));
+      expect(dayLabels.length).toBeGreaterThan(0);
+      expect(dayLabels.every((label) => /^\d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(label.textContent.trim()))).toBe(true);
+      expect(document.querySelectorAll('.month-label')).toHaveLength(0);
     } finally {
       vi.useRealTimers();
     }

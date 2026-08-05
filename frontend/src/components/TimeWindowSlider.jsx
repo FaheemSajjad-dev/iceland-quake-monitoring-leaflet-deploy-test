@@ -401,13 +401,14 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 				);
 
 				if (labelIndices.includes(i)) {
+					const dayLabel = `${String(dividerDate.getDate()).padStart(2, '0')} ${formatShortMonth(dividerDate.getMonth())}`;
 					labels.push(
 						<div
 							key={`day-label-${dividerDate.toISOString()}`}
 							className="day-label"
 							style={{ left: `${labelPos}%` }}
 						>
-							{dividerDate.getDate()}
+							{dayLabel}
 						</div>
 					);
 				}
@@ -422,20 +423,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 							style={{ left: `${dividerPos}%` }}
 						>
 							{String(yr - 1).slice(-2)}/{String(yr).slice(-2)}
-						</div>
-					);
-				}
-
-				// In week/day views, keep the short month name on its boundary so
-				// the day numbers retain calendar context.
-				if (isMonthBoundary) {
-					labels.push(
-						<div
-							key={`month-label-${dividerDate.getFullYear()}-${dividerDate.getMonth() + 1}`}
-							className="month-label"
-							style={{ left: `${dividerPos}%` }}
-						>
-							{formatShortMonth(dividerDate.getMonth())}
 						</div>
 					);
 				}
