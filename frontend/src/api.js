@@ -81,7 +81,9 @@ export const fetchVolcanoData = async (signal) => {
 export async function fetchShakeMapValidated(dt, lat, lon) {
   try {
     const params = new URLSearchParams({ dt, lat, lon });
-    const res = await fetch(`${API_URL}/shakemap_lookup?${params}`);
+    const res = await fetch(`${API_URL}/shakemap_lookup?${params}`, {
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data || !data.found) return null;

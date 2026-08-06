@@ -59,6 +59,7 @@ const App = () => {
     const [focusEarthquake, setFocusEarthquake] = useState(null);
     const [selectedVolcano, setSelectedVolcano] = useState(null);
     const [selectedEarthquake, setSelectedEarthquake] = useState(null);
+    const [earthquakeSelectionRequestId, setEarthquakeSelectionRequestId] = useState(0);
     const [temporaryFilterException, setTemporaryFilterException] = useState(null);
     const [shakeUrl, setShakeUrl] = useState(null);
     const openAbout = useCallback(() => {
@@ -73,6 +74,7 @@ const App = () => {
     const selectEarthquake = useCallback(quake => {
         setSelectedEarthquake(quake);
         if (!quake) return;
+        setEarthquakeSelectionRequestId(value => value + 1);
         const key = `${quake["Date-time"] ?? ""}|${quake.Latitude ?? ""}|${quake.Longitude ?? ""}`;
         setRecentSelections(current => [
             quake,
@@ -383,6 +385,7 @@ const App = () => {
                     mobileLeftPanelOpen={isMobile && !leftPanelCollapsed}
                     selectedEarthquake={selectedEarthquake}
                     setSelectedEarthquake={selectEarthquake}
+                    earthquakeSelectionRequestId={earthquakeSelectionRequestId}
                     focusEarthquake={focusEarthquake}
                     shakeUrl={shakeUrl}
                     setShakeUrl={setShakeUrl}

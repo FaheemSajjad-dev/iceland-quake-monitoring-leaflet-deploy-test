@@ -172,6 +172,7 @@ def test_shakemap_lookup_accepts_official_epos_data_host(test_app, monkeypatch):
     )
 
     assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
     assert response.get_json() == {
         "found": True,
         "url": (

@@ -31,9 +31,17 @@ vi.mock("../analysis/AnalysisPage", () => ({
   ),
 }));
 vi.mock("../components/MapComponent", () => ({
-  default: ({ earthquakes }) => (
-    <div data-testid="map-earthquakes">
-      {earthquakes.map((quake) => quake["Date-time"]).join("|")}
+  default: ({ earthquakes, selectedEarthquake, setSelectedEarthquake, earthquakeSelectionRequestId }) => (
+    <div>
+      <div data-testid="map-earthquakes">
+        {earthquakes.map((quake) => quake["Date-time"]).join("|")}
+      </div>
+      <div data-testid="selection-request-id">{earthquakeSelectionRequestId}</div>
+      {selectedEarthquake && (
+        <button type="button" onClick={() => setSelectedEarthquake(selectedEarthquake)}>
+          Reselect earthquake
+        </button>
+      )}
     </div>
   ),
 }));
@@ -141,5 +149,25 @@ describe("App initial request coordination", () => {
 
     fireEvent.click(screen.getByText("Open insights"));
     expect(screen.getByRole("textbox", { name: "Insights filter" })).toHaveValue("custom saved filter");
+  });
+
+  it("requests a fresh ShakeMap lookup when the same earthquake is reselected", async () => {
+    const quake = {
+      "Date-time": "2026-03-31 07:11:02.000",
+      Latitude: 64.669,
+      Longitude: -17.387,
+      Mw_mean: 3.8,
+    };
+    fetchEarthquakeData.mockResolvedValue([quake]);
+    fetchVolcanoData.mockResolvedValue([]);
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId("analysis-props")).toHaveTextContent("1-false-false"));
+
+    fireEvent.click(screen.getByText("Show on map"));
+    expect(screen.getByTestId("selection-request-id")).toHaveTextContent("1");
+
+    fireEvent.click(screen.getByText("Reselect earthquake"));
+    expect(screen.getByTestId("selection-request-id")).toHaveTextContent("2");
   });
 });

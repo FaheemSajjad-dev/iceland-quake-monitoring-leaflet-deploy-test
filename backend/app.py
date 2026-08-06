@@ -133,6 +133,9 @@ def add_security_headers(response):
     for header, value in SECURITY_HEADERS.items():
         response.headers.setdefault(header, value)
 
+    if request.endpoint in {"shakemap", "shakemap_lookup"}:
+        response.headers["Cache-Control"] = "no-store"
+
     origin = request.headers.get("Origin")
     if origin in _ALLOWED_ORIGINS:
         response.headers["Access-Control-Allow-Origin"] = origin

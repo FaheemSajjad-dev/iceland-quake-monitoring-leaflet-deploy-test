@@ -1334,6 +1334,7 @@ const MapComponent = ({
   mobileLeftPanelOpen = false,
   selectedEarthquake,
   setSelectedEarthquake,
+  earthquakeSelectionRequestId,
   focusEarthquake,
   shakeUrl,
   setShakeUrl,
@@ -1377,7 +1378,7 @@ const MapComponent = ({
     if (!selectedEarthquake) return;
     const t = setTimeout(() => setSelectedEarthquake(null), 15000);
     return () => clearTimeout(t);
-  }, [selectedEarthquake, setSelectedEarthquake]);
+  }, [earthquakeSelectionRequestId, selectedEarthquake, setSelectedEarthquake]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1397,7 +1398,7 @@ const MapComponent = ({
     }
     look();
     return () => { cancelled = true; };
-  }, [selectedEarthquake, setShakeUrl]);
+  }, [earthquakeSelectionRequestId, selectedEarthquake, setShakeUrl]);
 
   const handleMarkerClick  = useCallback((quake)   => { onSelectVolcano(null); setSelectedEarthquake(quake); }, [onSelectVolcano, setSelectedEarthquake]);
   const handleVolcanoClick = useCallback((volcano) => { setSelectedEarthquake(null); onSelectVolcano(volcano);    }, [onSelectVolcano, setSelectedEarthquake]);
