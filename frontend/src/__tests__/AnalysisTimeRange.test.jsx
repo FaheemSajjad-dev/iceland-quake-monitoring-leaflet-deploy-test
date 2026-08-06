@@ -86,6 +86,23 @@ describe("time-chart range labels", () => {
     expect(screen.getAllByText("1 Jun 2022")).toHaveLength(2);
   });
 
+  it("shows the exact selected end date at the full-range boundary", () => {
+    render(
+      <TimeChart
+        data={data}
+        metric="count"
+        color="#000"
+        selectedRange={{ startDate: "2021-11-01", endDate: "2024-12-19" }}
+        text={text}
+      />,
+    );
+
+    expect(screen.getByText("19 Dec 2024")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", {
+      name: "Start: 1 November 2021; End: 19 December 2024",
+    })).toHaveLength(2);
+  });
+
   it("resets to a newly filtered range and formats Icelandic labels", async () => {
     const { rerender } = render(
       <TimeChart data={data} metric="count" color="#000" text={text} />,

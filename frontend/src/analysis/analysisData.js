@@ -221,33 +221,58 @@ const periodStart = (date, grouping) => {
   return value;
 };
 
+const nextPeriodStart = (date, grouping) => {
+  const value = new Date(date);
+  if (grouping === "day") value.setUTCDate(value.getUTCDate() + 1);
+  if (grouping === "week") value.setUTCDate(value.getUTCDate() + 7);
+  if (grouping === "month") value.setUTCMonth(value.getUTCMonth() + 1);
+  if (grouping === "year") value.setUTCFullYear(value.getUTCFullYear() + 1);
+  return value;
+};
+
+const emptyTimeBucket = (start) => ({
+  period: start.toISOString(),
+  timestamp: start.getTime(),
+  count: 0,
+  magnitudeTotal: 0,
+  depthTotal: 0,
+  highestMagnitude: null,
+  matched: 0,
+  mpgv_only: 0,
+});
+
 export const aggregateByTime = (
   earthquakes,
   grouping,
   depthRecords = earthquakes,
+  selectedRange = null,
 ) => {
   const eligibleDepthIds = new Set(depthRecords.map((item) => item.id));
   const buckets = new Map();
+
+  if (selectedRange?.startDate && selectedRange?.endDate) {
+    let cursor = periodStart(new Date(`${selectedRange.startDate}T00:00:00Z`), grouping);
+    const last = periodStart(new Date(`${selectedRange.endDate}T00:00:00Z`), grouping);
+    while (cursor <= last) {
+      const bucket = emptyTimeBucket(cursor);
+      buckets.set(bucket.period, bucket);
+      cursor = nextPeriodStart(cursor, grouping);
+    }
+  }
+
   earthquakes.forEach((item) => {
     const start = periodStart(item.date, grouping);
     const key = start.toISOString();
-    const bucket = buckets.get(key) ?? {
-      period: key,
-      timestamp: start.getTime(),
-      count: 0,
-      magnitudeTotal: 0,
-      depthTotal: 0,
-      highestMagnitude: -Infinity,
-      matched: 0,
-      mpgv_only: 0,
-    };
+    const bucket = buckets.get(key) ?? emptyTimeBucket(start);
     bucket.count += 1;
     bucket.magnitudeTotal += item.magnitude;
     if (eligibleDepthIds.has(item.id)) {
       bucket.depthTotal += item.depth;
       bucket.depthCount = (bucket.depthCount ?? 0) + 1;
     }
-    bucket.highestMagnitude = Math.max(bucket.highestMagnitude, item.magnitude);
+    bucket.highestMagnitude = bucket.highestMagnitude == null
+      ? item.magnitude
+      : Math.max(bucket.highestMagnitude, item.magnitude);
     bucket[item.category] += 1;
     buckets.set(key, bucket);
   });
@@ -255,7 +280,9 @@ export const aggregateByTime = (
     .sort((a, b) => a.timestamp - b.timestamp)
     .map((bucket) => ({
       ...bucket,
-      averageMagnitude: bucket.magnitudeTotal / bucket.count,
+      averageMagnitude: bucket.count
+        ? bucket.magnitudeTotal / bucket.count
+        : null,
       averageDepth: bucket.depthCount
         ? bucket.depthTotal / bucket.depthCount
         : null,
@@ -351,7 +378,7 @@ export const buildDepthHistogram = (earthquakes) => {
   }));
 };
 
-export const buildAnalysis = (earthquakes, depthRecords, grouping) => {
+export const buildAnalysis = (earthquakes, depthRecords, grouping, selectedRange = null) => {
   const sortedByMagnitude = [...earthquakes].sort(
     (a, b) => b.magnitude - a.magnitude,
   );
@@ -379,7 +406,7 @@ export const buildAnalysis = (earthquakes, depthRecords, grouping) => {
       : null,
     matched,
     mpgvOnly,
-    timeSeries: aggregateByTime(earthquakes, grouping, depthRecords),
+    timeSeries: aggregateByTime(earthquakes, grouping, depthRecords, selectedRange),
     magnitudeBins: histogram(
       earthquakes,
       "magnitude",

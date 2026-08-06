@@ -77,7 +77,7 @@ const TimeTooltip = ({ active, payload, text }) => {
         {text.highestMagnitude}: {formatMagnitude(row.highestMagnitude)}
       </span>
       <span>
-        {text.averageMagnitude}: {row.averageMagnitude.toFixed(2)}
+        {text.averageMagnitude}: {row.averageMagnitude == null ? "â€”" : row.averageMagnitude.toFixed(2)}
       </span>
       <span>
         {text.averageDepth}:{" "}
@@ -172,9 +172,17 @@ const useTimeRange = (data) => {
   return { ...range, onChange };
 };
 
-const TimeRangeLabels = ({ data, range, text }) => {
-  const start = data[range.startIndex]?.period;
-  const end = data[range.endIndex]?.period;
+const visibleRangeDates = (data, range, selectedRange) => ({
+  start: range.startIndex === 0 && selectedRange?.startDate
+    ? `${selectedRange.startDate}T00:00:00Z`
+    : data[range.startIndex]?.period,
+  end: range.endIndex === data.length - 1 && selectedRange?.endDate
+    ? `${selectedRange.endDate}T00:00:00Z`
+    : data[range.endIndex]?.period,
+});
+
+const TimeRangeLabels = ({ data, range, selectedRange, text }) => {
+  const { start, end } = visibleRangeDates(data, range, selectedRange);
   if (!start || !end) return null;
   return (
     <div className="time-range-labels" aria-live="polite">
@@ -188,14 +196,13 @@ const TimeRangeLabels = ({ data, range, text }) => {
   );
 };
 
-const brushAriaLabel = (data, range, text) => {
-  const start = data[range.startIndex]?.period;
-  const end = data[range.endIndex]?.period;
+const brushAriaLabel = (data, range, selectedRange, text) => {
+  const { start, end } = visibleRangeDates(data, range, selectedRange);
   if (!start || !end) return undefined;
   return `${text.rangeStart}: ${accessiblePeriodLabel(start, text.locale)}; ${text.rangeEnd}: ${accessiblePeriodLabel(end, text.locale)}`;
 };
 
-export const TimeChart = ({ data, metric, color, text, children }) => {
+export const TimeChart = ({ data, metric, color, selectedRange, text, children }) => {
   const highest = data.reduce(
     (best, row) => (!best || row[metric] > best[metric] ? row : best),
     null,
@@ -248,17 +255,17 @@ export const TimeChart = ({ data, metric, color, text, children }) => {
               startIndex={range.startIndex}
               endIndex={range.endIndex}
               onChange={range.onChange}
-              ariaLabel={brushAriaLabel(data, range, text)}
+              ariaLabel={brushAriaLabel(data, range, selectedRange, text)}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <TimeRangeLabels data={data} range={range} text={text} />
+      <TimeRangeLabels data={data} range={range} selectedRange={selectedRange} text={text} />
     </div>
   );
 };
 
-export const CategoryTimeChart = ({ data, includeUnverified, text }) => {
+export const CategoryTimeChart = ({ data, includeUnverified, selectedRange, text }) => {
   const range = useTimeRange(data);
   return (
     <div className="time-chart-with-range">
@@ -310,12 +317,12 @@ export const CategoryTimeChart = ({ data, includeUnverified, text }) => {
               startIndex={range.startIndex}
               endIndex={range.endIndex}
               onChange={range.onChange}
-              ariaLabel={brushAriaLabel(data, range, text)}
+              ariaLabel={brushAriaLabel(data, range, selectedRange, text)}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <TimeRangeLabels data={data} range={range} text={text} />
+      <TimeRangeLabels data={data} range={range} selectedRange={selectedRange} text={text} />
     </div>
   );
 };
@@ -344,6 +351,7 @@ export default function AnalysisCharts({
   analysis,
   depthRecords,
   includeUnverified,
+  selectedRange,
   text,
 }) {
   const [zoomKey, setZoomKey] = useState(0);
@@ -501,6 +509,7 @@ export default function AnalysisCharts({
           data={series}
           metric="averageMagnitude"
           color={COLORS.purple}
+          selectedRange={selectedRange}
           text={text}
         />
       </ChartCard>
@@ -514,6 +523,7 @@ export default function AnalysisCharts({
           key={`category-${zoomKey}`}
           data={series}
           includeUnverified={includeUnverified}
+          selectedRange={selectedRange}
           text={text}
         />
       </ChartCard>

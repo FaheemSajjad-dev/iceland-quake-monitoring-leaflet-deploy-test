@@ -44,4 +44,12 @@ describe("active map architecture", () => {
       "bottom: calc(var(--action-rail-bottom) + var(--action-rail-height) + var(--action-card-gap));"
     );
   });
+
+  it("darkens water fills in the Map layer without treating glaciers as water", () => {
+    expect(mapComponentSource).toContain(
+      'const ROADMAP_WATER_COLOR = "rgb(150, 164, 170)";',
+    );
+    expect(mapComponentSource).toContain('"fill-color": ROADMAP_WATER_COLOR');
+    expect(mapComponentSource).toContain("!isGlacierOrIceStyleLayer(layer)");
+  });
 });

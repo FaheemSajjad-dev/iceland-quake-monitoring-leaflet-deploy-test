@@ -276,6 +276,9 @@ const LABEL_THEMES = {
   },
 };
 
+const ROADMAP_WATER_COLOR = "rgb(150, 164, 170)";
+const WATER_STYLE_LAYER_TOKEN = /(^|[^a-z])(ocean|water|lake|river)([^a-z]|$)/i;
+
 const normalizeTextFont = (font) => {
   const fallback = ["Noto Sans Regular"];
   if (!font) return fallback;
@@ -292,6 +295,11 @@ const isGlacierOrIceStyleLayer = (layer) => GLACIER_ICE_LAYER_TOKEN.test([
   layer["source-layer"],
   JSON.stringify(layer.filter ?? null),
 ].filter(Boolean).join(" "));
+
+const isWaterStyleLayer = (layer) =>
+  layer.type === "fill" &&
+  !isGlacierOrIceStyleLayer(layer) &&
+  WATER_STYLE_LAYER_TOKEN.test([layer.id, layer["source-layer"]].filter(Boolean).join(" "));
 
 
 const insertGlacierLayers = (raw, layers) => {
@@ -353,26 +361,35 @@ const patchStyle = (
     .filter(l => !hideGlaciers || !isGlacierOrIceStyleLayer(l))
     .filter(l => !labelsOnly || (l.type === "symbol" && l.layout?.["text-field"]))
     .map(l => {
-      if (!l.layout?.["text-field"]) return l;
+      const baseLayer = !labelsOnly && isWaterStyleLayer(l)
+        ? {
+            ...l,
+            paint: {
+              ...(l.paint ?? {}),
+              "fill-color": ROADMAP_WATER_COLOR,
+            },
+          }
+        : l;
+      if (!baseLayer.layout?.["text-field"]) return baseLayer;
       const layer = {
-        ...l,
+        ...baseLayer,
         layout: {
-          ...l.layout,
+          ...baseLayer.layout,
           visibility: "visible",
           "text-field": IS_NAME_EXPR,
-          "text-font": normalizeTextFont(l.layout["text-font"]),
+          "text-font": normalizeTextFont(baseLayer.layout["text-font"]),
         },
       };
       if (labelsOnly) {
         layer.paint = {
-          ...(l.paint ?? {}),
+          ...(baseLayer.paint ?? {}),
           "text-color": theme.textColor,
           "text-halo-color": theme.haloColor,
           "text-halo-width": theme.haloWidth,
           "text-opacity": 1,
         };
-      } else if (l.paint) {
-        layer.paint = l.paint;
+      } else if (baseLayer.paint) {
+        layer.paint = baseLayer.paint;
       }
       return layer;
     });

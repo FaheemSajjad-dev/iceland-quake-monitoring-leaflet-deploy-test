@@ -388,8 +388,11 @@ export default function AnalysisPage({
     [filtered, filters],
   );
   const analysis = useMemo(
-    () => buildAnalysis(filtered, depthRecords, filters.grouping),
-    [depthRecords, filtered, filters.grouping],
+    () => buildAnalysis(filtered, depthRecords, filters.grouping, {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    }),
+    [depthRecords, filtered, filters.endDate, filters.grouping, filters.startDate],
   );
   const apply = (draft) => {
     const policyBounds = boundsForPolicy(draft.depthQuality);
@@ -569,6 +572,10 @@ export default function AnalysisPage({
                 <AnalysisCharts
                   analysis={analysis}
                   depthRecords={depthRecords}
+                  selectedRange={{
+                    startDate: filters.startDate,
+                    endDate: filters.endDate,
+                  }}
                   includeUnverified={
                     filters.depthQuality === "include_unverified"
                   }

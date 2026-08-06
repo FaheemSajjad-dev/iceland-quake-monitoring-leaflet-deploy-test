@@ -114,6 +114,27 @@ describe("analysis transformations", () => {
     expect(series[0].averageDepth).toBe(5);
   });
 
+  it("includes empty time periods through the selected end date", () => {
+    const normalized = normalizeEarthquakes(rows);
+    const series = aggregateByTime(normalized, "month", normalized, {
+      startDate: "2024-01-01",
+      endDate: "2024-03-20",
+    });
+
+    expect(series.map((item) => item.period.slice(0, 10))).toEqual([
+      "2024-01-01",
+      "2024-02-01",
+      "2024-03-01",
+    ]);
+    expect(series[2]).toMatchObject({
+      count: 0,
+      matched: 0,
+      mpgv_only: 0,
+      averageMagnitude: null,
+      highestMagnitude: null,
+    });
+  });
+
   it("returns safe empty summaries", () => {
     expect(buildAnalysis([], [], "day")).toMatchObject({
       count: 0,
