@@ -55,7 +55,12 @@ EARTHQUAKES_MAX_ROWS = int(os.environ.get("EARTHQUAKES_MAX_ROWS", "20000"))
 CSV_MAX_DAYS_WINDOW = int(os.environ.get("CSV_MAX_DAYS_WINDOW", "3650"))
 CSV_MAX_ROWS = int(os.environ.get("CSV_MAX_ROWS", "50000"))
 REQUEST_TIMEOUT = (5, 20)
-SHAKEMAP_ALLOWED_HOSTS = {"api.vedur.is", "vedur.is", "www.vedur.is"}
+SHAKEMAP_ALLOWED_HOSTS = {
+    "api.vedur.is",
+    "data.epos-iceland.is",
+    "vedur.is",
+    "www.vedur.is",
+}
 
 
 def parse_bool(value: str | None, default: bool = False) -> bool:

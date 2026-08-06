@@ -141,6 +141,61 @@ def test_shakemap_lookup_accepts_catalogue_milliseconds(test_app, monkeypatch):
     assert response.get_json() == {"found": False}
 
 
+def test_shakemap_lookup_accepts_official_epos_data_host(test_app, monkeypatch):
+    class ShakeMapResponse:
+        headers = {"Content-Type": "application/json"}
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            return [{
+                "origin_time": "2026-03-31 07:11:02.000",
+                "latitude": 64.669,
+                "longitude": -17.387,
+                "url_view_file": (
+                    "https://data.epos-iceland.is/files/seismic/"
+                    "shakemaps/20260331_071102.jpg"
+                ),
+            }]
+
+    monkeypatch.setattr(
+        app_module.requests,
+        "get",
+        lambda *args, **kwargs: ShakeMapResponse(),
+    )
+
+    response = test_app.test_client().get(
+        "/shakemap_lookup?dt=2026-03-31+07:11:02.000&lat=64.669&lon=-17.387"
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "found": True,
+        "url": (
+            "https://data.epos-iceland.is/files/seismic/"
+            "shakemaps/20260331_071102.jpg"
+        ),
+        "origin_time": "2026-03-31 07:11:02.000",
+        "minutes_diff": 0.0,
+        "distance_km": 0.0,
+    }
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://data.epos-iceland.is.evil.example/shakemap.jpg",
+        "http://data.epos-iceland.is/shakemap.jpg",
+        "https://user@data.epos-iceland.is/shakemap.jpg",
+    ],
+)
+def test_shakemap_url_validation_still_rejects_unsafe_urls(url):
+    assert app_module._validate_shakemap_url(url) is None
+
+
 def test_shakemap_stored_url_validation(test_app, db_session):
     db.session.add(ShakeMapLink(dt="2026-01-01 00:00:00", status="valid", url_view_file="javascript:alert(1)"))
     db.session.commit()
