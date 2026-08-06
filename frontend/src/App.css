@@ -17,6 +17,15 @@ body,
   width: 100%;
 }
 
+/* Keep the mounted Insights route from introducing a flex/layout box. */
+.analysis-route {
+  display: contents;
+}
+
+.analysis-route[hidden] {
+  display: none;
+}
+
 .map-container {
   --right-panel-shift: 0px;
   --right-panel-width: 185px;

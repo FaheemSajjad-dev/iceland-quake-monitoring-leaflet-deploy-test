@@ -11,9 +11,16 @@ import { getCatalogueDisplayMagnitudeMaximum } from "./utils/magnitude";
 import "./App.css";
 
 const MIN_MAGNITUDE = 3.0;
+const FILTER_EXCEPTION_DURATION_MS = 15_000;
+const isSameEarthquake = (a, b) =>
+    !!a && !!b &&
+    a["Date-time"] === b["Date-time"] &&
+    Number(a.Latitude) === Number(b.Latitude) &&
+    Number(a.Longitude) === Number(b.Longitude);
 const AnalysisPage = lazy(() => import("./analysis/AnalysisPage"));
 const App = () => {
     const [route, setRoute] = useState(() => window.location.pathname.endsWith("/analysis") ? "analysis" : "map");
+    const [analysisMounted, setAnalysisMounted] = useState(() => route === "analysis");
     const [dataLoading, setDataLoading] = useState(true);
     const [dataLoadError, setDataLoadError] = useState(false);
     const [dataRetry, setDataRetry] = useState(0);
@@ -52,6 +59,7 @@ const App = () => {
     const [focusEarthquake, setFocusEarthquake] = useState(null);
     const [selectedVolcano, setSelectedVolcano] = useState(null);
     const [selectedEarthquake, setSelectedEarthquake] = useState(null);
+    const [temporaryFilterException, setTemporaryFilterException] = useState(null);
     const [shakeUrl, setShakeUrl] = useState(null);
     const openAbout = useCallback(() => {
         setSelectedVolcano(null);
@@ -83,7 +91,11 @@ const App = () => {
     const responsiveModeRef = useRef(isMobile);
 
     useEffect(() => {
-        const onPopState = () => setRoute(window.location.pathname.endsWith("/analysis") ? "analysis" : "map");
+        const onPopState = () => {
+            const nextRoute = window.location.pathname.endsWith("/analysis") ? "analysis" : "map";
+            if (nextRoute === "analysis") setAnalysisMounted(true);
+            setRoute(nextRoute);
+        };
         window.addEventListener("popstate", onPopState);
         return () => window.removeEventListener("popstate", onPopState);
     }, []);
@@ -119,6 +131,15 @@ const App = () => {
         const t = setTimeout(() => setSelectedVolcano(null), 15_000);
         return () => clearTimeout(t);
     }, [selectedVolcano]);
+
+    useEffect(() => {
+        if (!temporaryFilterException) return undefined;
+        const timeout = setTimeout(
+            () => setTemporaryFilterException(null),
+            FILTER_EXCEPTION_DURATION_MS,
+        );
+        return () => clearTimeout(timeout);
+    }, [temporaryFilterException]);
 
     const loadData = useCallback((signal, { initial = false } = {}) => {
         if (initial) {
@@ -195,6 +216,14 @@ const App = () => {
         setFilteredData(filtered);
     }, [allData, dateRange, magnitudeFilter]);
 
+    const mapEarthquakes = useMemo(() => {
+        if (
+            !temporaryFilterException ||
+            filteredData.some((quake) => isSameEarthquake(quake, temporaryFilterException))
+        ) return filteredData;
+        return [...filteredData, temporaryFilterException];
+    }, [filteredData, temporaryFilterException]);
+
     const handleFilterChange = useCallback((sy, sm, ey, em, sd, ed) => {
         const hasDay = sd !== undefined && ed !== undefined;
         setDateRange({
@@ -247,6 +276,7 @@ const App = () => {
         const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         const analysisPath = base ? `${base}/analysis` : "/mpgv/analysis";
         const path = nextRoute === "analysis" ? analysisPath : `${base}/`.replace(/\/+/g, "/");
+        if (nextRoute === "analysis") setAnalysisMounted(true);
         window.history.pushState({}, "", path);
         setRoute(nextRoute);
     }, []);
@@ -255,13 +285,22 @@ const App = () => {
         navigate("map");
         if (mapType === "heatmap") handleMapTypeChange("roadmap");
         const original = allData.find(item => item["Date-time"] === quake["Date-time"] && Number(item.Latitude) === quake.latitude && Number(item.Longitude) === quake.longitude) ?? quake;
+        setTemporaryFilterException(
+            filteredData.some(item => isSameEarthquake(item, original)) ? null : original,
+        );
         selectEarthquake(original);
         setFocusEarthquake({ quake: original, requestId: Date.now() });
-    }, [allData, handleMapTypeChange, mapType, navigate, selectEarthquake]);
+    }, [allData, filteredData, handleMapTypeChange, mapType, navigate, selectEarthquake]);
 
     return (
         <div className="app-container">
-            {route === "analysis" && <Suspense fallback={<div className="route-loading">Loading earthquake insights…</div>}><AnalysisPage earthquakes={allData} loading={dataLoading} loadError={dataLoadError} onRetryData={() => setDataRetry(value => value + 1)} onMap={() => navigate("map")} onViewMap={viewAnalysisEarthquake} /></Suspense>}
+            {analysisMounted && (
+                <div className="analysis-route" hidden={route !== "analysis"} aria-hidden={route !== "analysis"}>
+                    <Suspense fallback={<div className="route-loading">Loading earthquake insights…</div>}>
+                        <AnalysisPage earthquakes={allData} loading={dataLoading} loadError={dataLoadError} onRetryData={() => setDataRetry(value => value + 1)} onMap={() => navigate("map")} onViewMap={viewAnalysisEarthquake} />
+                    </Suspense>
+                </div>
+            )}
             <div aria-hidden={route === "analysis"} className={`map-container${route === "analysis" ? " route-hidden" : ""}${rightPanelOpen ? " right-panel-open" : ""}${!isMobile && leftPanelCollapsed ? " title-left" : ""}${isMobile && !leftPanelCollapsed ? " mobile-left-panel-open" : ""}`}>
                 <div className="map-type-control-container">
                     <MapTypeSelector onMapTypeChange={handleMapTypeChange} selectedType={mapType} />
@@ -328,7 +367,7 @@ const App = () => {
                 )}
 
                 <MapComponent
-                    earthquakes={filteredData}
+                    earthquakes={mapEarthquakes}
                     volcanoes={showVolcanoes ? volcanoData : emptyVolcanoes}
                     maxMagnitude={maxMagnitude}
                     mapType={mapType}

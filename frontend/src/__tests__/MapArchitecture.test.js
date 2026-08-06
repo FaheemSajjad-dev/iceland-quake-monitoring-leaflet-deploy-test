@@ -45,6 +45,12 @@ describe("active map architecture", () => {
     );
   });
 
+  it("keeps the mounted Insights route layout-transparent so the page can scroll", () => {
+    expect(appStyles).toContain(".analysis-route {");
+    expect(appStyles).toContain("display: contents;");
+    expect(appStyles).toContain(".analysis-route[hidden] {");
+  });
+
   it("darkens water fills in the Map layer without treating glaciers as water", () => {
     expect(mapComponentSource).toContain(
       'const ROADMAP_WATER_COLOR = "rgb(150, 164, 170)";',
