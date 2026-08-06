@@ -8,7 +8,7 @@ The app visualizes Icelandic earthquakes from June 2020 onward, focusing on even
 
 ## Current Deployment
 
-- Live Pluto URL: `http://pluto.cs.hi.is/mpgv/`
+- Live Pluto URL: `https://pluto.cs.hi.is/mpgv/`
 - Pluto backend port: `6000` behind the Pluto `/mpgv/` route
 - Pluto project path: `~/iceland-quake`
 - Pluto deploy command from the server project root: `./deploy.sh`
@@ -58,12 +58,14 @@ When a unique match is found, the Quakes API location and depth replace the MPGV
 
 Each Quakes API event is used at most once in the merged catalogue. If multiple MPGV rows compete for the same Quakes event, the best candidate by time difference, distance, and magnitude difference is matched; the other MPGV rows remain `v_only`. This prevents one physical Quakes event from being represented as multiple matched rows.
 
+MPGV ingestion preserves historical source revisions for provenance while marking only the latest authoritative row for each stable source identity as current. Reconciliation uses those current rows, preventing corrected or repeated source entries from appearing as duplicate catalogue events.
+
 ## Features
 
 - Interactive MapLibre/deck.gl earthquake markers with timeline and magnitude colour modes
 - Larger invisible click/tap targets without increasing visible marker size
 - Time window slider with day, week, month, and year filtering
-- Magnitude filter with default minimum **M 3.0**
+- Magnitude filter with default minimum **M 3.0** and a maximum derived from the exact catalogue values
 - Volcano overlay and right-side volcano list from EPOS metadata
 - Faults overlay from EGDI/HIKE WFS, filtered to Iceland onshore records
 - Fault/fissure legend with solid red fault lines and dotted red fissure lines
@@ -74,6 +76,7 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 - Main latitude labels plus unlabeled latitude midlines between main lines
 - Longitude labels anchored near the bottom with collision spacing
 - Default map-view button that returns to the Iceland opening view without reloading
+- Camera position and zoom preserved when switching among Map, Satellite, and Terrain
 - Recent Selections panel containing the latest ten unique marker selections, with map return actions
 - Responsive desktop and mobile controls and information layouts
 - MapLibre Heatmap mode for density-first analysis with subdued per-event weights; individual selection is unavailable in this view
@@ -83,13 +86,15 @@ Each Quakes API event is used at most once in the merged catalogue. If multiple 
 - Responsive summary cards and five interactive charts: magnitude distribution, depth distribution, magnitude versus depth, average magnitude over time, and data category over time
 - Hover tooltips on desktop and touch tracking on the magnitude-versus-depth chart; time charts include range brushes and explicit visible range labels
 - Recent and strongest earthquake tables with sorting, five rows per page, pagination, and **View on map** handoff
+- Insights filters and chart state preserved when visiting the map and returning
+- **View on map** temporarily reveals a selected earthquake for 15 seconds when active map filters would otherwise hide it, without changing those filters
 - Filtered-catalogue CSV download and print-ready Insights output for browser PDF saving
 - Depth analysis defaults to Quakes API reference depths from matched events; MPGV-only depths remain raw and can be included with explicit unverified labels
 - Reference and unverified depths are separated in charts, tooltips, tables, and CSV exports, with extreme raw values grouped into a labelled overflow bin
 
 ## Insights
 
-The Insights page analyzes the same merged catalogue loaded by the map. The map action opens `/mpgv/analysis`; its home action returns to the map, and **View on map** returns with the selected earthquake focused while preserving the map's current filters and overlays.
+The Insights page analyzes the same merged catalogue loaded by the map. The map action opens `/mpgv/analysis`; its home action returns to the map, and the mounted Insights route preserves its applied and draft filter state when users move between pages. **View on map** returns with the selected earthquake focused while preserving the map's current filters and overlays. If those filters exclude the selected event, only that event is added temporarily for 15 seconds and then removed from the map again.
 
 On initial load, the page waits for both the earthquake catalogue and two policy-specific responses from `GET /insights/limits`. That endpoint calculates the current catalogue magnitude minimum/maximum and the eligible depth minimum/maximum for either `reference_only` or `include_unverified`. Filter fields use those dynamic limits, clamp values on blur or policy changes, and reject invalid date or numeric ranges before applying them.
 
@@ -167,7 +172,7 @@ npm run dev:stop
 
 ## Pluto Deployment
 
-The Pluto server runs the app from `~/iceland-quake`. Gunicorn listens locally on port `6000`, and Pluto serves the public URL at `http://pluto.cs.hi.is/mpgv/`.
+The Pluto server runs the app from `~/iceland-quake`. Gunicorn listens locally on port `6000`, and Pluto serves the public URL at `https://pluto.cs.hi.is/mpgv/`.
 
 Typical update flow:
 

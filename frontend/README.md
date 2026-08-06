@@ -26,7 +26,7 @@ npm run dev
 
 The dev server opens at `http://localhost:5174`. It expects the Flask backend on port 5001.
 
-For the live Pluto deployment, the built frontend is served by Flask/Gunicorn through `http://pluto.cs.hi.is/mpgv/`. Gunicorn listens locally on port `6000`; the frontend and API are same-origin under `/mpgv/`.
+For the live Pluto deployment, the built frontend is served by Flask/Gunicorn through `https://pluto.cs.hi.is/mpgv/`. Gunicorn listens locally on port `6000`; the frontend and API are same-origin under `/mpgv/`.
 
 ## Testing
 
@@ -62,6 +62,8 @@ The separate `/analysis` route (served as `/mpgv/analysis` on Pluto) is linked f
 - Summary cards plus five Recharts visualizations: magnitude distribution, depth distribution, magnitude versus depth, average magnitude over time, and category counts over time.
 - Desktop tooltips, touch interaction for the magnitude-versus-depth scatter plot, and range brushes on both time-series charts.
 - Recent and strongest tables with sorting, five rows per page, pagination, and **View on map** actions.
+- Preserved Insights filter/chart state when navigating to the map and back.
+- A 15-second exception that shows only the selected event when **View on map** targets an earthquake excluded by active map filters; all filters remain unchanged.
 - Filtered CSV export and print/PDF output.
 
 Depth analysis defaults to matched IMO Quakes API depths. Raw MPGV-only depths can be included explicitly as unverified values; the interface preserves and labels those values rather than correcting them.
@@ -94,6 +96,8 @@ All current map views use MapLibre GL. The default **Map** layer uses the OpenFr
 - The bottom-right attribution is compact and reflects the active basemap plus EGDI/HIKE when faults are visible.
 - Earthquake and volcano info cards open at the upper-left map work area.
 - Recent Selections records the latest ten unique earthquake marker selections and can return to a selected event without changing filters or overlays.
+- Map, Satellite, and Terrain switches retain the current camera position and zoom.
+- The magnitude control uses the exact current catalogue maximum rather than a fixed ceiling.
 - The responsive layout supports desktop and mobile controls and information cards.
 
 ## Heatmap

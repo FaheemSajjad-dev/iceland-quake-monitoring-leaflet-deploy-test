@@ -2,10 +2,10 @@
   "project": {
     "name": "MPGV Monitor",
     "generated_by": "project-architecture/generate_architecture.py",
-    "analysed_files": 79,
+    "analysed_files": 104,
     "displayed_nodes": 63,
     "displayed_important_files": 32,
-    "relationships": 89,
+    "relationships": 93,
     "entry_points": [
       "frontend/index.html",
       "frontend/src/main.jsx",
@@ -16,11 +16,23 @@
     "large_files": [
       {
         "path": "frontend/src/components/MapComponent.jsx",
-        "lines": 1477
+        "lines": 1498
       },
       {
         "path": "backend/app.py",
-        "lines": 864
+        "lines": 1143
+      },
+      {
+        "path": "tmp/pdfs/chapter34_alignment_build/THESIS_DOCUMENTATION_TODO.abstract-agrip.pending.md",
+        "lines": 954
+      },
+      {
+        "path": "tmp/pdfs/chapter34_alignment_build/THESIS_DOCUMENTATION_TODO.chapter1.pending.md",
+        "lines": 953
+      },
+      {
+        "path": "tmp/pdfs/chapter34_alignment_build/THESIS_DOCUMENTATION_TODO.md",
+        "lines": 838
       },
       {
         "path": "frontend/src/components/MapComponent.css",
@@ -32,35 +44,23 @@
       },
       {
         "path": "frontend/src/components/TimeWindowSlider.jsx",
-        "lines": 609
+        "lines": 636
       },
       {
         "path": "frontend/src/analysis/AnalysisPage.jsx",
-        "lines": 602
+        "lines": 609
       },
       {
-        "path": "frontend/src/components/LeftPanel.css",
-        "lines": 523
+        "path": "tmp/pdfs/chapter34_alignment_build/CHAPTER_03_CONTROLLED_REVISION_PLAN.md",
+        "lines": 607
       },
       {
-        "path": "frontend/src/analysis/AnalysisCharts.jsx",
-        "lines": 522
+        "path": "backend/scrape.py",
+        "lines": 605
       },
       {
-        "path": "tools/generate_ch2_reference_report.py",
-        "lines": 478
-      },
-      {
-        "path": "frontend/src/components/TimeWindowSlider.css",
-        "lines": 441
-      },
-      {
-        "path": "frontend/src/components/MagnitudeScale.css",
-        "lines": 403
-      },
-      {
-        "path": "frontend/src/analysis/analysisData.js",
-        "lines": 396
+        "path": "tmp/pdfs/chapter34_alignment_build/CHAPTER_02_REVIEW.md",
+        "lines": 596
       }
     ],
     "excluded": [
@@ -328,7 +328,9 @@
         "EARTHQUAKES_MAX_ROWS",
         "FLASK_ENV",
         "FRONTEND_PORT",
+        "LOG_LEVEL",
         "MAX_DAYS_WINDOW",
+        "MPGV_DATABASE_PATH",
         "PORT",
         "RATE_LIMIT_*",
         "RATE_LIMIT_DEFAULT",
@@ -342,7 +344,7 @@
       "path": "backend/app.py",
       "node_type": "file",
       "label": "app.py",
-      "lines": 864,
+      "lines": 1143,
       "imports": [
         "backend/reconcile.py",
         "backend/scrape.py",
@@ -353,9 +355,12 @@
         "Earthquake",
         "EarthquakeMerged",
         "EarthquakeSRaw",
+        "IngestionBusyError",
         "IngestionLock",
+        "SchedulerOwnership",
         "ShakeMapLink",
         "Volcano",
+        "acquire",
         "add_security_headers",
         "bootstrap_missing_data",
         "create_tables",
@@ -370,10 +375,7 @@
         "home",
         "initialize_data",
         "parse_bool",
-        "rate_limit",
-        "require_admin",
-        "run_reconcile",
-        "scheduled_scrape"
+        "rate_limit"
       ],
       "routes": [
         "/",
@@ -408,6 +410,7 @@
         "backend/tests/conftest.py",
         "backend/tests/test_insights_limits.py",
         "backend/tests/test_reconcile.py",
+        "backend/tests/test_scrape_parse.py",
         "backend/tests/test_security_hardening.py",
         "frontend/src/api.js",
         "run-local.sh"
@@ -416,6 +419,7 @@
         "backend/tests/conftest.py",
         "backend/tests/test_insights_limits.py",
         "backend/tests/test_reconcile.py",
+        "backend/tests/test_scrape_parse.py",
         "backend/tests/test_security_hardening.py"
       ]
     },
@@ -528,7 +532,7 @@
       "path": "backend/tests/test_reconcile.py",
       "node_type": "file",
       "label": "test_reconcile.py",
-      "lines": 238,
+      "lines": 400,
       "imports": [
         "backend/app.py",
         "backend/reconcile.py"
@@ -538,7 +542,11 @@
         "add_v",
         "merged_rows",
         "run_merge",
+        "test_27_july_regression_preserves_fractional_source_identity",
+        "test_28_july_events_and_full_mpgv_anchored_invariant",
         "test_ambiguous_two_s_candidates_gives_v_only",
+        "test_api_only_event_is_excluded",
+        "test_changed_enrichment_keeps_one_mpgv_identity",
         "test_depth_policy_s_uses_quakes_api_depth",
         "test_depth_policy_v_uses_mpgv_depth",
         "test_idempotent_rerun",
@@ -548,6 +556,7 @@
         "test_one_quakes_api_event_is_used_once",
         "test_v_below_min_mag_not_merged",
         "test_v_only_distance_exceeds_threshold",
+        "test_v_only_is_replaced_when_api_match_arrives",
         "test_v_only_magnitude_diff_exactly_at_limit",
         "test_v_only_magnitude_diff_too_large",
         "test_v_only_time_outside_window",
@@ -577,8 +586,9 @@
       "path": "backend/tests/test_scrape_parse.py",
       "node_type": "file",
       "label": "test_scrape_parse.py",
-      "lines": 177,
+      "lines": 485,
       "imports": [
+        "backend/app.py",
         "backend/scrape.py"
       ],
       "symbols": [
@@ -586,25 +596,32 @@
         "TestEdgeCases",
         "TestGetMonthlyDataParsing",
         "TestMagnitudeFilter",
+        "get",
+        "test_abnormally_low_candidate_requires_explicit_maintenance_override",
         "test_above_threshold_included",
         "test_below_threshold_excluded",
+        "test_complete_candidate_catalogue_is_fetched_and_validated",
         "test_correct_field_values",
         "test_datetime_with_microseconds",
         "test_datetime_without_microseconds",
         "test_empty_table_returns_empty_list",
         "test_exactly_at_threshold_included",
+        "test_expected_page_without_table_is_rejected_without_state_change",
+        "test_fractional_timestamp_variants_are_preserved",
+        "test_malformed_row_loss_is_measured_and_abnormal_loss_rejected",
         "test_mixed_magnitudes_filtered_correctly",
+        "test_month_request_failure_rejects_before_current_state_changes",
+        "test_mpgv_millisecond_identity_is_preserved",
         "test_multiple_rows_returned",
         "test_no_table_returns_empty_list",
         "test_returns_list_of_dicts",
-        "test_row_with_missing_mw_skipped",
-        "test_row_with_non_numeric_mw_skipped",
-        "test_url_format"
+        "test_row_with_missing_mw_skipped"
       ],
       "routes": [],
       "config": [],
       "communications": [],
       "dependencies": [
+        "backend/app.py",
         "backend/scrape.py"
       ],
       "dependents": [],
@@ -625,31 +642,50 @@
       "path": "backend/tests/test_security_hardening.py",
       "node_type": "file",
       "label": "test_security_hardening.py",
-      "lines": 156,
+      "lines": 508,
       "imports": [
         "backend/app.py",
         "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
         "backend/volcano_scraper.py"
       ],
       "symbols": [
+        "EmptyShakeMapResponse",
         "fail_bootstrap",
         "failing_add_all",
+        "json",
+        "raise_for_status",
+        "test_app_has_one_canonical_module_identity",
+        "test_concurrent_scheduler_attempt_does_not_interrupt_owner",
+        "test_disable_scheduler_zero_means_enabled",
+        "test_earthquakes_endpoint_returns_all_three_july_28_identities",
+        "test_event_datetime_accepts_optional_fractional_seconds",
+        "test_ingestion_lock_never_recovers_a_live_owner",
+        "test_ingestion_lock_recovers_only_after_owner_is_dead",
         "test_invalid_days_returns_400",
         "test_invalid_shakemap_lookup_parameters_return_400",
         "test_production_admin_routes_reject_missing_token_even_from_loopback",
         "test_public_get_routes_do_not_bootstrap",
+        "test_quakes_failure_still_runs_mpgv_anchored_reconciliation",
         "test_reconcile_requires_x_admin_token_not_query_or_authorization",
         "test_reconcile_rollback_preserves_previous_merged_rows",
-        "test_scrape_volcanoes_is_post_only_and_authenticated",
-        "test_shakemap_stored_url_validation",
-        "test_volcano_replacement_rollback_preserves_existing_rows"
+        "test_scheduler_invalidates_cache_only_after_successful_reconciliation",
+        "test_scheduler_ownership_allows_only_one_live_process",
+        "test_scheduler_reconciliation_failure_preserves_cache",
+        "test_scheduler_rejected_acquisition_preserves_canonical_and_cache",
+        "test_scrape_volcanoes_is_post_only_and_authenticated"
       ],
       "routes": [],
-      "config": [],
+      "config": [
+        "DISABLE_SCHEDULER"
+      ],
       "communications": [],
       "dependencies": [
         "backend/app.py",
         "backend/reconcile.py",
+        "backend/scrape.py",
+        "backend/skjalftalisa_client.py",
         "backend/volcano_scraper.py"
       ],
       "dependents": [],
@@ -856,16 +892,25 @@
       "path": "backend/scrape.py",
       "node_type": "file",
       "label": "scrape.py",
-      "lines": 166,
+      "lines": 605,
       "imports": [
         "backend/app.py"
       ],
       "symbols": [
+        "CatalogueValidationError",
+        "fetch_authoritative_catalogue",
         "get_monthly_data",
-        "scrape_all_earthquake_data"
+        "scrape_all_earthquake_data",
+        "sync_authoritative_rows",
+        "validate_candidate_catalogue"
       ],
       "routes": [],
-      "config": [],
+      "config": [
+        "MPGV_MAX_CATALOGUE_DROP_FRACTION",
+        "MPGV_MAX_PAGE_PARSE_LOSS_FRACTION",
+        "MPGV_MIN_CATALOGUE_ROWS",
+        "MPGV_RECENT_MONTH_GRACE_DAYS"
+      ],
       "dependencies": [
         "backend/app.py",
         "external:mpgv",
@@ -873,10 +918,12 @@
       ],
       "dependents": [
         "backend/app.py",
-        "backend/tests/test_scrape_parse.py"
+        "backend/tests/test_scrape_parse.py",
+        "backend/tests/test_security_hardening.py"
       ],
       "tests": [
-        "backend/tests/test_scrape_parse.py"
+        "backend/tests/test_scrape_parse.py",
+        "backend/tests/test_security_hardening.py"
       ]
     },
     {
@@ -900,7 +947,7 @@
       "path": "backend/skjalftalisa_client.py",
       "node_type": "file",
       "label": "skjalftalisa_client.py",
-      "lines": 211,
+      "lines": 225,
       "imports": [
         "backend/app.py"
       ],
@@ -919,9 +966,11 @@
       ],
       "dependents": [
         "backend/app.py",
+        "backend/tests/test_security_hardening.py",
         "backend/tests/test_skjalftalisa_client.py"
       ],
       "tests": [
+        "backend/tests/test_security_hardening.py",
         "backend/tests/test_skjalftalisa_client.py"
       ]
     },
@@ -948,7 +997,7 @@
       "path": "backend/volcano_scraper.py",
       "node_type": "file",
       "label": "volcano_scraper.py",
-      "lines": 206,
+      "lines": 209,
       "imports": [],
       "symbols": [
         "fetch_and_merge",
@@ -992,13 +1041,14 @@
       "path": "backend/reconcile.py",
       "node_type": "file",
       "label": "reconcile.py",
-      "lines": 156,
+      "lines": 200,
       "imports": [
         "backend/app.py"
       ],
       "symbols": [
         "haversine_km",
-        "match_and_merge"
+        "match_and_merge",
+        "parse_source_time"
       ],
       "routes": [],
       "config": [],
@@ -1193,7 +1243,7 @@
       "path": "README.md",
       "node_type": "file",
       "label": "README.md",
-      "lines": 270,
+      "lines": 275,
       "imports": [],
       "symbols": [],
       "routes": [],
@@ -1370,12 +1420,13 @@
     {
       "category": "Frontend orchestration",
       "importance": "Core",
-      "purpose": "Owns application-wide map data, route state, filtering, selection state, and component composition.",
+      "purpose": "Owns application-wide map data, persistent route state, filtering, selection state, and component composition.",
       "responsibilities": [
         "Fetches earthquake and volcano records in parallel and refreshes every three minutes",
         "Filters earthquakes by date and magnitude",
-        "Coordinates map, panels, dialogs, recent selections, and Insights navigation",
-        "Keeps responsive panel state and map selection state"
+        "Keeps Insights mounted after first use so its working state survives map navigation",
+        "Temporarily reveals an Insights-selected event excluded by map filters",
+        "Coordinates map, panels, dialogs, recent selections, and responsive state"
       ],
       "why": "It is the composition root that turns backend records and user actions into the two main application routes.",
       "breakage": "Map and Insights navigation, polling, filtering, selection, or responsive behavior can break together.",
@@ -1387,7 +1438,7 @@
       "path": "frontend/src/App.jsx",
       "node_type": "file",
       "label": "App.jsx",
-      "lines": 370,
+      "lines": 407,
       "imports": [
         "frontend/src/App.css",
         "frontend/src/api.js",
@@ -1397,11 +1448,13 @@
         "frontend/src/components/MapTypeSelector.jsx",
         "frontend/src/components/RecentSelections.jsx",
         "frontend/src/components/RightPanel.jsx",
-        "frontend/src/utils/datetime.js"
+        "frontend/src/utils/datetime.js",
+        "frontend/src/utils/magnitude.js"
       ],
       "symbols": [
         "AnalysisPage",
         "App",
+        "FILTER_EXCEPTION_DURATION_MS",
         "MIN_MAGNITUDE",
         "analysisPath",
         "base",
@@ -1420,10 +1473,9 @@
         "handleMapTypeChange",
         "hasDay",
         "interval",
+        "isSameEarthquake",
         "key",
-        "loadData",
-        "mag",
-        "mags"
+        "loadData"
       ],
       "routes": [],
       "config": [
@@ -1590,10 +1642,13 @@
       "dependencies": [],
       "dependents": [
         "frontend/src/App.jsx",
+        "frontend/src/__tests__/analysisData.test.js",
         "frontend/src/analysis/analysisData.js",
         "frontend/src/components/MapComponent.jsx"
       ],
-      "tests": []
+      "tests": [
+        "frontend/src/__tests__/analysisData.test.js"
+      ]
     },
     {
       "category": "Frontend styles",
@@ -1610,7 +1665,7 @@
       "path": "frontend/src/App.css",
       "node_type": "file",
       "label": "App.css",
-      "lines": 340,
+      "lines": 349,
       "imports": [],
       "symbols": [],
       "routes": [],
@@ -1754,7 +1809,7 @@
       "path": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
       "node_type": "file",
       "label": "AnalysisPageLimits.test.jsx",
-      "lines": 142,
+      "lines": 145,
       "imports": [
         "frontend/src/analysis/AnalysisPage.jsx",
         "frontend/src/api.js",
@@ -1799,7 +1854,7 @@
       "path": "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
       "node_type": "file",
       "label": "AnalysisTimeRange.test.jsx",
-      "lines": 122,
+      "lines": 139,
       "imports": [
         "frontend/src/analysis/AnalysisCharts.jsx"
       ],
@@ -1823,19 +1878,20 @@
     {
       "category": "Frontend tests",
       "importance": "Test",
-      "purpose": "Verifies parallel initial requests and StrictMode stale-request protection.",
+      "purpose": "Verifies initial request coordination and cross-route selection/state behavior.",
       "responsibilities": [
-        "Mocks API functions",
-        "Renders App under StrictMode",
-        "Checks request coordination"
+        "Mocks API functions and route children",
+        "Checks StrictMode stale-request protection",
+        "Checks the 15-second filtered-event exception",
+        "Checks Insights state survives map navigation"
       ],
-      "why": "App polling and cancellation are easy to duplicate under development StrictMode.",
-      "breakage": "Initial data may be fetched twice or stale responses may overwrite current state.",
+      "why": "App owns asynchronous requests and the state boundary between the map and Insights.",
+      "breakage": "Stale responses, hidden selected events, or lost Insights work can reach users.",
       "id": "frontend/src/__tests__/AppInitialRequests.test.jsx",
       "path": "frontend/src/__tests__/AppInitialRequests.test.jsx",
       "node_type": "file",
       "label": "AppInitialRequests.test.jsx",
-      "lines": 68,
+      "lines": 146,
       "imports": [
         "frontend/src/App.jsx",
         "frontend/src/api.js"
@@ -1843,7 +1899,9 @@
       "symbols": [
         "deferred",
         "earthquakeRuns",
+        "filter",
         "promise",
+        "quake",
         "volcanoRuns"
       ],
       "routes": [],
@@ -1871,12 +1929,13 @@
       "path": "frontend/src/__tests__/MapArchitecture.test.js",
       "node_type": "file",
       "label": "MapArchitecture.test.js",
-      "lines": 48,
+      "lines": 62,
       "imports": [
         "frontend/package.json"
       ],
       "symbols": [
         "REMOVED_LEAFLET_PACKAGES",
+        "ROADMAP_WATER_COLOR",
         "appStyles",
         "dependencies",
         "mapStyles",
@@ -1942,11 +2001,12 @@
       "path": "frontend/src/__tests__/TimeWindowSlider.test.jsx",
       "node_type": "file",
       "label": "TimeWindowSlider.test.jsx",
-      "lines": 167,
+      "lines": 225,
       "imports": [
         "frontend/src/components/TimeWindowSlider.jsx"
       ],
       "symbols": [
+        "dayLabels",
         "firstCall",
         "hasYYFormat",
         "inMonthMode",
@@ -1955,13 +2015,15 @@
         "label2020",
         "leftPct",
         "leftStyle",
+        "monthLabels",
         "onFilterChange",
         "rangeEl",
         "renderSlider",
         "result",
         "track",
         "year",
-        "yyLabels"
+        "yyLabels",
+        "zoomIn"
       ],
       "routes": [],
       "config": [],
@@ -1987,10 +2049,11 @@
       "path": "frontend/src/__tests__/analysisData.test.js",
       "node_type": "file",
       "label": "analysisData.test.js",
-      "lines": 251,
+      "lines": 317,
       "imports": [
         "frontend/src/analysis/analysisData.js",
-        "frontend/src/analysis/analysisExport.js"
+        "frontend/src/analysis/analysisExport.js",
+        "frontend/src/utils/datetime.js"
       ],
       "symbols": [
         "bins",
@@ -2000,6 +2063,7 @@
         "errors",
         "filtered",
         "high",
+        "july28",
         "normalized",
         "reference",
         "rows",
@@ -2011,7 +2075,8 @@
       "communications": [],
       "dependencies": [
         "frontend/src/analysis/analysisData.js",
-        "frontend/src/analysis/analysisExport.js"
+        "frontend/src/analysis/analysisExport.js",
+        "frontend/src/utils/datetime.js"
       ],
       "dependents": [],
       "tests": []
@@ -2036,7 +2101,7 @@
       "path": "frontend/src/analysis/AnalysisPage.jsx",
       "node_type": "file",
       "label": "AnalysisPage.jsx",
-      "lines": 602,
+      "lines": 609,
       "imports": [
         "frontend/src/analysis/AnalysisCharts.jsx",
         "frontend/src/analysis/AnalysisFilters.jsx",
@@ -2115,9 +2180,10 @@
       "path": "frontend/src/analysis/AnalysisCharts.jsx",
       "node_type": "file",
       "label": "AnalysisCharts.jsx",
-      "lines": 522,
+      "lines": 533,
       "imports": [
-        "frontend/src/analysis/ChartCard.jsx"
+        "frontend/src/analysis/ChartCard.jsx",
+        "frontend/src/utils/magnitude.js"
       ],
       "symbols": [
         "AnalysisCharts",
@@ -2134,7 +2200,6 @@
         "accessiblePeriodLabel",
         "brushAriaLabel",
         "depthRecordsById",
-        "end",
         "highest",
         "isTouchPointer",
         "mediaQuery",
@@ -2143,7 +2208,8 @@
         "point",
         "range",
         "record",
-        "resetZoom"
+        "resetZoom",
+        "row"
       ],
       "routes": [],
       "config": [],
@@ -2225,8 +2291,10 @@
       "path": "frontend/src/analysis/ResultsTables.jsx",
       "node_type": "file",
       "label": "ResultsTables.jsx",
-      "lines": 141,
-      "imports": [],
+      "lines": 142,
+      "imports": [
+        "frontend/src/utils/magnitude.js"
+      ],
       "symbols": [
         "PAGE_SIZE",
         "ResultsTable",
@@ -2260,8 +2328,10 @@
       "path": "frontend/src/analysis/SummaryCards.jsx",
       "node_type": "file",
       "label": "SummaryCards.jsx",
-      "lines": 50,
-      "imports": [],
+      "lines": 52,
+      "imports": [
+        "frontend/src/utils/magnitude.js"
+      ],
       "symbols": [
         "SummaryCards",
         "cards",
@@ -2322,7 +2392,7 @@
       "path": "frontend/src/analysis/analysisData.js",
       "node_type": "file",
       "label": "analysisData.js",
-      "lines": 396,
+      "lines": 423,
       "imports": [
         "frontend/src/utils/datetime.js"
       ],
@@ -2428,7 +2498,7 @@
       "path": "frontend/src/components/MapComponent.jsx",
       "node_type": "file",
       "label": "MapComponent.jsx",
-      "lines": 1477,
+      "lines": 1498,
       "imports": [
         "frontend/src/api.js",
         "frontend/src/i18n.jsx",
@@ -2531,7 +2601,7 @@
       "path": "frontend/src/components/MagnitudeScale.jsx",
       "node_type": "file",
       "label": "MagnitudeScale.jsx",
-      "lines": 136,
+      "lines": 166,
       "imports": [
         "frontend/src/components/MagnitudeScale.css"
       ],
@@ -2539,10 +2609,14 @@
         "MagnitudeScale",
         "barClass",
         "clampMagnitude",
+        "decreaseKeys",
         "element",
+        "firstWholeMagnitude",
         "getFilterBoxPosition",
         "getMagnitudeTickPosition",
+        "handleKeyDown",
         "handleSliderChange",
+        "increaseKeys",
         "length",
         "magnitudeLabels",
         "nextLength",
@@ -2552,12 +2626,10 @@
         "range",
         "rect",
         "roundMagnitude",
+        "roundedValue",
         "scaleContainerRef",
         "sliderDisplayValue",
-        "thumbRadius",
-        "updateTrackLength",
-        "value",
-        "valueRatio"
+        "thumbRadius"
       ],
       "routes": [],
       "config": [],
@@ -2704,12 +2776,13 @@
       "path": "frontend/src/components/TimeWindowSlider.jsx",
       "node_type": "file",
       "label": "TimeWindowSlider.jsx",
-      "lines": 609,
+      "lines": 636,
       "imports": [
         "frontend/src/components/TimeWindowSlider.css",
         "frontend/src/i18n.jsx"
       ],
       "symbols": [
+        "EN_MONTH_SHORT",
         "IS_MONTH_SHORT",
         "Mnew",
         "Mold",
@@ -2726,14 +2799,13 @@
         "currentDate",
         "cursorRatio",
         "dateRangeDisplay",
+        "dayLabel",
         "dayOffset",
         "days",
         "daysToShow",
         "delta",
         "deltaRatio",
-        "dividerDate",
-        "dividerPos",
-        "dividers"
+        "dividerDate"
       ],
       "routes": [],
       "config": [],
@@ -2823,7 +2895,7 @@
       "path": "frontend/src/components/About.jsx",
       "node_type": "file",
       "label": "About.jsx",
-      "lines": 219,
+      "lines": 222,
       "imports": [
         "frontend/src/api.js",
         "frontend/src/i18n.jsx"
@@ -3028,13 +3100,21 @@
     {
       "id": "e22",
       "source": "backend/tests/test_scrape_parse.py",
+      "target": "backend/app.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_scrape_parse.py imports and exercises behavior from backend/app.py.",
+      "detected": true
+    },
+    {
+      "id": "e23",
+      "source": "backend/tests/test_scrape_parse.py",
       "target": "backend/scrape.py",
       "type": "Test coverage",
       "reason": "backend/tests/test_scrape_parse.py imports and exercises behavior from backend/scrape.py.",
       "detected": true
     },
     {
-      "id": "e23",
+      "id": "e24",
       "source": "backend/tests/test_security_hardening.py",
       "target": "backend/app.py",
       "type": "Test coverage",
@@ -3042,7 +3122,7 @@
       "detected": true
     },
     {
-      "id": "e24",
+      "id": "e25",
       "source": "backend/tests/test_security_hardening.py",
       "target": "backend/reconcile.py",
       "type": "Test coverage",
@@ -3050,7 +3130,23 @@
       "detected": true
     },
     {
-      "id": "e25",
+      "id": "e26",
+      "source": "backend/tests/test_security_hardening.py",
+      "target": "backend/scrape.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_security_hardening.py imports and exercises behavior from backend/scrape.py.",
+      "detected": true
+    },
+    {
+      "id": "e27",
+      "source": "backend/tests/test_security_hardening.py",
+      "target": "backend/skjalftalisa_client.py",
+      "type": "Test coverage",
+      "reason": "backend/tests/test_security_hardening.py imports and exercises behavior from backend/skjalftalisa_client.py.",
+      "detected": true
+    },
+    {
+      "id": "e28",
       "source": "backend/tests/test_security_hardening.py",
       "target": "backend/volcano_scraper.py",
       "type": "Test coverage",
@@ -3058,7 +3154,7 @@
       "detected": true
     },
     {
-      "id": "e26",
+      "id": "e29",
       "source": "backend/tests/test_skjalftalisa_client.py",
       "target": "backend/skjalftalisa_client.py",
       "type": "Test coverage",
@@ -3066,7 +3162,7 @@
       "detected": true
     },
     {
-      "id": "e27",
+      "id": "e30",
       "source": "backend/tests/test_volcano_scraper.py",
       "target": "backend/volcano_scraper.py",
       "type": "Test coverage",
@@ -3074,7 +3170,7 @@
       "detected": true
     },
     {
-      "id": "e28",
+      "id": "e31",
       "source": "backend/volcano_scraper.py",
       "target": "external:epos",
       "type": "Data ingestion flow",
@@ -3082,7 +3178,7 @@
       "detected": false
     },
     {
-      "id": "e29",
+      "id": "e32",
       "source": "backend/volcano_scraper.py",
       "target": "system:sqlite",
       "type": "Database access",
@@ -3090,7 +3186,7 @@
       "detected": false
     },
     {
-      "id": "e30",
+      "id": "e33",
       "source": "frontend/index.html",
       "target": "frontend/src/main.jsx",
       "type": "Script execution",
@@ -3098,7 +3194,7 @@
       "detected": false
     },
     {
-      "id": "e31",
+      "id": "e34",
       "source": "frontend/package.json",
       "target": "frontend/vite.config.js",
       "type": "Configuration loading",
@@ -3106,7 +3202,7 @@
       "detected": false
     },
     {
-      "id": "e32",
+      "id": "e35",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/App.css",
       "type": "Stylesheet usage",
@@ -3114,7 +3210,7 @@
       "detected": true
     },
     {
-      "id": "e33",
+      "id": "e36",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/analysis/AnalysisPage.jsx",
       "type": "Navigation between pages",
@@ -3122,7 +3218,7 @@
       "detected": false
     },
     {
-      "id": "e34",
+      "id": "e37",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/api.js",
       "type": "Function calls",
@@ -3130,7 +3226,7 @@
       "detected": false
     },
     {
-      "id": "e35",
+      "id": "e38",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/About.jsx",
       "type": "Imports",
@@ -3138,7 +3234,7 @@
       "detected": true
     },
     {
-      "id": "e36",
+      "id": "e39",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/LeftPanel.jsx",
       "type": "Shared state / props",
@@ -3146,7 +3242,7 @@
       "detected": false
     },
     {
-      "id": "e37",
+      "id": "e40",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/MapComponent.jsx",
       "type": "Component rendering",
@@ -3154,7 +3250,7 @@
       "detected": false
     },
     {
-      "id": "e38",
+      "id": "e41",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/MapTypeSelector.jsx",
       "type": "Imports",
@@ -3162,7 +3258,7 @@
       "detected": true
     },
     {
-      "id": "e39",
+      "id": "e42",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/RecentSelections.jsx",
       "type": "Component rendering",
@@ -3170,7 +3266,7 @@
       "detected": false
     },
     {
-      "id": "e40",
+      "id": "e43",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/components/RightPanel.jsx",
       "type": "Shared state / props",
@@ -3178,7 +3274,7 @@
       "detected": false
     },
     {
-      "id": "e41",
+      "id": "e44",
       "source": "frontend/src/App.jsx",
       "target": "frontend/src/utils/datetime.js",
       "type": "Imports",
@@ -3186,7 +3282,7 @@
       "detected": true
     },
     {
-      "id": "e42",
+      "id": "e45",
       "source": "frontend/src/__tests__/AnalysisFilters.test.jsx",
       "target": "frontend/src/analysis/AnalysisFilters.jsx",
       "type": "Test coverage",
@@ -3194,7 +3290,7 @@
       "detected": true
     },
     {
-      "id": "e43",
+      "id": "e46",
       "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
       "target": "frontend/src/analysis/AnalysisPage.jsx",
       "type": "Test coverage",
@@ -3202,7 +3298,7 @@
       "detected": true
     },
     {
-      "id": "e44",
+      "id": "e47",
       "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
       "target": "frontend/src/api.js",
       "type": "Test coverage",
@@ -3210,7 +3306,7 @@
       "detected": true
     },
     {
-      "id": "e45",
+      "id": "e48",
       "source": "frontend/src/__tests__/AnalysisPageLimits.test.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Test coverage",
@@ -3218,7 +3314,7 @@
       "detected": true
     },
     {
-      "id": "e46",
+      "id": "e49",
       "source": "frontend/src/__tests__/AnalysisTimeRange.test.jsx",
       "target": "frontend/src/analysis/AnalysisCharts.jsx",
       "type": "Test coverage",
@@ -3226,7 +3322,7 @@
       "detected": true
     },
     {
-      "id": "e47",
+      "id": "e50",
       "source": "frontend/src/__tests__/AppInitialRequests.test.jsx",
       "target": "frontend/src/App.jsx",
       "type": "Test coverage",
@@ -3234,7 +3330,7 @@
       "detected": true
     },
     {
-      "id": "e48",
+      "id": "e51",
       "source": "frontend/src/__tests__/AppInitialRequests.test.jsx",
       "target": "frontend/src/api.js",
       "type": "Test coverage",
@@ -3242,7 +3338,7 @@
       "detected": true
     },
     {
-      "id": "e49",
+      "id": "e52",
       "source": "frontend/src/__tests__/MapArchitecture.test.js",
       "target": "frontend/package.json",
       "type": "Test coverage",
@@ -3250,7 +3346,7 @@
       "detected": true
     },
     {
-      "id": "e50",
+      "id": "e53",
       "source": "frontend/src/__tests__/RecentSelections.test.jsx",
       "target": "frontend/src/components/RecentSelections.jsx",
       "type": "Test coverage",
@@ -3258,7 +3354,7 @@
       "detected": true
     },
     {
-      "id": "e51",
+      "id": "e54",
       "source": "frontend/src/__tests__/RecentSelections.test.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Test coverage",
@@ -3266,7 +3362,7 @@
       "detected": true
     },
     {
-      "id": "e52",
+      "id": "e55",
       "source": "frontend/src/__tests__/TimeWindowSlider.test.jsx",
       "target": "frontend/src/components/TimeWindowSlider.jsx",
       "type": "Test coverage",
@@ -3274,7 +3370,7 @@
       "detected": true
     },
     {
-      "id": "e53",
+      "id": "e56",
       "source": "frontend/src/__tests__/analysisData.test.js",
       "target": "frontend/src/analysis/analysisData.js",
       "type": "Test coverage",
@@ -3282,7 +3378,7 @@
       "detected": true
     },
     {
-      "id": "e54",
+      "id": "e57",
       "source": "frontend/src/__tests__/analysisData.test.js",
       "target": "frontend/src/analysis/analysisExport.js",
       "type": "Test coverage",
@@ -3290,7 +3386,15 @@
       "detected": true
     },
     {
-      "id": "e55",
+      "id": "e58",
+      "source": "frontend/src/__tests__/analysisData.test.js",
+      "target": "frontend/src/utils/datetime.js",
+      "type": "Test coverage",
+      "reason": "frontend/src/__tests__/analysisData.test.js imports and exercises behavior from frontend/src/utils/datetime.js.",
+      "detected": true
+    },
+    {
+      "id": "e59",
       "source": "frontend/src/analysis/AnalysisCharts.jsx",
       "target": "frontend/src/analysis/ChartCard.jsx",
       "type": "Imports",
@@ -3298,7 +3402,7 @@
       "detected": true
     },
     {
-      "id": "e56",
+      "id": "e60",
       "source": "frontend/src/analysis/AnalysisFilters.jsx",
       "target": "frontend/src/api.js",
       "type": "Imports",
@@ -3306,7 +3410,7 @@
       "detected": true
     },
     {
-      "id": "e57",
+      "id": "e61",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/AnalysisCharts.jsx",
       "type": "Component rendering",
@@ -3314,7 +3418,7 @@
       "detected": false
     },
     {
-      "id": "e58",
+      "id": "e62",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/AnalysisFilters.jsx",
       "type": "Shared state / props",
@@ -3322,7 +3426,7 @@
       "detected": false
     },
     {
-      "id": "e59",
+      "id": "e63",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/AnalysisPage.css",
       "type": "Stylesheet usage",
@@ -3330,7 +3434,7 @@
       "detected": true
     },
     {
-      "id": "e60",
+      "id": "e64",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/ResultsTables.jsx",
       "type": "Component rendering",
@@ -3338,7 +3442,7 @@
       "detected": false
     },
     {
-      "id": "e61",
+      "id": "e65",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/SummaryCards.jsx",
       "type": "Component rendering",
@@ -3346,7 +3450,7 @@
       "detected": false
     },
     {
-      "id": "e62",
+      "id": "e66",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/analysisData.js",
       "type": "Function calls",
@@ -3354,7 +3458,7 @@
       "detected": false
     },
     {
-      "id": "e63",
+      "id": "e67",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/analysis/analysisExport.js",
       "type": "Generated output",
@@ -3362,7 +3466,7 @@
       "detected": false
     },
     {
-      "id": "e64",
+      "id": "e68",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/api.js",
       "type": "API request",
@@ -3370,7 +3474,7 @@
       "detected": false
     },
     {
-      "id": "e65",
+      "id": "e69",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/components/About.jsx",
       "type": "Imports",
@@ -3378,7 +3482,7 @@
       "detected": true
     },
     {
-      "id": "e66",
+      "id": "e70",
       "source": "frontend/src/analysis/AnalysisPage.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3386,7 +3490,7 @@
       "detected": true
     },
     {
-      "id": "e67",
+      "id": "e71",
       "source": "frontend/src/analysis/analysisData.js",
       "target": "frontend/src/utils/datetime.js",
       "type": "Imports",
@@ -3394,7 +3498,7 @@
       "detected": true
     },
     {
-      "id": "e68",
+      "id": "e72",
       "source": "frontend/src/api.js",
       "target": "backend/app.py",
       "type": "API request",
@@ -3402,7 +3506,7 @@
       "detected": false
     },
     {
-      "id": "e69",
+      "id": "e73",
       "source": "frontend/src/components/About.jsx",
       "target": "frontend/src/api.js",
       "type": "Imports",
@@ -3410,7 +3514,7 @@
       "detected": true
     },
     {
-      "id": "e70",
+      "id": "e74",
       "source": "frontend/src/components/About.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3418,7 +3522,7 @@
       "detected": true
     },
     {
-      "id": "e71",
+      "id": "e75",
       "source": "frontend/src/components/LeftPanel.jsx",
       "target": "frontend/src/components/LeftPanel.css",
       "type": "Stylesheet usage",
@@ -3426,7 +3530,7 @@
       "detected": true
     },
     {
-      "id": "e72",
+      "id": "e76",
       "source": "frontend/src/components/LeftPanel.jsx",
       "target": "frontend/src/components/MagnitudeScale.jsx",
       "type": "Imports",
@@ -3434,7 +3538,7 @@
       "detected": true
     },
     {
-      "id": "e73",
+      "id": "e77",
       "source": "frontend/src/components/LeftPanel.jsx",
       "target": "frontend/src/components/TimeWindowSlider.jsx",
       "type": "Imports",
@@ -3442,7 +3546,7 @@
       "detected": true
     },
     {
-      "id": "e74",
+      "id": "e78",
       "source": "frontend/src/components/LeftPanel.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3450,7 +3554,7 @@
       "detected": true
     },
     {
-      "id": "e75",
+      "id": "e79",
       "source": "frontend/src/components/MapComponent.jsx",
       "target": "frontend/public/map-style.json",
       "type": "Configuration loading",
@@ -3458,7 +3562,7 @@
       "detected": false
     },
     {
-      "id": "e76",
+      "id": "e80",
       "source": "frontend/src/components/MapComponent.jsx",
       "target": "frontend/src/api.js",
       "type": "API request",
@@ -3466,7 +3570,7 @@
       "detected": false
     },
     {
-      "id": "e77",
+      "id": "e81",
       "source": "frontend/src/components/MapComponent.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3474,7 +3578,7 @@
       "detected": true
     },
     {
-      "id": "e78",
+      "id": "e82",
       "source": "frontend/src/components/MapComponent.jsx",
       "target": "frontend/src/utils/datetime.js",
       "type": "Imports",
@@ -3482,7 +3586,7 @@
       "detected": true
     },
     {
-      "id": "e79",
+      "id": "e83",
       "source": "frontend/src/components/MapTypeSelector.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3490,7 +3594,7 @@
       "detected": true
     },
     {
-      "id": "e80",
+      "id": "e84",
       "source": "frontend/src/components/RecentSelections.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3498,7 +3602,7 @@
       "detected": true
     },
     {
-      "id": "e81",
+      "id": "e85",
       "source": "frontend/src/components/RightPanel.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3506,7 +3610,7 @@
       "detected": true
     },
     {
-      "id": "e82",
+      "id": "e86",
       "source": "frontend/src/components/TimeWindowSlider.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3514,7 +3618,7 @@
       "detected": true
     },
     {
-      "id": "e83",
+      "id": "e87",
       "source": "frontend/src/main.jsx",
       "target": "frontend/src/App.jsx",
       "type": "Component rendering",
@@ -3522,7 +3626,7 @@
       "detected": false
     },
     {
-      "id": "e84",
+      "id": "e88",
       "source": "frontend/src/main.jsx",
       "target": "frontend/src/i18n.jsx",
       "type": "Imports",
@@ -3530,7 +3634,7 @@
       "detected": true
     },
     {
-      "id": "e85",
+      "id": "e89",
       "source": "frontend/vite.config.js",
       "target": "frontend/src/main.jsx",
       "type": "Generated output",
@@ -3538,7 +3642,7 @@
       "detected": false
     },
     {
-      "id": "e86",
+      "id": "e90",
       "source": "run-local.sh",
       "target": "backend/app.py",
       "type": "Script execution",
@@ -3546,7 +3650,7 @@
       "detected": false
     },
     {
-      "id": "e87",
+      "id": "e91",
       "source": "run-local.sh",
       "target": "frontend/package.json",
       "type": "Script execution",
@@ -3554,7 +3658,7 @@
       "detected": false
     },
     {
-      "id": "e88",
+      "id": "e92",
       "source": "runtime:browser",
       "target": "frontend/index.html",
       "type": "Loads",
@@ -3562,7 +3666,7 @@
       "detected": false
     },
     {
-      "id": "e89",
+      "id": "e93",
       "source": "runtime:flask",
       "target": "runtime:browser",
       "type": "API response",

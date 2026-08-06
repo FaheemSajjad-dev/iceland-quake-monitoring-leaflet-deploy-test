@@ -8,7 +8,7 @@ MPGV Monitor is a two-route React application backed by a Flask/SQLite service.
 2. `backend/skjalftalisa_client.py` ingests IMO Quakes API GeoJSON into `earthquake_s_raw`.
 3. `backend/reconcile.py` makes conservative one-to-one matches and atomically rebuilds `earthquake_merged`. A matched row keeps MPGV time/magnitude and uses the Quakes API location/depth; an unmatched or ambiguous MPGV row remains `v_only`.
 4. `backend/app.py` serves the merged catalogue, volcanoes, Insights limits, CSV, ShakeMap lookup, admin operations, health data, and the built React application.
-5. `frontend/src/App.jsx` fetches the earthquake catalogue once for both routes, polls every three minutes, filters map records, and owns cross-component selection/navigation state.
+5. `frontend/src/App.jsx` fetches the earthquake catalogue once for both routes, polls every three minutes, filters map records, preserves the mounted Insights state after first use, and owns cross-component selection/navigation state, including the temporary filtered-event exception.
 6. The map route renders spatial layers through `MapComponent.jsx`; the Insights route computes analysis locally through `analysisData.js` and renders it with Recharts components.
 
 The production topology documented in `DEPLOYMENT_OVERVIEW.md` uses Gunicorn on Pluto port 6000 behind the `/mpgv/` proxy path. The current main repository contains local launch scripts and deployment documentation; the operational `deploy.sh` is maintained in the separate deploy repository, not this source tree.
@@ -49,7 +49,7 @@ This isolated architecture explorer. Nothing in the application imports it.
 
 | File | Purpose | Main dependencies / communication |
 |---|---|---|
-| `frontend/src/App.jsx` | Owns catalogue polling, map filtering, routes, responsive panels, and selections | `api.js`, `datetime.js`, map components, lazy `AnalysisPage.jsx` |
+| `frontend/src/App.jsx` | Owns catalogue polling, map filtering, persistent route state, responsive panels, selections, and the 15-second Insights-to-map filter exception | `api.js`, `datetime.js`, map components, lazy `AnalysisPage.jsx` |
 | `frontend/src/api.js` | Central browser API adapter and limits-contract validation | Axios/fetch → Flask `/earthquakes`, `/volcanoes`, `/insights/limits`, `/shakemap_lookup` |
 | `frontend/src/components/MapComponent.jsx` | MapLibre/deck.gl rendering and spatial interaction | `react-map-gl`, deck.gl, `api.js`, `datetime.js`, `map-style.json` |
 | `frontend/src/components/LeftPanel.jsx` | Map filters, layer controls, action rail, mobile event summary | `TimeWindowSlider`, `MagnitudeScale`, `i18n`; sends callbacks to `App.jsx` |
@@ -146,7 +146,7 @@ Backend tests use `backend/tests/conftest.py` to disable the scheduler and bind 
 - Insights limits and depth-quality policies;
 - admin authentication, URL/input hardening, rate limiting, and health exemption.
 
-Frontend tests use Vitest, jsdom, and Testing Library. They cover App request coordination, analysis transformations/export, exact filter bounds, coordinated Insights initialization, Recharts time-range behavior, the map time slider, recent selections, and MapLibre architecture/mobile layout guards.
+Frontend tests use Vitest, jsdom, and Testing Library. They cover App request coordination and cross-route state, the temporary filtered-event exception, analysis transformations/export, exact filter bounds, coordinated Insights initialization, Recharts time-range behavior, the map time slider, recent selections, and MapLibre architecture/mobile layout guards.
 
 ## Recommended reading order
 
@@ -168,14 +168,14 @@ Frontend tests use Vitest, jsdom, and Testing Library. They cover App request co
 1. `EarthquakeMerged` in `backend/app.py` maps `earthquake_merged`.
 2. `get_earthquake_data` queries magnitude-3+ rows, optionally applies a day cutoff, enforces a row ceiling, and serializes backend field names.
 3. `fetchEarthquakeData` in `frontend/src/api.js` requests `/earthquakes`.
-4. `App.jsx` stores the complete array in `allData`, computes `filteredData` from date/magnitude controls, and passes it to `MapComponent`.
+4. `App.jsx` stores the complete array in `allData`, computes `filteredData` from date/magnitude controls, and passes it to `MapComponent`. When an Insights selection is excluded, `mapEarthquakes` adds only that event for 15 seconds without modifying the filters.
 5. `MapComponent.jsx` normalizes coordinate/magnitude values into deck.gl data, creates hit-target and visible `ScatterplotLayer` instances, and updates selected-event state on click.
 6. Selected state returns to `App.jsx`, which records recent selections and passes details back into the map/left panel.
 
 ### Trace an Insights chart from database query to rendered graph
 
 1. `/earthquakes` supplies merged records from SQLite; `/insights/limits` separately calculates exact magnitude and policy-eligible depth bounds.
-2. `App.jsx` passes `allData` to the lazy `AnalysisPage` route.
+2. `App.jsx` passes `allData` to the lazy `AnalysisPage` route and keeps that route mounted after its first visit so draft filters, applied filters, chart ranges, and table state survive a map round trip.
 3. `AnalysisPage.jsx` calls `normalizeEarthquakes`, gets server limits, clamps/validates filters, and calls `filterEarthquakes`, `selectDepthRecords`, and `buildAnalysis`.
 4. `analysisData.js` performs time aggregation, magnitude/depth histograms, category counts, scatter data, and summaries.
 5. `AnalysisCharts.jsx` renders the resulting arrays with Recharts. `SummaryCards.jsx` and `ResultsTables.jsx` use the same computed source, preventing a second analytical contract.

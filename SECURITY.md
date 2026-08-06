@@ -143,9 +143,9 @@ chmod 700 backend/data/
 chmod 600 backend/data/earthquakes.db
 ```
 
-## 11. HTTPS - SERVER ADMINISTRATION REQUIRED
+## 11. HTTPS - SERVER ADMINISTRATION
 
-Pluto nginx currently listens only on port 80 and has no active TLS certificate or port 443 listener. Public HTTPS must be configured by the Pluto server administrator at nginx, followed by an HTTP-to-HTTPS redirect. Flask, React, Gunicorn, and `deploy.sh` do not control public TLS; Gunicorn should continue serving plain HTTP on `127.0.0.1:6000` behind nginx.
+Pluto nginx now terminates public TLS for `/mpgv/` and redirects HTTP requests to HTTPS. Certificate renewal, the port 443 listener, Host validation, and the public redirect remain server-administration responsibilities. Flask, React, Gunicorn, and `deploy.sh` do not control public TLS; Gunicorn should continue serving plain HTTP on `127.0.0.1:6000` behind nginx.
 
 ## 12. Frontend API URL Detection - DONE
 

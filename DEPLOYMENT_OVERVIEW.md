@@ -5,7 +5,7 @@ This document records how this project is deployed, how the live service behaves
 ## Current Live Deployment
 
 - Platform: University server on Pluto
-- Live URL: `http://pluto.cs.hi.is/mpgv/`
+- Live URL: `https://pluto.cs.hi.is/mpgv/`
 - SSH host: `pluto.cs.hi.is`
 - SSH user: `mfs7`
 - Server project path: `~/iceland-quake`
@@ -19,7 +19,7 @@ The deploy project at `F:\iceland-quake-monitoring-leaflet-deploy-test` is the l
 - Flask backend runs from `backend/app.py`.
 - React frontend is built from `frontend/`.
 - Flask serves the built frontend from `frontend/dist`.
-- API and frontend are served from the same origin under `http://pluto.cs.hi.is/mpgv/`.
+- API and frontend are served from the same origin under `https://pluto.cs.hi.is/mpgv/`.
 - Flask's frontend fallback serves both the map route and the Insights route at `/mpgv/analysis`; Insights API calls remain same-origin under `/mpgv/insights/limits`.
 - Gunicorn listens locally on port `6000`; Pluto routes `/mpgv/` traffic to that backend.
 - `deploy.sh` installs dependencies, builds the frontend, stops the existing Gunicorn process, and starts Gunicorn on port 6000.
@@ -76,13 +76,13 @@ When root-level deploy files change, upload only the root files that changed. Wh
 
 Check:
 
-- `http://pluto.cs.hi.is/mpgv/`
-- `http://pluto.cs.hi.is/mpgv/health` if routed by the server configuration
+- `https://pluto.cs.hi.is/mpgv/`
+- `https://pluto.cs.hi.is/mpgv/health` if routed by the server configuration
 - `~/iceland-quake/server.log` on Pluto
 
 ## HTTPS Responsibility
 
-Pluto nginx currently exposes this route on port 80 only. The application and Gunicorn do not terminate TLS. Enabling public HTTPS requires the Pluto server administrator to install or assign a certificate, add an nginx port 443 listener that proxies `/mpgv/` to `127.0.0.1:6000`, and redirect HTTP to HTTPS. No Flask or React protocol change is required.
+Pluto nginx terminates public TLS for this route and redirects HTTP requests to HTTPS. The application and Gunicorn continue serving plain HTTP on the private `127.0.0.1:6000` hop; certificate renewal, the port 443 listener, Host validation, and the public redirect remain the Pluto server administrator's responsibility.
 
 ## Production Considerations
 
