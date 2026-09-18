@@ -77,7 +77,7 @@ const TimeTooltip = ({ active, payload, text }) => {
         {text.highestMagnitude}: {formatMagnitude(row.highestMagnitude)}
       </span>
       <span>
-        {text.averageMagnitude}: {row.averageMagnitude == null ? "â€”" : row.averageMagnitude.toFixed(2)}
+        {text.averageMagnitude}: {row.averageMagnitude == null ? "—" : row.averageMagnitude.toFixed(2)}
       </span>
       <span>
         {text.averageDepth}:{" "}

@@ -84,10 +84,6 @@ def test_invalid_days_returns_400(test_app, value):
         ("dt=2026-01-01T00:00:00.100junk&lat=64&lon=-22", "dt"),
         ("dt=2026-01-01T00:00:00.&lat=64&lon=-22", "dt"),
         ("dt=2026-01-01T00:00:00.1234567&lat=64&lon=-22", "dt"),
-        ("dt=2026-01-01T00:00:00&lat=nan&lon=-22", "lat"),
-        ("dt=2026-01-01T00:00:00&lat=91&lon=-22", "lat"),
-        ("dt=2026-01-01T00:00:00&lat=64&lon=inf", "lon"),
-        ("dt=2026-01-01T00:00:00&lat=64&lon=-181", "lon"),
     ],
 )
 def test_invalid_shakemap_lookup_parameters_return_400(test_app, query, parameter):
@@ -138,7 +134,7 @@ def test_shakemap_lookup_accepts_catalogue_milliseconds(test_app, monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.get_json() == {"found": False}
+    assert response.get_json() == {"found": False, "reason": "no_exact_match"}
 
 
 def test_shakemap_lookup_accepts_official_epos_data_host(test_app, monkeypatch):
@@ -180,8 +176,8 @@ def test_shakemap_lookup_accepts_official_epos_data_host(test_app, monkeypatch):
             "shakemaps/20260331_071102.jpg"
         ),
         "origin_time": "2026-03-31 07:11:02.000",
-        "minutes_diff": 0.0,
-        "distance_km": 0.0,
+        "dt_sec": 0.0,
+        "match_method": "mpgv_origin_time",
     }
 
 

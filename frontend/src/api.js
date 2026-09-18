@@ -78,9 +78,9 @@ export const fetchVolcanoData = async (signal) => {
     }
 };
 
-export async function fetchShakeMapValidated(dt, lat, lon) {
+export async function fetchShakeMapValidated(dt) {
   try {
-    const params = new URLSearchParams({ dt, lat, lon });
+    const params = new URLSearchParams({ dt });
     const res = await fetch(`${API_URL}/shakemap_lookup?${params}`, {
       cache: "no-store",
     });
@@ -90,9 +90,8 @@ export async function fetchShakeMapValidated(dt, lat, lon) {
     return {
       available: true,
       url: data.url,
-      dt_sec: Math.round((data.minutes_diff || 0) * 60),
-      dist_km: data.distance_km,
-      dm: null,
+      dt_sec: data.dt_sec,
+      match_method: data.match_method,
     };
   } catch {
     return null;

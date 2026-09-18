@@ -410,6 +410,18 @@ const patchDarkHeatmapStyle = (raw) => {
     hideGlaciers: true,
     hiddenLayerIds: HIDDEN_HEATMAP_LAYERS,
   });
+  const layers = style.layers.map((layer) =>
+    layer.type === "symbol" && layer.layout?.["text-field"]
+      ? {
+          ...layer,
+          paint: {
+            ...(layer.paint ?? {}),
+            "text-color": "#fff",
+            "text-halo-color": "rgba(0, 0, 0, 0.5)",
+          },
+        }
+      : layer
+  );
   const sources = Object.fromEntries(
     Object.entries(style.sources ?? {}).map(([sourceId, source]) => [
       sourceId,
@@ -418,7 +430,7 @@ const patchDarkHeatmapStyle = (raw) => {
         : source,
     ])
   );
-  return { ...style, sources };
+  return { ...style, layers, sources };
 };
 
 const buildRasterStyleWithLabels = (rasterStyle, rawOpenFreeMapStyle, labelTheme = "light") => {
@@ -1111,6 +1123,7 @@ const MapLibreEarthquakeMap = ({
     let cancelled = false;
     if (mapType === "heatmap") {
       setStyledMapStyle(null);
+      setDarkHeatmapStyle(null);
       fetchDarkStyle()
         .then((raw) => {
           if (!cancelled) setDarkHeatmapStyle(patchDarkHeatmapStyle(raw));
@@ -1127,12 +1140,15 @@ const MapLibreEarthquakeMap = ({
       .then((raw) => {
         if (cancelled) return;
         if (mapType === "roadmap") {
-          setStyledMapStyle(patchStyle(raw));
+          setStyledMapStyle({ mapType, style: patchStyle(raw) });
           return;
         }
         const rasterStyle = MAPLIBRE_STYLES[mapType] ?? MAPLIBRE_STYLES.roadmap;
         const labelTheme = mapType === "satellite" ? "dark" : "light";
-        setStyledMapStyle(buildRasterStyleWithLabels(rasterStyle, raw, labelTheme));
+        setStyledMapStyle({
+          mapType,
+          style: buildRasterStyleWithLabels(rasterStyle, raw, labelTheme),
+        });
       })
       .catch(() => {
         if (!cancelled) setStyledMapStyle(null);
@@ -1161,7 +1177,7 @@ const MapLibreEarthquakeMap = ({
 
   const baseMapStyle = mapType === "heatmap"
     ? darkHeatmapStyle
-    : styledMapStyle ?? (MAPLIBRE_STYLES[mapType] ?? MAPLIBRE_STYLES.roadmap);
+    : styledMapStyle?.mapType === mapType ? styledMapStyle.style : null;
   const activeMapStyle = useMemo(
     () => !baseMapStyle || !isMobileAttribution
       ? baseMapStyle
@@ -1387,9 +1403,7 @@ const MapComponent = ({
       if (!selectedEarthquake) return;
       try {
         const data = await fetchShakeMapValidated(
-          selectedEarthquake["Date-time"],
-          selectedEarthquake.Latitude,
-          selectedEarthquake.Longitude
+          selectedEarthquake["Date-time"]
         );
         if (!cancelled) setShakeUrl(data);
       } catch {
@@ -1451,7 +1465,7 @@ const MapComponent = ({
               <button
                 className="info-card__action"
                 onClick={() => window.open(shakeUrl.url, "_blank", "noopener,noreferrer")}
-                title={`ShakeMap (Δt ${Math.round(shakeUrl.dt_sec)} s, Δd ${shakeUrl.dist_km?.toFixed(1)} km, ΔM ${shakeUrl.dm ?? "–"})`}
+                title={t('info_shakemap_match')}
               >
                 {t('info_view_shakemap')}
               </button>

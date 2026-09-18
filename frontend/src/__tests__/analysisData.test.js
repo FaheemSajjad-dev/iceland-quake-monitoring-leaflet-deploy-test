@@ -150,7 +150,7 @@ describe("analysis transformations", () => {
     ]).filter((item) => item.hasDepth);
     expect(high.at(-1).depth).toBe(900);
     const bins = buildDepthHistogram(high);
-    expect(bins.at(-1)).toMatchObject({ overflow: true, unverified: 1 });
+    expect(bins.at(-1)).toMatchObject({ isOverflow: true, unverified: 1 });
   });
 
   it("exports the active depth mode and raw depth provenance", () => {

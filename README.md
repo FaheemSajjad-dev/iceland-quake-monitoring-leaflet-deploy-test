@@ -15,7 +15,7 @@ The app visualizes Icelandic earthquakes from June 2020 onward, focusing on even
 - Local development frontend: `http://localhost:5174`
 - Local development backend: `http://localhost:5001`
 
-The deploy copy in `F:\iceland-quake-monitoring-leaflet-deploy-test` is the source used for Pluto uploads.
+This repository is the source used for GitHub and Pluto deployments.
 
 ## Stack
 
@@ -92,7 +92,16 @@ MPGV ingestion preserves historical source revisions for provenance while markin
 - Depth analysis defaults to Quakes API reference depths from matched events; MPGV-only depths remain raw and can be included with explicit unverified labels
 - Reference and unverified depths are separated in charts, tooltips, tables, and CSV exports, with extreme raw values grouped into a labelled overflow bin
 
+## ShakeMap association
+
+The on-demand `/shakemap_lookup` request takes `dt`, the original MPGV timestamp retained in the merged event. It reads the IMO/EPOS ShakeMap list and requires an exact UTC origin-time match, including fractional seconds. Reviewed Quakes coordinates and geographic distance do not select a product. Repeated rows with the same safe viewer URL count as one product; distinct viewer URLs at the same timestamp are ambiguous and produce no link. A timestamp mismatch also produces no link, even if a nearby product exists.
+
+The optional `backend/shakemap_validator.py` audit uses the same policy and endpoint. It stores product metadata and the EPOS `mw` value for diagnostics, without a distance or magnitude threshold. Old proximity-based cached associations are withheld until the audit refreshes them under the current policy. The active frontend uses on-demand lookup and does not require this cache. Exact-time association is a software rule, not independent scientific validation.
+
 ## Insights
+
+For daily variation, choose the start and end dates, set **Time grouping** to **Day**, and press **Apply filters**. Both time charts use daily buckets and retain empty days. Month is the default; draft filter changes take effect only after applying them.
+
 
 The Insights page analyzes the same merged catalogue loaded by the map. The map action opens `/mpgv/analysis`; its home action returns to the map, and the mounted Insights route preserves its applied and draft filter state when users move between pages. **View on map** returns with the selected earthquake focused while preserving the map's current filters and overlays. If those filters exclude the selected event, only that event is added temporarily for 15 seconds and then removed from the map again.
 
@@ -176,9 +185,9 @@ The Pluto server runs the app from `~/iceland-quake`. Gunicorn listens locally o
 
 Typical update flow:
 
-1. Apply and verify changes in the main F project.
-2. Copy the same relevant changes to the deploy F project.
-3. Mirror the same files into the G recovery folders.
+1. Apply and verify changes in this repository.
+2. Run the backend and frontend tests and production build.
+3. Commit and push this repository to GitHub.
 4. Build and test locally.
 5. Commit and push both F Git repositories.
 6. Upload deploy F changes to Pluto.

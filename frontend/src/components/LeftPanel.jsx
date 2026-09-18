@@ -116,7 +116,7 @@ const LeftPanel = ({
                   <button
                     className="info-card__action left-panel__event-action"
                     onClick={() => onOpenShakeMap(shakeUrl.url)}
-                    title={`ShakeMap (\u0394t ${Math.round(shakeUrl.dt_sec)} s, \u0394d ${shakeUrl.dist_km?.toFixed(1)} km, \u0394M ${shakeUrl.dm ?? "\u2013"})`}
+                    title={t('info_shakemap_match')}
                   >
                     {t('info_view_shakemap')}
                   </button>

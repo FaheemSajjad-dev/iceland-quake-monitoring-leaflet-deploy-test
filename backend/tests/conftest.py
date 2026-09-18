@@ -10,19 +10,14 @@ import sys
 import tempfile
 import pytest
 
-# --- Must be set BEFORE importing app.py -----------------------------------
+# Set before importing app.py so tests never start APScheduler.
 os.environ.setdefault("DISABLE_SCHEDULER", "1")
 
-# Add backend directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Import real Flask app and db after setting DISABLE_SCHEDULER
 from app import app as flask_app, db as _db
 
 
-# ---------------------------------------------------------------------------
-# Session-scoped: one temp database for the whole test run
-# ---------------------------------------------------------------------------
 @pytest.fixture(scope="session")
 def test_app():
     """
@@ -39,7 +34,6 @@ def test_app():
     flask_app.config.update({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
-        # Remove pool_size (invalid for SQLite) and allow cross-thread use
         "SQLALCHEMY_ENGINE_OPTIONS": {
             "connect_args": {"check_same_thread": False},
         },
@@ -67,9 +61,6 @@ def test_app():
         pass
 
 
-# ---------------------------------------------------------------------------
-# Function-scoped: wipe all rows between tests
-# ---------------------------------------------------------------------------
 @pytest.fixture()
 def db_session(test_app):
     """

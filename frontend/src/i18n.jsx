@@ -37,6 +37,7 @@ const T = {
     info_elevation: "Elevation",
     info_unknown: "Unknown",
     info_view_shakemap: "View ShakeMap ↗",
+    info_shakemap_match: "ShakeMap for this MPGV event",
     // Right panel
     // About dialog
     about_title: "Iceland MPGV Earthquake Map",
@@ -73,7 +74,7 @@ const T = {
     app_title: "MPGV Jarðskjálftakort Íslands",
     analysis: "Jarðskjálftayfirlit",
     about: "Um",
-    recent_selections: "NÃ½leg val",
+    recent_selections: "Nýleg val",
     // LeftPanel controls
     show_controls: "Sýna stýringar",
     hide_controls: "Fela stýringar",
@@ -101,6 +102,7 @@ const T = {
     info_elevation: "Hæð",
     info_unknown: "Óþekkt",
     info_view_shakemap: "Skoða ShakeMap ↗",
+    info_shakemap_match: "ShakeMap fyrir þennan MPGV-atburð",
     // Right panel
     // About dialog
     about_title: "MPGV Jarðskjálftakort Íslands",

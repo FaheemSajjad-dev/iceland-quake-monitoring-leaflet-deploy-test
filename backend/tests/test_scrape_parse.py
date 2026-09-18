@@ -24,7 +24,7 @@ from scrape import (
 
 
 def _make_response(html: str) -> MagicMock:
-    """Helper: fake requests.Response whose .content returns bytes."""
+    """Return a minimal byte-backed requests.Response mock."""
     mock = MagicMock()
     mock.content = html.encode("utf-8")
     return mock
@@ -78,10 +78,6 @@ def _catalogue_router(month_html, *, month_error=None):
     return get
 
 
-# ---------------------------------------------------------------------------
-# Basic parsing
-# ---------------------------------------------------------------------------
-
 class TestGetMonthlyDataParsing:
 
     def test_returns_list_of_dicts(self):
@@ -113,10 +109,6 @@ class TestGetMonthlyDataParsing:
         assert len(result) == 2
 
 
-# ---------------------------------------------------------------------------
-# Magnitude filter (must be >= 3.0)
-# ---------------------------------------------------------------------------
-
 class TestMagnitudeFilter:
 
     def test_below_threshold_excluded(self):
@@ -139,9 +131,9 @@ class TestMagnitudeFilter:
 
     def test_mixed_magnitudes_filtered_correctly(self):
         html = _html_table(
-            ("2023-06-01 08:00:00", "64.0", "-22.0", "5.0", "", "", "2.5", ""),  # excluded
-            ("2023-06-02 09:30:00", "64.0", "-22.0", "5.0", "", "", "3.0", ""),  # included
-            ("2023-06-03 10:00:00", "64.0", "-22.0", "5.0", "", "", "3.5", ""),  # included
+            ("2023-06-01 08:00:00", "64.0", "-22.0", "5.0", "", "", "2.5", ""),
+            ("2023-06-02 09:30:00", "64.0", "-22.0", "5.0", "", "", "3.0", ""),
+            ("2023-06-03 10:00:00", "64.0", "-22.0", "5.0", "", "", "3.5", ""),
         )
         with patch("scrape.requests.get", return_value=_make_response(html)):
             result = get_monthly_data(2023, 6)
@@ -149,14 +141,9 @@ class TestMagnitudeFilter:
         assert all(r["mw_mean"] >= 3.0 for r in result)
 
 
-# ---------------------------------------------------------------------------
-# Datetime format handling
-# ---------------------------------------------------------------------------
-
 class TestDatetimeParsing:
 
     def test_datetime_with_microseconds(self):
-        # Format: '%Y-%m-%d %H:%M:%S.%f'
         html = _html_table(("2023-06-15 12:00:00.123456", "64.1", "-22.0", "5.0", "", "", "3.0", ""))
         with patch("scrape.requests.get", return_value=_make_response(html)):
             result = get_monthly_data(2023, 6)
@@ -164,7 +151,6 @@ class TestDatetimeParsing:
         assert result[0]["source_id"] == "2023-06-15 12:00:00.123456"
 
     def test_datetime_without_microseconds(self):
-        # Format: '%Y-%m-%d %H:%M:%S'
         html = _html_table(("2023-06-15 12:00:00", "64.1", "-22.0", "5.0", "", "", "3.0", ""))
         with patch("scrape.requests.get", return_value=_make_response(html)):
             result = get_monthly_data(2023, 6)
@@ -187,10 +173,6 @@ class TestDatetimeParsing:
             result = get_monthly_data(2026, 7)
         assert result[0]["source_id"] == "2026-07-27 00:36:17.400"
 
-
-# ---------------------------------------------------------------------------
-# Edge cases
-# ---------------------------------------------------------------------------
 
 class TestEdgeCases:
 
@@ -229,7 +211,7 @@ class TestEdgeCases:
             get_monthly_data(2022, 3)
         called_url = mock_get.call_args[0][0]
         assert "2022" in called_url
-        assert "03" in called_url  # zero-padded month
+        assert "03" in called_url
 
 
 def test_complete_candidate_catalogue_is_fetched_and_validated():

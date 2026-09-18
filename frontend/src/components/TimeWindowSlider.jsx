@@ -85,7 +85,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
       }
       return { firstVisibleDate, lastVisibleDate, isDayView: true };
     } else if (isWeekMode) {
-      // Weeks mode: 4 → 3 → 2 → 1 week(s) as you zoom in
         const weeksToShow =
           zoomLevel < 0.0125 ? 1 :
           zoomLevel < 0.015  ? 2 :
@@ -101,9 +100,8 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
           lastVisibleDate.setTime(currentDate.getTime());
         }
         return { firstVisibleDate, lastVisibleDate, isWeekMode: true };
-      	} else if (isYearMode) {
-		// Year mode: show the full range June 2020 → today,
-		// but still express it in terms of months so dividers line up correctly.
+        } else if (isYearMode) {
+		// Preserve month-based indices so dividers align across the full year view.
 		const visibleMonths = totalMonths;
 		const firstVisibleMonthIndex = 0;
 		const firstVisibleDate = new Date(startDate);
@@ -119,7 +117,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 			lastVisibleMonthIndex: firstVisibleMonthIndex + visibleMonths - 1,
 		};
 	} else {
-      // Months mode: continuous mapping from zoom → span
       const visibleMonths = Math.max(
         1,
         Math.min(totalMonths, Math.round(totalMonths * zoomLevel))
@@ -205,21 +202,21 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 
   const handleMouseDown = (e) => {
     if (!trackRef.current) return;
-    
+
     isDraggingRef.current = true;
     dragStartXRef.current = vertical ? e.clientY : e.clientX;
     dragStartOffsetRef.current = viewOffset;
-    
+
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    
+
     trackRef.current.classList.add("dragging");
-    e.preventDefault(); // Prevent text selection during drag
+    e.preventDefault();
   };
 
   const handleMouseMove = (e) => {
     if (!isDraggingRef.current || !trackRef.current) return;
-    
+
     const trackWidth = trackRef.current.offsetWidth;
     const delta = (vertical ? e.clientY : e.clientX) - dragStartXRef.current;
 
@@ -237,13 +234,12 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
     isDraggingRef.current = false;
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-    
+
     if (trackRef.current) {
       trackRef.current.classList.remove("dragging");
     }
   };
 
-  // Zoom handler – smooth, no big jumps, anchored to cursor in month mode
   const applyZoom = (raw, cursorRatio = 0.5) => {
     const clamped = Math.max(-60, Math.min(60, raw));
     const k = zoomLevel < 0.1 ? 0.004 : 0.006;
@@ -261,9 +257,8 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
         1,
         Math.min(N, range.visibleMonths || Math.round(totalMonths * oldZoom))
       );
-      const i0old = range.firstVisibleMonthIndex || 0; // leftmost visible month index
+      const i0old = range.firstVisibleMonthIndex || 0;
 
-      // Absolute month index under the cursor before zoom
       const iUnderCursor = i0old + cursorRatio * Mold;
 
       const Mnew = Math.max(
@@ -272,11 +267,9 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
       );
       const maxOffsetIdx = Math.max(0, N - Mnew);
 
-      // New left index so that the same absolute month stays under the cursor
       let i0new = iUnderCursor - cursorRatio * Mnew;
       i0new = Math.max(0, Math.min(maxOffsetIdx, i0new));
 
-      // Convert back to viewOffset in [0, 1]
       const newViewOffset =
         maxOffsetIdx > 0 ? i0new / maxOffsetIdx : 0;
 
@@ -285,7 +278,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
       return;
     }
 
-    // Day / week / year modes
     const absolutePoint = viewOffset + cursorRatio * oldZoom;
     let newOffset = absolutePoint - cursorRatio * newZoom;
 
@@ -371,7 +363,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 				Math.ceil((lastVisibleDate - firstVisibleDate) / oneDay) + 1;
 			const dividerDate = new Date(firstVisibleDate);
 
-			// Only three day labels: left, center, right
 			const labelIndices =
 				days <= 3
 					? [...Array(days).keys()]
@@ -413,7 +404,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 					);
 				}
 
-				// Year label at the Jan 1 divider line showing prev/next year
 				if (isYearBoundary) {
 					const yr = dividerDate.getFullYear();
 					labels.push(
@@ -454,7 +444,6 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 			segments <= 24 ? 2 :
 			segments <= 36 ? 3 : 6;
 
-		// For year mode: collect boundary positions then place labels at midpoints
 		const yearBoundaryPositions = [];
 
 		for (let i = 0; i <= segments; i++) {
@@ -463,12 +452,11 @@ const TimeWindowSlider = ({ onFilterChange, colorOwner = 'timeline', mapType = '
 			const base = startDate.getMonth() + boundaryIndex;
 			const year =
 				startDate.getFullYear() + Math.floor(base / 12);
-			const month = base % 12; // 0 = Jan ... 11 = Dec
+			const month = base % 12;
 
 			const pos = segments > 0 ? (i / segments) * 100 : 0;
 			const boundaryDate = new Date(year, month, 1);
 
-			// A year boundary is *only* a January 1st that lies inside the data window
 			const isYearBoundary =
 				month === 0 &&
 				boundaryDate >= startDate &&

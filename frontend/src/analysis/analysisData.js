@@ -346,7 +346,7 @@ export const buildDepthHistogram = (earthquakes) => {
     end: first + (index + 1) * binSize,
     reference: 0,
     unverified: 0,
-    overflow: false,
+    isOverflow: false,
   }));
   const hasOverflow = depths.some((depth) => depth > displayMax);
   if (hasOverflow) {
@@ -355,7 +355,7 @@ export const buildDepthHistogram = (earthquakes) => {
       end: null,
       reference: 0,
       unverified: 0,
-      overflow: true,
+      isOverflow: true,
     });
   }
   earthquakes.forEach((item) => {
@@ -372,7 +372,7 @@ export const buildDepthHistogram = (earthquakes) => {
   return bins.map((bin) => ({
     ...bin,
     count: bin.reference + bin.unverified,
-    range: bin.overflow
+    range: bin.isOverflow
       ? `>${bin.start.toFixed(0)} km`
       : `${bin.start.toFixed(0)}–${bin.end.toFixed(0)} km`,
   }));

@@ -13,6 +13,7 @@ import io
 import math
 import time
 import requests
+from shakemap_matching import EPOS_SHAKEMAP_API, MATCH_METHOD, POLICY_NOTE, origin_time, select_shakemap
 
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -294,10 +295,10 @@ class ShakeMapLink(db.Model):
     sm_depth= db.Column(db.Float)
 
     dt_sec  = db.Column(db.Float)   # time difference in seconds to chosen ShakeMap
-    dist_km = db.Column(db.Float)   # distance to chosen shakemap
-    dm      = db.Column(db.Float)   # Mw_v - M_shakemap
+    dist_km = db.Column(db.Float)   # legacy diagnostic; null under exact-time policy
+    dm      = db.Column(db.Float)   # MPGV Mw - product mw; diagnostic only
 
-    status  = db.Column(db.String)  # "valid" | "no_candidate" | "no_valid" | "error"
+    status  = db.Column(db.String)  # valid | no_exact_match | ambiguous | invalid_event_time
     note    = db.Column(db.String)
 
 def create_tables() -> None:
@@ -1053,74 +1054,36 @@ def health():
         })
 
 
-def _km_distance(lat1, lon1, lat2, lon2):
-    # Local copy keeps ShakeMap lookup independent from reconcile.py imports.
-    R = 6371.0
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dlat = p2 - p1
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dlon/2)**2
-    return 2 * R * math.asin(min(1, math.sqrt(a)))
-
 @app.route("/shakemap_lookup", methods=["GET"])
 @limiter.limit(lambda: rate_limit("SHAKEMAP", "60 per minute"))
 def shakemap_lookup():
-    """Query EPOS shakemaps near an event. Params: dt, lat, lon."""
+    """Find a unique safe EPOS product at the retained MPGV time. Param: dt."""
     dt_str = (request.args.get("dt") or "").strip()
-    evt_dt, error = _parse_event_datetime(dt_str)
+    _, error = _parse_event_datetime(dt_str)
     if error:
         return error
-    lat, error = _parse_float_param("lat", -90.0, 90.0)
-    if error:
-        return error
-    lon, error = _parse_float_param("lon", -180.0, 180.0)
-    if error:
-        return error
-
-    url = "https://api.vedur.is/epos/seismic/shakemaps"
-
     try:
-        r = requests.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=False)
+        r = requests.get(EPOS_SHAKEMAP_API, timeout=REQUEST_TIMEOUT, allow_redirects=False)
         r.raise_for_status()
         if "json" not in r.headers.get("Content-Type", "").lower():
             return jsonify({"found": False, "reason": "upstream content type error"}), 502
-        items = r.json() if isinstance(r.json(), list) else []
+        items = r.json()
+        if not isinstance(items, list):
+            return jsonify({"found": False, "reason": "upstream format error"}), 502
     except Exception as e:
         logging.exception("shakemap_lookup fetch failed")
         return jsonify({"found": False, "reason": "upstream fetch error"}), 502
 
-    best = None
-    best_score = 1e18
-    for it in items:
-        try:
-            ot = it.get("origin_time") or ""
-            ot_norm = ot.replace("T", " ").replace("Z", "")
-            dt = datetime.strptime(ot_norm[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-            dmin = abs((dt - evt_dt).total_seconds()) / 60.0
-            dkm = _km_distance(lat, lon, float(it["latitude"]), float(it["longitude"]))
-            score = dmin * 3 + dkm
-            if score < best_score:
-                best_score = score
-                best = {**it, "dmin": dmin, "dkm": dkm}
-        except Exception:
-            continue
-
-    if not best:
-        return jsonify({"found": False})
-    if best["dmin"] > 180 or best["dkm"] > 200:
-        return jsonify({"found": False})
-
-    view_url = (best.get("url_view_file") or "").strip()
-    view_url = _validate_shakemap_url(view_url)
-    if not view_url:
-        return jsonify({"found": False})
+    best, reason = select_shakemap(items, dt_str, _validate_shakemap_url)
+    if best is None:
+        return jsonify({"found": False, "reason": reason})
 
     return jsonify({
         "found": True,
-        "url": view_url,
+        "url": best["url_view_file"],
         "origin_time": best.get("origin_time"),
-        "minutes_diff": round(best["dmin"], 1),
-        "distance_km": round(best["dkm"], 1),
+        "dt_sec": 0.0,
+        "match_method": MATCH_METHOD,
     })
 
 
@@ -1131,7 +1094,8 @@ def shakemap(dt):
     if error:
         return error
     link = db.session.get(ShakeMapLink, dt)
-    if not link or link.status != "valid":
+    if (not link or link.status != "valid" or link.note != POLICY_NOTE
+            or origin_time(link.origin_time) != origin_time(dt)):
         return {"available": False}, 200
     url = _validate_shakemap_url(link.url_view_file or "")
     if not url:
